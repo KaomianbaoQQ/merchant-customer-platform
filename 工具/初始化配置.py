@@ -44,7 +44,7 @@ FIELDS = [
     ("smtp.password", "SMTP 授权码", True, "注意是授权码，不是登录密码"),
     ("smtp.host", "SMTP 服务器", False, "留空则按邮箱域名自动推断"),
     ("smtp.port", "SMTP 端口", False, "465(SSL) / 587(STARTTLS)"),
-    ("smtp.from_name", "发件人显示名", False, "如「考棉宝商城」"),
+    ("smtp.from_name", "发件人显示名", False, "如「Kaomianbao」"),
 ]
 
 DEFAULTS = {
@@ -66,7 +66,7 @@ DEFAULTS = {
     "dify_knowledge.product_dir": "商品咨询",
     "dify_knowledge.indexing_technique": "high_quality",
     "smtp.ssl": True,
-    "smtp.from_name": "考棉宝商城",
+    "smtp.from_name": "Kaomianbao",
     "default_delay": 300,
     "inventory": {"default_stock": 100, "reserve_ttl_seconds": 900, "cleanup_interval_seconds": 30},
 }

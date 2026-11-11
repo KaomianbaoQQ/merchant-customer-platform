@@ -10,7 +10,7 @@
            "host": "",                    # 留空则按邮箱域名自动推断
            "port": 0,                     # 留空则按 host/ssl 自动推断
            "ssl": true,                   # 465 端口用 SSL；587 用 STARTTLS 时填 false
-           "from_name": "考棉宝商城"
+           "from_name": "Kaomianbao"
          }
        }
 
@@ -64,7 +64,7 @@ def _load_smtp_conf():
     port_raw = os.getenv("KB_SMTP_PORT") or conf.get("port") or 0
     ssl_raw = os.getenv("KB_SMTP_SSL")
     use_ssl = conf.get("ssl")
-    from_name = str(os.getenv("KB_SMTP_FROM_NAME") or conf.get("from_name") or "考棉宝商城")
+    from_name = str(os.getenv("KB_SMTP_FROM_NAME") or conf.get("from_name") or "Kaomianbao")
 
     try:
         port = int(port_raw or 0)
@@ -188,7 +188,7 @@ def build_code_mail(code, purpose_text="登录", minutes=5):
     return f"""\
 <div style="margin:0;padding:24px;background:#f5f5f7;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;padding:32px 28px">
-    <div style="font-size:20px;font-weight:700;color:#1d1d1f;margin-bottom:6px">考棉宝商城</div>
+    <div style="font-size:20px;font-weight:700;color:#1d1d1f;margin-bottom:6px">Kaomianbao</div>
     <div style="font-size:13px;color:#86868b;margin-bottom:24px">邮箱验证码 · {purpose_text}</div>
     <div style="font-size:14px;color:#1d1d1f;line-height:1.7;margin-bottom:18px">
       你正在进行<strong>{purpose_text}</strong>操作，验证码如下：

@@ -76,7 +76,7 @@ def api_send_email_code():
     purpose_text = PURPOSES.get(purpose, "登录")
     sent, msg = mailer.send_mail(
         email,
-        f"【考棉宝商城】{purpose_text}验证码",
+        f"【Kaomianbao】{purpose_text}验证码",
         mailer.build_code_mail(code_or_msg, purpose_text, minutes=max(1, ttl // 60)),
         text_body=f"你的{purpose_text}验证码是 {code_or_msg}，{max(1, ttl // 60)} 分钟内有效。",
     )

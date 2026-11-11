@@ -50,8 +50,8 @@ def main():
     if not password:
         print("未填写授权码，已退出。")
         return
-    from_name = input(f"发件人显示名 [{cur.get('from_name') or '考棉宝商城'}]: ").strip() \
-        or cur.get("from_name") or "考棉宝商城"
+    from_name = input(f"发件人显示名 [{cur.get('from_name') or 'Kaomianbao'}]: ").strip() \
+        or cur.get("from_name") or "Kaomianbao"
 
     domain = user.split("@")[-1].lower()
     preset = mailer.SMTP_PRESETS.get(domain)
@@ -79,7 +79,7 @@ def main():
     print("\n正在发送测试邮件到", user, "…")
     ok, msg = mailer.send_mail(
         user,
-        "【考棉宝商城】发件邮箱配置成功",
+        "【Kaomianbao】发件邮箱配置成功",
         mailer.build_code_mail("888888", "配置测试", minutes=5),
         text_body="发件邮箱配置成功，这是一封测试邮件。",
     )
