@@ -164,7 +164,7 @@ brew install cloudflared              # 只需装一次（已装可跳过）
 - `i18n/core.js`：切换内核。遍历页面文本节点与 `placeholder / title / aria-label / alt` 属性，
   按词条替换；动态渲染出来的内容用 `MutationObserver` 追着翻译，`alert / confirm / prompt`
   的文案也一并处理。切回中文时按记录还原原文，不做反向翻译。
-- `i18n/客户.js`、`商户.js`、`平台.js`、`入口.js`：各页面词条，格式 `{"中文原文": "English"}`，
+- `i18n/customer.js`、`merchant.js`、`platform.js`、`entry.js`：各页面词条，格式 `{"中文原文": "English"}`，
   键里带 `${x}` 的是占位符（例如 `已带出「${x}」的地址`），按正则匹配变量部分。
 - 想补词条：在对应文件里加一行即可，不用改页面代码；页面里不想被翻译的节点加 `data-no-i18n`。
 - 打开时想直接进英文：`http://127.0.0.1:8000/?lang=en`（或 `?lang=zh`）。
