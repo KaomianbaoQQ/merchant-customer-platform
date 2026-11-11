@@ -32,7 +32,6 @@ from .session_state import (
     mark_human, is_human,
 )
 
-# ============================ 意图识别 ============================
 # 物流问题：没收到 / 丢件 / 破损 等，需要先确认是哪一单
 LOGISTICS_ISSUE_KEYWORDS = (
     "没收到", "未收到", "没有收到", "没收着", "没拿到", "没到货", "没到", "收不到",
@@ -42,7 +41,6 @@ LOGISTICS_ISSUE_KEYWORDS = (
 EXCHANGE_KEYWORDS = ("换货", "换新", "更换", "以旧换新", "换一个", "换一台", "换个")
 RETURN_KEYWORDS = ("退货", "退掉", "退单", "不要了", "申请退", "退回")
 REFUND_KEYWORDS = ("退款", "退钱", "退费", "只退款")
-# “退2个 / 退两件 / 我要退MacBook” 这类也按退货处理（排除「退出登录」等无关说法）
 _RETURN_RE = re.compile(r"退(?!出)\s*(?:货|款|钱|掉|单|回|了|个|[0-9a-zA-Z一-龥])?")
 # “换一个 / 帮我换” 这类裸换货诉求
 _EXCHANGE_RE = re.compile(r"换(?:货|新|一个|一台|个|台|了)?")
@@ -93,11 +91,9 @@ RETURN_POLICY_TEXT = (
     "需要办理的话，直接告诉我「商品名或订单号 + 退/换/退款」，我马上帮你提交申请。"
 )
 
-
 def detect_logistics_issue(text):
     t = (text or "").strip()
     return bool(t) and any(k in t for k in LOGISTICS_ISSUE_KEYWORDS)
-
 
 def detect_return_intent(text):
     """识别退货 / 换货意图，返回 "return" / "exchange" / None。"""
@@ -122,7 +118,6 @@ def detect_return_intent(text):
         return "exchange"
     return None
 
-
 def detect_policy_question(text):
     """是否是退换货 / 售后的「政策 / 流程 / 时间窗」咨询（而非立即提交申请）。
 
@@ -140,7 +135,6 @@ def detect_policy_question(text):
         return False
     return any(k in t for k in POLICY_KEYWORDS)
 
-
 def detect_type_change(text):
     """是否是「把已经申请的售后换个类型」（把换货改成退货 / 我不换要退）。
 
@@ -156,7 +150,6 @@ def detect_type_change(text):
         return True
     return False
 
-
 def detect_query_intent(text):
     """是否是查询订单类意图（写操作不在此列）。"""
     t = (text or "").strip()
@@ -166,8 +159,6 @@ def detect_query_intent(text):
         return False
     return any(k in t for k in QUERY_KEYWORDS)
 
-
-# 售后单进度 / 仲裁查询：说的是「已经提交的那笔申请现在怎么样了」，不是要新申请
 _AFTERSALE_WORDS = ("退换货", "退货", "换货", "退款", "售后")
 _STATUS_WORDS = (
     "进度", "怎么样了", "怎样了", "如何了", "到哪", "结果", "状态", "审核",
@@ -176,7 +167,6 @@ _STATUS_WORDS = (
     # 「我的订单退货怎么还没处理好？」这类催办问法
     "还没处理", "没处理", "处理好", "还没好", "怎么还没", "处理完", "处理了",
 )
-
 
 def detect_aftersale_status_query(text):
     """是否在问已有售后单的进度 / 仲裁情况（而不是要新申请一笔）。
@@ -196,9 +186,6 @@ def detect_aftersale_status_query(text):
     return (any(k in t for k in _AFTERSALE_WORDS)
             and any(k in t for k in _STATUS_WORDS))
 
-
-# ============================ 转人工客服 ============================
-# 只认「人工 / 真人」这类明确说法（「找客服」等泛指不在此列，避免抢走退货 / 物流意图）
 HUMAN_RE = re.compile(r"(人工|真人|转人工|人工客服|人工服务|真人客服)")
 HUMAN_TRIGGER_TIMES = 3   # 连续说出满 3 次「人工」自动转接人工客服
 HUMAN_TRANSFER_REPLY = (
@@ -206,11 +193,9 @@ HUMAN_TRANSFER_REPLY = (
     "（转接后由人工客服接管，你可以继续在下面留言补充问题。）"
 )
 
-
 def detect_human_request(text):
     """顾客是否在要求转人工客服。"""
     return bool(HUMAN_RE.search(str(text or "").strip()))
-
 
 def answer_human_request(user, user_input, session_id):
     """售后「人工」请求：连续说满 3 次自动转人工，未满则提示还差几次。"""
@@ -242,13 +227,10 @@ def answer_human_request(user, user_input, session_id):
     result["needs_human"] = True
     return result
 
-
-# ============================ 顾客用序号选订单 ============================
 # 「4」「第4个」「4.」这类纯序号回答
 _SELECTION_RE = re.compile(
     r"^\s*(?:第\s*)?([0-9]{1,3})\s*(?:个|号|笔|条|单|项)?\s*[.。、,，)）]?\s*$"
 )
-
 
 def parse_selection(text, total):
     """把「4 / 第4个」解析成 1..total 的序号；不是纯序号或超出范围返回 None。"""
@@ -258,14 +240,12 @@ def parse_selection(text, total):
     idx = int(m.group(1))
     return idx if 1 <= idx <= max(0, int(total or 0)) else None
 
-
 def remember_order_choices(session_id, action, orders, **extra):
     """记住客服刚列出的候选订单，等顾客用序号回答（下一句「4」就能接着办）。"""
     set_pending(session_id, dict({
         "action": action,
         "orders": [str(o.get("id")) for o in (orders or [])],
     }, **extra))
-
 
 def continue_pending_selection(user, user_input, session_id):
     """顾客用序号回答「是哪一笔订单」时，接着上一轮的动作继续办理。
@@ -296,8 +276,6 @@ def continue_pending_selection(user, user_input, session_id):
         return _result("这笔订单已经找不到了，请重新告诉我商品名或订单号。", action or "query")
     return _result(format_order_detail(order), action or "query")
 
-
-# ============================ 售后单进度 / 仲裁查询 ============================
 def format_aftersale_detail(r):
     """一笔售后记录的详细进度说明（含仲裁 / 拒绝理由 / 退货单号）。"""
     code = str(r.get("status_code") or "")
@@ -328,7 +306,6 @@ def format_aftersale_detail(r):
         lines.append("还在等商家确认，商家同意或拒绝后会更新状态。")
     return "\n".join(lines)
 
-
 def summarize_aftersales(rows, asked_arbitration=False):
     """多笔售后记录时只做概览，不罗列全部明细。"""
     total = len(rows)
@@ -347,7 +324,6 @@ def summarize_aftersales(rows, asked_arbitration=False):
         lines.append("目前没有正在平台仲裁中的申请。")
     lines.append("告诉我商品名或售后单号，我可以帮你看单笔的详细进度。")
     return "\n".join(lines)
-
 
 def answer_aftersale_status(user, user_input):
     """回答「我的退货仲裁怎么样了」这类售后进度问题。"""
@@ -382,8 +358,6 @@ def answer_aftersale_status(user, user_input):
     asked_arb = ("仲裁" in t or "平台介入" in t)
     return _result(summarize_aftersales(rows, asked_arbitration=asked_arb), "aftersale")
 
-
-# ============================ 订单定位 / 文案 ============================
 def _orders_payload(orders):
     """把订单列表整理成「订单定位」工作流可读的 JSON 文本（带显式序号）。"""
     items = [{
@@ -395,8 +369,6 @@ def _orders_payload(orders):
     } for i, o in enumerate(orders, 1)]
     return json.dumps(items, ensure_ascii=False) + "（这是用户可能的订单，已按顺序列出）"
 
-
-# 以下本地匹配规则仅在 Dify「订单定位」不可用时兜底，不作为命中判定主逻辑。
 # 中英文俗称 → 英文名/同义词（如「苹果电脑」匹配 MacBook）
 PRODUCT_ALIASES = {
     "苹果": ["apple", "mac", "macbook", "iphone", "ipad"],
@@ -412,7 +384,6 @@ PRODUCT_ALIASES = {
     "斑鸠": ["dove", "pigeon", "turtledove"],
 }
 
-
 def _name_features(s):
     """把名称拆成英文 token + 中文字 / 相邻字二元组，用于模糊匹配。"""
     s = str(s or "").lower()
@@ -423,7 +394,6 @@ def _name_features(s):
         bigrams.update(run[i:i + 2] for i in range(len(run) - 1))
     return {"latin": latin, "chars": chars, "bigrams": bigrams}
 
-
 def _query_latin_terms(text):
     """查询里的英文 token + 中文俗称展开的英文词。"""
     t = str(text or "").lower()
@@ -433,14 +403,12 @@ def _query_latin_terms(text):
             terms.update(ens)
     return terms
 
-
 def _match_score(text, name):
     """返回 (是否实质命中, 得分)。英文 token 精确包含权重最高。"""
     qf = _name_features(text)
     nf = _name_features(name)
     q_latin = _query_latin_terms(text)
 
-    # 英文名包含匹配（macbook 命中 "MacBook Air"；也兼容词缀包含）
     latin_hit = set()
     for tok in nf["latin"]:
         if len(tok) < 3:
@@ -466,7 +434,6 @@ def _match_score(text, name):
     score = len(latin_hit) * 10 + len(common_bg) * 2 + len(common_chars)
     return hit, score
 
-
 def best_product_match(orders, text):
     """挑出与用户输入最匹配的订单（支持中英文俗称，如「苹果电脑」→ MacBook）。"""
     best, best_score = None, -1
@@ -475,7 +442,6 @@ def best_product_match(orders, text):
         if hit and score > best_score:
             best, best_score = o, score
     return best
-
 
 def find_order_in_text(orders, text):
     """
@@ -496,7 +462,6 @@ def find_order_in_text(orders, text):
         if o.get("waybill") and str(o["waybill"]) in t:
             return o
     return None
-
 
 def locate_order(user, user_input, orders=None):
     """
@@ -527,7 +492,6 @@ def locate_order(user, user_input, orders=None):
 
     return find_order_in_text(orders, user_input), qty
 
-
 def resolve_return_order(user, user_input, orders=None):
     """
     定位用户要退 / 换的那一笔订单。
@@ -551,7 +515,6 @@ def resolve_return_order(user, user_input, orders=None):
         return orders[0], orders, qty
     return None, orders, qty
 
-
 def ask_which_order(orders, action="退货 / 换货"):
     """顾客说不清是哪一笔订单时，请他提供序号 / 订单号 / 商品名（附简短候选）。"""
     lines = [f"请告诉我你要{action}的是哪一笔订单呢？回复序号、订单号或商品名即可："]
@@ -560,7 +523,6 @@ def ask_which_order(orders, action="退货 / 换货"):
         qty = int(o.get("quantity") or effective_quantity(o) or 1)
         lines.append(f"{i}. {name} ×{qty}（订单号 {o.get('id')}）")
     return "\n".join(lines)
-
 
 def format_order_line(index, o):
     """一行订单摘要（人话）。"""
@@ -574,7 +536,6 @@ def format_order_line(index, o):
     if o.get("waybill"):
         parts.append(f"运单号 {o['waybill']}")
     return "｜".join(parts)
-
 
 def format_order_detail(o):
     """单笔订单详情（人话）。"""
@@ -598,11 +559,9 @@ def format_order_detail(o):
         lines.append(f"收货地址：{o['address']}")
     return "\n".join(lines)
 
-
 _CN_NUM = {"一": 1, "两": 2, "二": 2, "三": 3, "四": 4, "五": 5,
            "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
 _QTY_RE = re.compile(r"([0-9]+|一|两|二|三|四|五|六|七|八|九|十)\s*(?:个|件|台|把|条|只|支|张|块|瓶|盒|包|套)")
-
 
 def parse_quantity(text):
     """从“退两个 / 换 3 件”里解析数量；解析不到返回 None。"""
@@ -614,12 +573,9 @@ def parse_quantity(text):
         return int(token)
     return _CN_NUM.get(token)
 
-
 def _result(reply, branch, return_row=None):
     return {"ok": True, "reply": reply, "return": return_row, "branch": branch, "error": None}
 
-
-# ============================ 物流问题：先问是哪一单 ============================
 def handle_logistics_issue(user, user_input, session_id=None):
     orders = get_orders_by_user(user["id"])
     if not orders:
@@ -638,8 +594,6 @@ def handle_logistics_issue(user, user_input, session_id=None):
         lines.append(f"{i}. {name}（{o.get('id')}）")
     return _result("\n".join(lines), "logistics")
 
-
-# ============================ 查询订单：人话 ============================
 def summarize_orders(orders):
     """订单概览总结：只说数量与状态分布，不罗列每笔订单的详细信息。"""
     total = len(orders)
@@ -655,7 +609,6 @@ def summarize_orders(orders):
     lines.append("回复序号、商品名或订单号，我可以帮你查单笔订单的详细物流。")
     return "\n".join(lines)
 
-
 def handle_query_orders(user, user_input, session_id=None):
     orders = get_orders_by_user(user["id"])
     if not orders:
@@ -669,7 +622,6 @@ def handle_query_orders(user, user_input, session_id=None):
     # 记住候选列表，顾客下一句回序号也能直接看那一笔
     remember_order_choices(session_id, "query", orders)
     return _result(summarize_orders(orders), "query")
-
 
 def format_order_query_result(rows, user_input=None):
     """把 cs.order 查询结果转成人话（用于 Dify select 兜底）。
@@ -692,8 +644,6 @@ def format_order_query_result(rows, user_input=None):
         lines.append(format_order_line(i, r))
     return "\n".join(lines)
 
-
-# ============================ 退货 / 换货 / 退款 ============================
 def handle_return_request(user, user_input, return_type, session_id=None):
     order, orders, pick_qty = resolve_return_order(user, user_input)
     if not orders:
@@ -705,7 +655,6 @@ def handle_return_request(user, user_input, return_type, session_id=None):
                                return_type=return_type, reason=user_input)
         return _result(ask_which_order(orders), "return")
 
-    # 用户明确表示「改主意」（取消换货 / 改成退货 / 我不换要退）：直接改已有申请的类型
     if return_type in ("return", "exchange") and detect_type_change(user_input):
         changed, changed_msg, changed_ret = change_active_return_type(
             order["id"], return_type, user_id=user["id"], reason=user_input
@@ -719,7 +668,6 @@ def handle_return_request(user, user_input, return_type, session_id=None):
     )
     return _result(msg, "return", ret if ok else None)
 
-
 def answer_policy_question(user, user_input, session_id=None):
     """退换货 / 退款政策咨询：走 Dify 知识库分支作答；Dify 不可用时回退本地权威政策。"""
     dify = ask_after_sales_workflow(user, user_input, session_id)
@@ -727,8 +675,6 @@ def answer_policy_question(user, user_input, session_id=None):
         return str(dify["policy"]).strip()
     return RETURN_POLICY_TEXT
 
-
-# ============================ 上传给 Dify 的完整上下文 ============================
 def build_dify_context(user, session_id=None):
     """订单 + 退换货记录 + 最近对话历史，作为 user_orders 上传，帮助 Dify 理解意图。"""
     parts = [build_user_orders(user)]
@@ -738,7 +684,6 @@ def build_dify_context(user, session_id=None):
     except Exception:
         returns = []
     if returns:
-        # 带上售后单号 / 拒绝理由 / 仲裁说明，客服才能回答「我的退货仲裁怎么样了」这类问题
         slim = [{
             "售后单号": r.get("id"),
             "类型": r.get("type_text"),
@@ -762,8 +707,6 @@ def build_dify_context(user, session_id=None):
 
     return "\n\n".join(parts)
 
-
-# ============================ Dify 分支 ============================
 def ask_after_sales_workflow(user, user_input, session_id=None):
     return run_dify_workflow(
         user_input=user_input,
@@ -772,7 +715,6 @@ def ask_after_sales_workflow(user, user_input, session_id=None):
         user_name=user["name"],
         user_orders=build_dify_context(user, session_id),
     )
-
 
 def _format_dify_reply(dify, user, user_input=None):
     reply_lines = []
@@ -794,7 +736,6 @@ def _format_dify_reply(dify, user, user_input=None):
             )
             for res in results:
                 if res["operate"] == "select" and res["success"]:
-                    # 查询结果转成人话：有具体商品只说该单，否则给总结，不返回 JSON / SQL
                     reply_lines.append(
                         format_order_query_result(res.get("data") or [], user_input)
                     )
@@ -815,8 +756,6 @@ def _format_dify_reply(dify, user, user_input=None):
 
     return reply_lines
 
-
-# ============================ 主入口 ============================
 def handle_after_sales(user, user_input, session_id=None):
     """
     user: {"name","id","role","is_admin",...}
@@ -847,7 +786,6 @@ def handle_after_sales(user, user_input, session_id=None):
             save_message(session_id, user["id"], user["name"], "assistant", result["reply"])
         return _mark_human_channel(result, session_id)
 
-    # 3) 退换货 / 退款政策咨询：走 Dify 知识库分支作答（不可用时回退本地政策文本）
     if detect_policy_question(user_input):
         reply = answer_policy_question(user, user_input, session_id)
         result = _result(reply, "policy")
@@ -902,7 +840,6 @@ def handle_after_sales(user, user_input, session_id=None):
     if session_id:
         save_message(session_id, user["id"], user["name"], "assistant", result["reply"])
     return _mark_human_channel(result, session_id)
-
 
 def _mark_human_channel(result, session_id):
     """已在人工通道的会话，每次回复都带上 needs_human，前端才会持续收取人工客服消息。"""

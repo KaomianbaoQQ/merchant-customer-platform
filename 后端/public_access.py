@@ -16,6 +16,7 @@ PROXY_HEADERS = ("Cf-Connecting-Ip", "X-Real-Ip", "X-Forwarded-For", "Cf-Ray")
 # 公网允许访问的路径：顾客商城页面 + 商品图片 + 顾客侧接口
 PUBLIC_PATHS = (
     "/",
+    "/i18n",
     "/images",
     "/api/health",
     "/api/login",

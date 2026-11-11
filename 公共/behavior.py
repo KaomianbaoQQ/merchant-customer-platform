@@ -20,14 +20,11 @@ BEHAVIOR_COLLECTION = "user_behaviors"
 EVENTS = ("view", "cart", "purchase")
 _warned = False
 
-
 def _now():
     return time.strftime("%Y-%m-%d %H:%M:%S")
 
-
 def _coll():
     return get_client()[MONGO_CONFIG["database"]][BEHAVIOR_COLLECTION]
-
 
 def _warn(error):
     """连接失败只告警一次，别刷屏。"""
@@ -35,7 +32,6 @@ def _warn(error):
     if not _warned:
         _warned = True
         print(f"[行为埋点] MongoDB 不可用，行为数据暂不记录：{str(error).split(', Topology')[0]}")
-
 
 def ensure_indexes():
     """建索引（幂等）。返回 (是否成功, 提示信息)，供启动自检调用。"""
@@ -47,10 +43,6 @@ def ensure_indexes():
     except Exception as e:
         return False, f"MongoDB 连接失败：{e}"
 
-
-# ------------------------------------------------------------
-# 写入
-# ------------------------------------------------------------
 def record(user_id, event, product_id="", product_name="", merchant_id="",
            user_name="", extra=None):
     """记录一条行为。event 只认 view / cart / purchase，其余忽略。失败返回 False。"""
@@ -79,10 +71,6 @@ def record(user_id, event, product_id="", product_name="", merchant_id="",
         _warn(e)
         return False
 
-
-# ------------------------------------------------------------
-# 读取
-# ------------------------------------------------------------
 def _query(event=None, user_id=None, product_id=None, since_ts=None, until_ts=None):
     q = {}
     if event:
@@ -100,7 +88,6 @@ def _query(event=None, user_id=None, product_id=None, since_ts=None, until_ts=No
         q["ts"] = rng
     return q
 
-
 def list_by_user(user_id, event=None, limit=1000):
     """某个用户的全部行为（按时间倒序）。"""
     try:
@@ -110,7 +97,6 @@ def list_by_user(user_id, event=None, limit=1000):
         _warn(e)
         return []
 
-
 def list_all(event=None, limit=5000):
     """全部行为（按时间倒序），供平台聚合。"""
     try:
@@ -119,7 +105,6 @@ def list_all(event=None, limit=5000):
     except Exception as e:
         _warn(e)
         return []
-
 
 def _counts(rows, field):
     """把行为流水按 field（user_id / product_id）压成计数。"""
@@ -134,16 +119,13 @@ def _counts(rows, field):
             item[ev] += 1
     return out
 
-
 def counts_by_user():
     """{user_id: {"view": n, "cart": n, "purchase": n}}。"""
     return _counts(list_all(), "user_id")
 
-
 def counts_by_product():
     """{product_id: {"view": n, "cart": n, "purchase": n}}。"""
     return _counts(list_all(), "product_id")
-
 
 def matrix():
     """(user_id, product_id) → {"view": n, "cart": n, "purchase": n}，购买预测用。"""

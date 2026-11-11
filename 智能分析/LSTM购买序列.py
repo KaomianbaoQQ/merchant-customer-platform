@@ -24,10 +24,7 @@ MIN_SEQ = 6          # 每个用户至少要有这么多次购买才构造成样
 MIN_SAMPLES = 200    # 样本总数低于此值就不训练（训练没意义）
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
 
-
-# ------------------------------------------------------------
 # 1. 读取本商城订单，构造成「用户购买序列」
-# ------------------------------------------------------------
 def load_sequences():
     """从 cs.order 读取并构造 {user_id: [商品ID序列（按下单时间升序）]}。"""
     from 公共.db_config import get_conn
@@ -48,7 +45,6 @@ def load_sequences():
         sequences.setdefault(uid, []).append(item)
     return sequences
 
-
 def build_samples(sequences):
     """把每个用户的序列切分成 (前缀, 下一个商品) 样本对。"""
     X, Y = [], []
@@ -59,7 +55,6 @@ def build_samples(sequences):
             X.append(seq[:i])
             Y.append(seq[i])
     return X, Y
-
 
 def report(sequences):
     users = len(sequences)
@@ -75,10 +70,7 @@ def report(sequences):
     print("=" * 56)
     return X, Y
 
-
-# ------------------------------------------------------------
 # 2. 训练（仅在数据足够时执行）
-# ------------------------------------------------------------
 def train(X, Y, item_to_idx, num_items):
     import time
     import numpy as np
@@ -174,7 +166,6 @@ def train(X, Y, item_to_idx, num_items):
     print(f"最佳 MRR@{TOPK} = {best:.4f}，模型已保存到 {model_path}")
     return best
 
-
 def main():
     sequences = load_sequences()
     X, Y = report(sequences)
@@ -194,7 +185,6 @@ def main():
     items = sorted({str(x) for seq in sequences.values() for x in seq} | {str(y) for y in Y})
     item_to_idx = {it: i + 1 for i, it in enumerate(items)}
     train(X, Y, item_to_idx, len(items))
-
 
 if __name__ == "__main__":
     main()

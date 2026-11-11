@@ -40,8 +40,6 @@ CREATE TABLE IF NOT EXISTS `logistics` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物流信息表';
 """
 
-
-# ============================ 建表 / 迁移 ============================
 def _column_exists(cur, table_name, column_name):
     cur.execute(
         "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
@@ -50,10 +48,8 @@ def _column_exists(cur, table_name, column_name):
     )
     return cur.fetchone() is not None
 
-
 _ensure_done = False
 _ensure_lock = threading.Lock()
-
 
 def ensure_logistics():
     """确保 cs.logistics 表存在，并给 cs.order 补齐 address / waybill 字段。
@@ -71,7 +67,6 @@ def ensure_logistics():
         if ok:
             _ensure_done = True
         return ok, msg
-
 
 def _ensure_logistics_once():
     """真正执行建表 / 补字段（仅进程内首次调用时执行）。"""
@@ -103,8 +98,6 @@ def _ensure_logistics_once():
     finally:
         conn.close()
 
-
-# ============================ 创建物流 ============================
 def waybill_exists(waybill):
     """该运单号是否已被其他物流记录占用。"""
     code = str(waybill or "").strip()
@@ -120,7 +113,6 @@ def waybill_exists(waybill):
             return cur.fetchone() is not None
     finally:
         conn.close()
-
 
 def create_logistics(order_ids, user_id, user_name, address, delay_second=None, waybill=None):
     """
@@ -172,8 +164,6 @@ def create_logistics(order_ids, user_id, user_name, address, delay_second=None, 
     finally:
         conn.close()
 
-
-# ============================ 退货 / 换货运单登记 ============================
 def register_return_logistics(waybill, order_ids, user_id, user_name, address):
     """把平台生成的退货 / 换货运单登记进物流表，使其可按运单号被商家 / 客户查询。
 
@@ -209,7 +199,6 @@ def register_return_logistics(waybill, order_ids, user_id, user_name, address):
     finally:
         conn.close()
 
-
 def update_return_logistics_shipped(waybill, delay_second=None):
     """用户点「我已发出」后，给退货运单补上发货时间与预计到仓时间。"""
     code = str(waybill or "").strip()
@@ -238,8 +227,6 @@ def update_return_logistics_shipped(waybill, delay_second=None):
     finally:
         conn.close()
 
-
-# ============================ 查询物流 ============================
 def get_logistics(waybill):
     """
     按运单号查询物流，返回 (是否找到, 物流 dict)；
@@ -279,7 +266,6 @@ def get_logistics(waybill):
         if row.get(key) is not None:
             row[key] = format_datetime(row[key])
     return True, row
-
 
 def get_logistics_by_user(user_id, limit=20):
     """查询某用户最近的物流记录"""

@@ -55,7 +55,6 @@ QUESTIONS = [
     "这个和另一款比哪个好？", "重量是多少？", "支持货到付款吗？", "发什么快递？",
     "我是学生可以优惠吗？", "颜色有哪些？",
 ]
-# 模拟的机器人回复（真调 Dify 时用真实回复，这里只是让对话记录看起来合理）
 BOT_REPLIES = [
     "支持的，这款商品的参数里都有写，需要我帮你看哪一项？",
     "这款商品提供一年质保，非人为损坏都可以申请售后。",
@@ -72,20 +71,15 @@ BOT_REPLIES = [
 _thread_local = threading.local()
 _print_lock = threading.Lock()
 
-
 def log(msg):
     with _print_lock:
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
-
 
 def err(data):
     """接口失败时的提示文字：有的接口用 error，有的用 message，统一取一下。"""
     return data.get("error") or data.get("message") or ""
 
-
-# ------------------------------------------------------------
 # HTTP 工具
-# ------------------------------------------------------------
 class Api:
     """一个线程一个 Session（keep-alive），带简单重试。"""
 
@@ -136,34 +130,25 @@ class Api:
                     time.sleep(0.3 * (attempt + 1))
         return 0, {"ok": False, "error": f"请求失败：{last}"}
 
-
-# ------------------------------------------------------------
-# config.json 的 default_delay 临时调整（保留其它配置，跑完还原）
-# ------------------------------------------------------------
 def read_config():
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
 def write_config(cfg):
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(cfg, f, ensure_ascii=False, indent=2)
-
 
 def set_default_delay(seconds):
     cfg = read_config()
     cfg["default_delay"] = int(seconds)
     write_config(cfg)
 
-
-# ------------------------------------------------------------
 # 仿真主体
-# ------------------------------------------------------------
 class Simulation:
     def __init__(self, args):
         self.args = args
         self.api = Api(args.base_url)
-        self.merchants = []          # [{"id","token","shop_name","products":[...]}]
+        self.merchants = []
         self.products = []           # 全部商品
         self.merchant_token = {}     # merchant_id -> token
         self.results = []
@@ -172,7 +157,6 @@ class Simulation:
         # 每次运行一个短标识：顾客姓名带上它，重复跑不会与上一次的账号重名
         self.tag = datetime.now().strftime("%H%M%S")
 
-    # ---------- 准备 ----------
     def check_ready(self):
         code, data = self.api.get("/api/health", timeout=8)
         if code != 200 or not data.get("ok"):
@@ -292,7 +276,6 @@ class Simulation:
             if reply:
                 rec["chat"].append({"role": "bot", "text": reply, "source": "dify"})
         else:
-            # 直接写 MongoDB：与 POST /api/consult 落库的消息格式一致，只是不调 Dify
             from 公共.chat_store import append_message
             reply = random.choice(BOT_REPLIES)
             append_message(mid, uid, name, "user", q, mname)
@@ -317,7 +300,6 @@ class Simulation:
             rec["ms"] = int((time.time() - t0) * 1000)
             return rec
 
-        # 5) 售后：四种路径，覆盖「未发货即时 / 已发货退款推进 / 已发货退货全链路」
         roll = random.random()
         status_code, orders_data = self.api.get(
             f"/api/orders?user_id={uid}&user_name={requests.utils.quote(name)}")
@@ -430,7 +412,6 @@ class Simulation:
         time.sleep(max(1.0, self.args.short_delay + 0.6))     # 等退货到仓自动完成
         code, data = self.api.get(f"/api/returns/{rid}")
         ret = data.get("return") or {}
-        # 状态以 status_text 为准：status 列可能还停在 shipping，文案是实时算出来的
         done = str(ret.get("status") or "") in ("done", "refunded") or \
             str(ret.get("status_text") or "") in ("退换完成", "退款完成")
         step("退货完成", done, ret.get("status_text") or "")
@@ -474,7 +455,6 @@ class Simulation:
         log(f"总耗时 {int(time.time() - started)} 秒，结果目录：{self.out_dir}")
         return 0
 
-    # ---------- 落盘 ----------
     def save(self):
         users_dir = os.path.join(self.out_dir, "users")
         chat_lines = []
@@ -589,7 +569,6 @@ class Simulation:
             out["mongo错误"] = str(e)[:80]
         return out
 
-
 def main():
     p = argparse.ArgumentParser(description="仿真压测：模拟大量用户的完整业务链路")
     p.add_argument("--users", type=int, default=2000, help="顾客数量（默认 2000）")
@@ -636,7 +615,6 @@ def main():
         if original_delay is not None:
             set_default_delay(original_delay)
             log(f"已还原物流等待秒数：{original_delay}")
-
 
 if __name__ == "__main__":
     try:

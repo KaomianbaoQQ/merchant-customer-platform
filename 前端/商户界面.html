@@ -241,7 +241,7 @@
   .conv.active{background:#f0f7ff;}
   .conv.need-human{background:#fff8ec;box-shadow:inset 3px 0 0 var(--orange);animation:needBlink 1.2s ease-in-out infinite;}
   .conv.need-human:hover{background:#fff3db;}
-  /* 转人工强提醒：顶部红色横幅（点一下跳到待人工的会话） */
+  
   .alert-banner{
     display:none;margin:0 0 16px;padding:12px 16px;border-radius:12px;cursor:pointer;
     background:linear-gradient(90deg,#fff1f0,#ffe6e3);border:1px solid #ffc4bd;
@@ -249,7 +249,7 @@
     animation:alertPulse 1.3s ease-in-out infinite;
   }
   .alert-banner.show{display:block;}
-  /* 「平台客服在处理」这类只需要知道、不需要你动手的提示：不闪动、不刺眼 */
+  
   .alert-banner.calm{
     animation:none;background:#f5f7fb;border-color:#e3e8f0;color:#5b6577;cursor:default;
   }
@@ -308,7 +308,7 @@
     color:var(--ink-3);gap:6px;
   }
   .chat-placeholder .big{font-size:34px;}
-  /* ===== 商品数据 / 物流 / 退款 ===== */
+  
   .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px;}
   .stat-card{background:var(--bg-soft);border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px;}
   .stat-card .k{font-size:12px;color:var(--ink-2);}
@@ -351,7 +351,7 @@
   .order-card .oc-title{font-size:15px;font-weight:600;}
   .order-card .oc-meta{font-size:12.5px;color:var(--ink-2);margin-top:3px;word-break:break-all;}
   .order-card .oc-ops{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
-  /* 发货信息：收货人 / 电话 / 地址用大字醒目展示，避免发错货 */
+  
   .ship-info{margin-top:10px;padding:12px 14px;border-radius:12px;background:#f7fbff;border:1px solid #d6e6ff;}
   .ship-info .si-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;}
   .ship-info .si-row + .si-row{margin-top:8px;}
@@ -373,7 +373,7 @@
   .chat-order .co-name{font-weight:600;}
   .chat-order .co-meta{color:var(--ink-2);}
   .chat-order .co-ops{margin-left:auto;display:flex;gap:6px;align-items:center;}
-  /* 聊天里的收货信息同样用大字，发货前一眼看清 */
+  
   .chat-order .co-addr{width:100%;font-size:14.5px;font-weight:700;color:#0b3f7a;line-height:1.45;word-break:break-all;}
   /* ===== 物流详情弹窗 ===== */
   .logi-mask{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s;z-index:130;}
@@ -435,7 +435,7 @@
 </style>
 </head>
 <body>
-<!-- ===== 顶部导航 ===== -->
+
 <nav class="nav" id="appNav" style="display:none">
   <div class="nav-inner">
     <div class="nav-logo">Kaomianbao<span class="dot">.</span><span class="nav-sub">商户中心</span></div>
@@ -453,9 +453,9 @@
   </div>
 </nav>
 <div class="main">
-  <!-- 转人工强提醒（顾客连说 3 次「人工」时出现） -->
+  
   <div class="alert-banner" id="alertBanner" onclick="goPendingHuman()"></div>
-  <!-- ===== 视图：登录 / 注册 ===== -->
+  
   <div class="view active" id="view-auth">
     <div class="auth-card">
       <div class="auth-logo">Kaomianbao<span class="dot">.</span></div>
@@ -481,7 +481,7 @@
       <button class="btn btn-primary auth-submit" id="authSubmit" onclick="submitAuth()">登录</button>
     </div>
   </div>
-  <!-- ===== 视图：商品管理 ===== -->
+  
   <div class="view" id="view-products">
     <div class="page-head">
       <div>
@@ -501,7 +501,7 @@
     </div>
     <div class="list" id="list"></div>
   </div>
-  <!-- ===== 视图：订单管理 ===== -->
+  
   <div class="view" id="view-orders">
     <div class="page-head">
       <div>
@@ -521,7 +521,7 @@
     </div>
     <div class="list" id="merchantOrderList"></div>
   </div>
-  <!-- ===== 视图：顾客消息 ===== -->
+  
   <div class="view" id="view-chats">
     <div class="page-head">
       <div>
@@ -551,7 +551,7 @@
       </div>
     </div>
   </div>
-  <!-- ===== 视图：退款处理 ===== -->
+  
   <div class="view" id="view-refunds">
     <div class="page-head">
       <div>
@@ -572,7 +572,7 @@
     <div id="logiResult"></div>
     <div class="list" id="refundList" style="margin-top:18px"></div>
   </div>
-  <!-- ===== 视图：顾客洞察（智能分析） ===== -->
+  
   <div class="view" id="view-insight">
     <div class="page-head">
       <div>
@@ -586,7 +586,7 @@
     <div id="insightBody"><div class="empty">加载中…</div></div>
   </div>
 </div>
-<!-- ===== 商品编辑抽屉 ===== -->
+
 <div class="drawer-mask" id="drawerMask" onclick="closeEditor()"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-label="商品编辑">
   <div class="drawer-head">
@@ -635,7 +635,7 @@
     </button>
   </div>
 </aside>
-<!-- ===== 商品数据抽屉 ===== -->
+
 <div class="drawer-mask" id="statsMask" onclick="closeStats()"></div>
 <aside class="drawer" id="statsDrawer" role="dialog" aria-label="商品数据">
   <div class="drawer-head">
@@ -644,7 +644,7 @@
   </div>
   <div class="drawer-body" id="statsBody"></div>
 </aside>
-<!-- ===== 库存管理抽屉 ===== -->
+
 <div class="drawer-mask" id="invMask" onclick="closeInv()"></div>
 <aside class="drawer" id="invDrawer" role="dialog" aria-label="库存管理">
   <div class="drawer-head">
@@ -660,7 +660,7 @@
     </button>
   </div>
 </aside>
-<!-- ===== 物流详情弹窗 ===== -->
+
 <div class="logi-mask" id="logiMask" onclick="closeLogiModal()"></div>
 <div class="logi-modal" id="logiModal" role="dialog" aria-label="物流详情">
   <button class="btn btn-ghost btn-sm lm-close" onclick="closeLogiModal()">关闭</button>
@@ -670,24 +670,7 @@
 </div>
 <div class="toast-wrap" id="toastWrap"></div>
 <script>
-/* ============================================================
-   商户管理后台逻辑（支持多商户）
-   ------------------------------------------------------------
-   所有接口由主后端（Flask）提供，前缀 /api/merchant：
-     POST /register /login /logout      账号注册 / 登录 / 退出
-     GET  /me                           当前商户
-     GET/POST /products                 商品列表 / 新增
-     PUT/DELETE /products/<id>          修改 / 删除
-     POST /upload                       图片上传（multipart，可多次调用）
-     GET  /chats                        顾客会话列表
-     GET  /chats/thread                单个会话（读取后自动标记已读）
-     POST /chats/reply                  回复顾客
-     POST /knowledge/update             知识库同步（预留 · 界面不可见）
-   ============================================================ */
-/* 后端地址：
-   - 由后端页面（http/https）打开时用同源，最省事；
-   - 直接双击 html（file://）打开时，自动指向本地后端，
-     默认 127.0.0.1:8000，也可用 ?api=http://127.0.0.1:8001 指定。 */
+
 const API_ORIGIN = (function(){
   if (location.protocol !== 'file:') return '';
   try {
@@ -707,8 +690,8 @@ let editingId = null;
 let editingImages = [];     // 正在编辑的商品图片文件名数组
 let uploading = 0;
 let conversations = [];
-let chatSearching = false;   // 正在「查聊天记录」时，轮询不要覆盖搜索结果
-let activeChat = null;      // { user_id, merchant_id }
+let chatSearching = false;   
+let activeChat = null;      
 let chatTimer = null;
 let unreadTimer = null;
 let refunds = [];
@@ -717,10 +700,10 @@ let merchantOrders = [];
 let orderFilter = '';
 let orderTimer = null;
 let chatOrdersSig = '';
-let chatOrdersData = [];    // 聊天里展示的顾客订单（发货前核对收货信息用）
+let chatOrdersData = [];    
 let statsProductId = null;
 let authTab = 'login';
-/* ---------------- 基础工具 ---------------- */
+
 function $(id){ return document.getElementById(id); }
 function getToken(){
   try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; }
@@ -756,7 +739,7 @@ async function api(method, path, body){
   }
   return data;
 }
-/* 网络层失败（连不上后端 / 浏览器拦截 file:// 请求）时的友好提示 */
+
 function networkHint(){
   if (location.protocol === 'file:'){
     return '无法连接后端 ' + API_ORIGIN + '。你正在用本地文件方式打开（file://），' +
@@ -764,7 +747,7 @@ function networkHint(){
   }
   return '无法连接后端服务（' + location.origin + '）。请确认后端已启动，然后刷新重试。';
 }
-/* 双击 html（file://）打开时，直接在登录页给出正确入口 */
+
 function maybeLocalFileTip(){
   if (location.protocol !== 'file:') return;
   const tip = $('localTip');
@@ -789,13 +772,7 @@ function esc(s){
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function imgUrl(name){ return API_ORIGIN + '/images/' + encodeURIComponent(name); }
-/* ============================================================
-   知识库同步接口（预留 · 界面中不可见）
-   ------------------------------------------------------------
-   商家新增 / 修改 / 删除商品时都会静默调用。
-   目前后端尚未接入，仅占位，不影响商品管理功能。
-   日后接入 Dify / 向量库时，只需在此处补齐实现。
-   ============================================================ */
+
 function syncKnowledgeBase(action, product){
   try {
     fetch(API + '/knowledge/update', {
@@ -806,9 +783,7 @@ function syncKnowledgeBase(action, product){
     }).catch(function(){});
   } catch (e) { /* 静默失败 */ }
 }
-/* ============================================================
-   登录 / 注册
-   ============================================================ */
+
 function setAuthTab(tab){
   authTab = tab;
   $('tabLogin').classList.toggle('active', tab === 'login');
@@ -827,7 +802,7 @@ function showAuth(){
   if (unreadTimer){ clearInterval(unreadTimer); unreadTimer = null; }
   if (refundTimer){ clearInterval(refundTimer); refundTimer = null; }
   if (orderTimer){ clearInterval(orderTimer); orderTimer = null; }
-  // 清空上一个商户的数据，避免切换账号后看到别人的商品 / 消息
+  
   products = [];
   categories = [];
   conversations = [];
@@ -920,9 +895,7 @@ function logoutMerchant(){
   showAuth();
   toast('已退出登录');
 }
-/* ============================================================
-   视图切换
-   ============================================================ */
+
 function switchView(view){
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const box = $('view-' + view);
@@ -934,7 +907,7 @@ function switchView(view){
   stopRefundPolling();
   stopOrderPolling();
   if (view === 'chats'){
-    // 每次进入「顾客消息」都回到正常会话列表（清掉上一次的查询状态）
+    
     chatSearching = false;
     const tipEl = $('chatSearchTip'); if (tipEl) tipEl.textContent = '';
     loadConversations(false);
@@ -951,9 +924,6 @@ function switchView(view){
   window.scrollTo(0, 0);
 }
 
-/* ============================================================
-   顾客洞察（智能分析：顾客画像 + 商品购买可能性）
-   ============================================================ */
 function probBarM(p){
   const w = Math.max(0, Math.min(100, Math.round((p || 0) * 100)));
   return '<span style="display:inline-block;width:120px;height:8px;border-radius:6px;' +
@@ -1024,9 +994,7 @@ async function loadInsight(){
     box.innerHTML = '<div class="empty">加载失败：' + esc(e.message) + '</div>';
   }
 }
-/* ============================================================
-   初始化
-   ============================================================ */
+
 async function boot(){
   maybeLocalFileTip();
   token = getToken();
@@ -1055,7 +1023,7 @@ async function loadProducts(){
   categories = Array.from(new Set(products.map(p => p.tag).filter(Boolean)));
   renderFilters();
 }
-/* ---------------- 类目 / 筛选 ---------------- */
+
 function updateCatOptions(){
   $('catOptions').innerHTML = categories.map(c => '<option value="' + esc(c) + '">').join('');
   renderFilters();
@@ -1074,7 +1042,7 @@ function setCat(btn){
   renderFilters();
   renderList();
 }
-/* ---------------- 列表渲染 ---------------- */
+
 function renderList(){
   const q = ($('searchInput').value || '').trim().toLowerCase();
   const list = products.filter(p => {
@@ -1117,7 +1085,7 @@ function fmtPrice(v){
   const n = Number(v) || 0;
   return n.toLocaleString('zh-CN');
 }
-/* ---------------- 库存管理 ---------------- */
+
 let invPid = null;
 let invSkus = [];
 async function openInv(pid){
@@ -1199,7 +1167,7 @@ function productImages(p){
   if (!imgs.length && p.img) imgs.push(p.img);
   return imgs.filter(Boolean);
 }
-/* ---------------- 编辑抽屉 ---------------- */
+
 function openEditor(id){
   editingId = id || null;
   const p = id ? products.find(x => x.id === id) : null;
@@ -1256,7 +1224,7 @@ function collectSpecs(){
     })
     .filter(kv => kv[0] || kv[1]);
 }
-/* ---------------- 多图上传 ---------------- */
+
 function renderImages(){
   const grid = $('imgGrid');
   let html = editingImages.map((name, i) =>
@@ -1325,7 +1293,7 @@ function bindDrag(){
     if (files.length) uploadFiles(files);
   });
 }
-/* ---------------- 保存 / 删除 ---------------- */
+
 async function saveProduct(){
   const name = $('fName').value.trim();
   if (!name){ toast('请填写商品名称', true); $('fName').focus(); return; }
@@ -1376,9 +1344,7 @@ async function deleteProduct(){
     toast('删除失败：' + e.message, true);
   }
 }
-/* ============================================================
-   顾客消息
-   ============================================================ */
+
 async function loadConversations(manual){
   try {
     const data = await api('GET', '/chats');
@@ -1398,8 +1364,6 @@ function updateUnreadBadge(){
   else badge.style.display = 'none';
 }
 
-/* ---------- 聊天记录查询（关键词 + 时间范围）----------
-   每个商家的记录各自独立：这里只搜本店会话（后端按登录商家过滤） */
 function rangeToSinceUntil(range){
   if (!range) return { since: '', until: '' };
   const now = new Date();
@@ -1473,8 +1437,6 @@ function clearChatSearch(){
   renderConversations();
 }
 
-/* ---------- 转人工强提醒（顾客连说 3 次「人工」）----------
-   商家侧：自己店里待人工的会话 + 平台那边售后转人工的数量（只看数量，不看内容） */
 let lastHumanCount = 0;
 let lastPlatformHuman = 0;
 
@@ -1488,20 +1450,20 @@ function updateHumanAlert(platformHuman){
     lastPlatformHuman = 0;
     return;
   }
-  // 只算「还没人接手」的：平台客服点开会话后，商家这边立刻停止提醒
+  
   const pending = conversations.filter(c => c.needs_human && !c.human_ack);
   const total = pending.length;
   const platform = Number(platformHuman) || 0;
 
   if (total > 0){
-    // 自己店里有人等人工：红色横幅 + 呼吸闪动（该你处理）
+    
     banner.classList.remove('calm');
     banner.onclick = goPendingHuman;
     banner.innerHTML = '⚠️ 有 ' + total + ' 位顾客在等你人工回复' +
       (platform > 0 ? '<span class="sub">另有 ' + platform + ' 条售后转人工，由平台客服处理</span>' : '');
     banner.classList.add('show');
   } else if (platform > 0){
-    // 全都在平台那边：只做提示，不闪动、不可点（不归商家处理）
+    
     banner.classList.add('calm');
     banner.onclick = null;
     banner.innerHTML = '有 ' + platform + ' 条售后转人工，正在由平台客服处理' +
@@ -1513,20 +1475,18 @@ function updateHumanAlert(platformHuman){
     banner.innerHTML = '';
   }
 
-  // 出现「需要商家处理」的新转人工才响提示音；平台侧的会话不打扰商家
+  
   if (total > lastHumanCount) beepAlert();
   lastHumanCount = total;
   lastPlatformHuman = platform;
 }
 
-/* 点横幅：跳到「顾客消息」并打开第一条待人工的会话 */
 function goPendingHuman(){
   const target = conversations.find(c => c.needs_human);
   switchView('chats');
   if (target) openChat(target.user_id, target.merchant_id);
 }
 
-/* 提示音：两声短促蜂鸣（WebAudio，不依赖音频文件） */
 function beepAlert(){
   try {
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -1557,7 +1517,7 @@ function startUnreadPolling(){
     if (view && view.classList.contains('active')) return;  // 会话页已单独轮询
     loadConversations(false);
   }, 6000);
-  // 退款申请数量轮询（不在退款页时也保持红点）
+  
   setInterval(function(){
     if (!token) return;
     const view = $('view-refunds');
@@ -1657,7 +1617,6 @@ function chatOrdersHtml(orders){
     }).join('');
 }
 
-/* 订单操作区：待发货给发货输入框；已申请售后时置灰并说明原因 */
 function shipOps(o, source){
   const pending = Number(o.status_step) === 0;
   if (pending){
@@ -1679,7 +1638,7 @@ function messagesHtml(msgs){
   if (!msgs || !msgs.length) return '<div class="chat-placeholder">还没有消息</div>';
   return msgs.map(m => {
     const cls = m.role === 'merchant' ? 'merchant' : (m.role === 'bot' ? 'bot' : 'user');
-    // 已读小字：自己（商家 / 平台客服）发的看顾客是否已读，顾客 / 机器人发来的看商家是否已读
+    
     const own = m.role === 'merchant';
     const read = own ? m.read_user : m.read_merchant;
     return '<div class="msg ' + cls + '">' +
@@ -1688,7 +1647,7 @@ function messagesHtml(msgs){
   }).join('');
 }
 function msgSig(msgs){
-  // 消息数 + 每条已读状态的指纹：只有内容或已读状态变了才重绘
+  
   return msgs.length + ':' + msgs.map(m =>
     (m.read_user ? 1 : 0) + '' + (m.read_merchant ? 1 : 0)).join('');
 }
@@ -1717,7 +1676,7 @@ function renderChatThread(thread){
   const box = $('chatMsgs');
   if (box) box.scrollTop = box.scrollHeight;
 }
-/* 轮询时只刷新消息区，避免清空正在输入的回复 */
+
 function refreshChatMessages(thread){
   const box = $('chatMsgs');
   if (!box){ renderChatThread(thread); return; }
@@ -1769,9 +1728,6 @@ function stopChatPolling(){
   if (chatTimer){ clearInterval(chatTimer); chatTimer = null; }
 }
 
-/* ============================================================
-   商品数据（浏览量 / 销量 / 买家 / 订单 / 物流）
-   ============================================================ */
 function statCard(label, value){
   return '<div class="stat-card"><div class="k">' + esc(label) +
          '</div><div class="v">' + value + '</div></div>';
@@ -1837,9 +1793,6 @@ function renderStats(data){
   $('statsBody').innerHTML = html;
 }
 
-/* ============================================================
-   订单管理（查看全部订单 / 发货）
-   ============================================================ */
 async function loadMerchantOrders(manual){
   try {
     const q = orderFilter ? ('?status=' + encodeURIComponent(orderFilter)) : '';
@@ -1910,7 +1863,7 @@ async function shipOrder(orderId, source){
   const input = $((source === 'chat' ? 'cship_' : 'oship_') + orderId);
   const waybill = (input ? input.value : '').trim();
   if (!/^\d{7}$/.test(waybill)){ toast('快递单号必须是 7 位数字', true); return; }
-  // 发货前再核对一遍收货信息（大字展示在卡片上，这里也确认一次）
+  
   const list = (source === 'chat') ? chatOrdersData : merchantOrders;
   const o = (list || []).find(function(x){ return x.order_id === orderId; });
   if (o){
@@ -1943,9 +1896,6 @@ function stopOrderPolling(){
   if (orderTimer){ clearInterval(orderTimer); orderTimer = null; }
 }
 
-/* ============================================================
-   物流查询（弹窗，订单数据 / 退款处理 / 聊天中均可使用）
-   ============================================================ */
 async function queryLogistics(waybill){
   const input = $('logiInput');
   const code = String(waybill || (input ? input.value : '') || '').trim();
@@ -1998,9 +1948,6 @@ function renderLogistics(l){
     '</div>';
 }
 
-/* ============================================================
-   退款处理
-   ============================================================ */
 const REFUND_STATUS_CLASS = {
   requested: 'blue', approved: 'blue', pending: 'blue',
   returning: 'orange', delivering: 'orange', shipping: 'orange',
@@ -2023,7 +1970,7 @@ async function loadRefunds(manual){
 }
 
 function updateRefundBadge(){
-  // 待商家确认 / 待商家处理的售后单，以及已签收待重新发货的换货单，都计入红点
+  
   const pending = refunds.filter(function(r){
     return r.status_code === 'requested'
       || (r.type === 'exchange' && r.status_code === 'received');
@@ -2060,7 +2007,7 @@ function renderRefunds(){
           '<button class="btn btn-danger btn-sm" onclick="setRefundStatus(\'' + esc(r.id) + '\',\'rejected\')">拒绝</button>';
       }
     } else if (isExchange && (code === 'shipping' || code === 'received')){
-      // 换货：顾客寄回的商品到仓后，商家填写新运单号重新发货
+      
       ops =
         '<input class="co-waybill" id="reship_' + esc(r.id) + '" maxlength="7" placeholder="7位新单号" ' +
           'onkeydown="if(event.key===\'Enter\'){event.preventDefault();reshipExchange(\'' + esc(r.id) + '\');}">' +
@@ -2095,7 +2042,6 @@ function renderRefunds(){
   }).join('');
 }
 
-/* 换货：商家签收顾客寄回的商品后，填写新的 7 位运单号重新发货 */
 async function reshipExchange(id){
   const input = $('reship_' + id);
   const waybill = (input ? input.value : '').trim();
@@ -2111,10 +2057,10 @@ async function reshipExchange(id){
 
 async function setRefundStatus(id, status){
   const body = { status: status };
-  // 拒绝必须说明理由：该理由会展示给顾客，也是顾客申请平台仲裁时平台判定的依据
+  
   if (status === 'rejected'){
     const reason = prompt('请填写拒绝理由（顾客会看到，将作为平台仲裁的判定依据）：', '');
-    if (reason === null) return;                    // 取消
+    if (reason === null) return;                    
     if (!reason.trim()){ toast('拒绝必须填写理由', true); return; }
     body.reject_reason = reason.trim();
   }
@@ -2141,5 +2087,7 @@ function stopRefundPolling(){
 
 boot();
 </script>
+<script src="i18n/core.js"></script>
+<script src="i18n/merchant.js"></script>
 </body>
 </html>

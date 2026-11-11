@@ -46,6 +46,11 @@ def platform():
     return send_from_directory(FRONTEND_DIR, PLATFORM_FILE)
 
 
+@bp.get("/i18n/<path:filename>")
+def i18n_asset(filename):
+    return send_from_directory(os.path.join(FRONTEND_DIR, "i18n"), filename)
+
+
 @bp.get("/images/<path:filename>")
 def image(filename):
     """优先返回商家后台上传的图片，找不到再回退到历史图片目录。"""

@@ -38,14 +38,9 @@ CONFIG_FILE = os.path.join(ROOT_DIR, "config.json")
 
 _PLACEHOLDER_RE = re.compile(r"app-|请填写|请填入|在此填入|在此填写", re.IGNORECASE)
 
-# 后台执行 Dify 同步的线程池（最大同时 2 个任务，避免打爆 Dify 并发）
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="dify-kb")
 _mapping_lock = threading.RLock()
 
-
-# ------------------------------------------------------------
-# 配置
-# ------------------------------------------------------------
 def _load_config():
     try:
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
@@ -53,7 +48,6 @@ def _load_config():
     except Exception:
         cfg = {}
     return cfg.get("dify_knowledge") or {}
-
 
 def get_knowledge_settings():
     """读取全部知识库相关配置，返回 dict。"""
@@ -85,16 +79,12 @@ def get_knowledge_settings():
         "valid": valid,
     }
 
-
 def get_dify_config():
     """兼容旧调用：返回 (base_url, api_key, dataset_id, map_file, valid)。"""
     s = get_knowledge_settings()
     return (s["base_url"], s["api_key"], s["dataset_id"], s["map_file"], s["valid"])
 
-
-# ------------------------------------------------------------
 # 映射持久化（product_id → document_id）
-# ------------------------------------------------------------
 def _load_map(map_file):
     if not os.path.exists(map_file):
         return {}
@@ -105,7 +95,6 @@ def _load_map(map_file):
     except Exception:
         return {}
 
-
 def _save_map(map_file, data):
     os.makedirs(os.path.dirname(map_file) or ".", exist_ok=True)
     tmp = map_file + ".tmp"
@@ -113,10 +102,8 @@ def _save_map(map_file, data):
         json.dump(data, f, ensure_ascii=False, indent=2)
     os.replace(tmp, map_file)
 
-
 def _get_document_id(map_file, product_id):
     return (_load_map(map_file).get(str(product_id)) or {}).get("document_id")
-
 
 def _set_document(map_file, product_id, document_id):
     with _mapping_lock:
@@ -128,7 +115,6 @@ def _set_document(map_file, product_id, document_id):
         data[str(product_id)] = record
         _save_map(map_file, data)
 
-
 def _drop_document(map_file, product_id):
     with _mapping_lock:
         data = _load_map(map_file)
@@ -136,21 +122,16 @@ def _drop_document(map_file, product_id):
             del data[str(product_id)]
             _save_map(map_file, data)
 
-
-# ------------------------------------------------------------
 # 商品文件（落盘到 商品咨询 文件夹）
-# ------------------------------------------------------------
 def _safe_filename(product_id):
     """把商品 id 转成安全的文件名（去路径分隔符 / 空白）。"""
     name = re.sub(r'[/\\:*?"<>|]', "-", str(product_id or "")).strip()
     return (name or "product")
 
-
 def product_file_path(product_id):
     """返回某商品在 商品咨询 文件夹中的文件绝对路径。"""
     return os.path.join(get_knowledge_settings()["product_dir"],
                         _safe_filename(product_id) + ".md")
-
 
 def build_product_text(product):
     """把商品所有信息拼成一段可供知识库检索的纯文本。"""
@@ -187,7 +168,6 @@ def build_product_text(product):
 
     return "\n".join(lines)
 
-
 def write_product_file(product):
     """把商品落盘为 md 文件（硬性动作），返回文件绝对路径；失败返回 None。"""
     product = product or {}
@@ -213,7 +193,6 @@ def write_product_file(product):
         print(f"[知识库] 商品文件写入失败：{e}")
         return None
 
-
 def remove_product_file(product_id):
     """删除商品在 商品咨询 文件夹的文件（硬性动作），返回是否删除。"""
     path = product_file_path(product_id)
@@ -224,7 +203,6 @@ def remove_product_file(product_id):
     except Exception as e:
         print(f"[知识库] 商品文件删除失败：{e}")
     return False
-
 
 def read_product_file(product_id):
     """读取商品文件的文本内容（用于上传知识库）。文件不存在返回 None。"""
@@ -237,21 +215,15 @@ def read_product_file(product_id):
         print(f"[知识库] 读取商品文件失败：{e}")
     return None
 
-
 def _document_name(product_id):
     return f"product-{product_id}"
-
 
 def _product_id_of(product):
     return str((product or {}).get("id") or "").strip()
 
-
-# ------------------------------------------------------------
 # Dify Dataset 调用
-# ------------------------------------------------------------
 def _headers(api_key):
     return {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-
 
 def _doc_create(base_url, api_key, dataset_id, product_id, text, technique):
     """新增文档，返回 (ok, document_id, message)。"""
@@ -266,7 +238,6 @@ def _doc_create(base_url, api_key, dataset_id, product_id, text, technique):
     resp = requests.post(url, headers=_headers(api_key), json=body, timeout=30)
     resp.raise_for_status()
     payload = resp.json() or {}
-    # 新版 Dify：document_id 在 "document" 对象里；旧版可能返回 "data" 数组
     doc_id = None
     if isinstance(payload.get("document"), dict):
         doc_id = payload["document"].get("id")
@@ -281,7 +252,6 @@ def _doc_create(base_url, api_key, dataset_id, product_id, text, technique):
         return False, None, "Dify 未返回 document_id"
     return True, doc_id, "created"
 
-
 def _doc_update(base_url, api_key, dataset_id, document_id, product_id, text):
     """更新文档内容。"""
     url = f"{base_url}/datasets/{dataset_id}/documents/{document_id}/update-by-text"
@@ -293,14 +263,12 @@ def _doc_update(base_url, api_key, dataset_id, document_id, product_id, text):
     resp.raise_for_status()
     return True, "updated"
 
-
 def _doc_delete(base_url, api_key, dataset_id, document_id):
     """删除文档。"""
     url = f"{base_url}/datasets/{dataset_id}/documents/{document_id}"
     resp = requests.delete(url, headers=_headers(api_key), timeout=30)
     resp.raise_for_status()
     return True, "deleted"
-
 
 def _doc_set_metadata(base_url, api_key, dataset_id, document_id, product):
     """给知识库文档写「商家」元数据（merchant_id / merchant_name）。
@@ -338,10 +306,7 @@ def _doc_set_metadata(base_url, api_key, dataset_id, document_id, product):
         print(f"[知识库] 元数据写入失败：{e}")
         return False, "metadata_failed"
 
-
-# ------------------------------------------------------------
 # 后台同步入口
-# ------------------------------------------------------------
 def _sync_doc(action, product):
     """单次同步：先落盘商品文件（无条件），再视配置同步到 Dify。"""
     s = get_knowledge_settings()
@@ -404,7 +369,6 @@ def _sync_doc(action, product):
         result.update(message=f"同步异常：{e}")
         return result
 
-
 def async_sync_knowledge(action, product=None):
     """提交一个同步任务到后台线程，立即返回，不阻塞调用方。
 
@@ -420,7 +384,6 @@ def async_sync_knowledge(action, product=None):
     except Exception as e:
         return {"ok": False, "message": f"提交后台任务失败：{e}"}
 
-
 def _run_sync_logged(action, product):
     """后台执行同步并打印结果，避免失败被静默吞掉（商品文件仍无条件落盘）。"""
     try:
@@ -434,7 +397,6 @@ def _run_sync_logged(action, product):
             print(f"[知识库] {action} 同步失败：{pid} -> {r.get('message')}")
     except Exception as e:
         print(f"[知识库] {action} 后台同步异常：{e}")
-
 
 def _now():
     return time.strftime("%Y-%m-%d %H:%M:%S")

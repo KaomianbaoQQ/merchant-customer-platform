@@ -16,7 +16,6 @@ from ..common import resolve_user
 
 bp = Blueprint("orders", __name__, url_prefix="/api")
 
-
 @bp.get("/regions")
 def api_regions():
     """全国行政区划（省 / 市 / 区），供下单地址级联选择。
@@ -35,7 +34,6 @@ def api_regions():
     body = json.dumps({"ok": True, "provinces": load_regions()}, ensure_ascii=False)
     return current_app.response_class(body, mimetype="application/json")
 
-
 @bp.get("/orders")
 def api_my_orders():
     """当前用户的全部订单（含物流状态）与退换货记录。"""
@@ -51,7 +49,6 @@ def api_my_orders():
         "returns": get_returns_by_user(user["id"]),
     })
 
-
 @bp.post("/orders")
 def api_orders():
     data = request.get_json(silent=True) or {}
@@ -61,7 +58,6 @@ def api_orders():
     if user.get("is_admin"):
         return jsonify({"ok": False, "error": "管理员账号用于后台管理，不能在商城前台下单"}), 403
 
-    # 收货地址必须从行政区划数据中选择省 / 市 / 区（前端提交值不可信，服务端重新校验），
     # 入库地址 = 省市区（校验后拼接）+ 详细地址
     province = str(data.get("province") or "").strip()
     city = str(data.get("city") or "").strip()
@@ -104,7 +100,6 @@ def api_orders():
             "offline": blocked,
         }), 409
 
-    # 写入 cs.order（服务端按商品库重新校验名称/价格/商家，运单号留空待发货）
     ok, msg, order_ids = create_checkout_orders(
         items, user, address, None, phone=phone, receiver_name=receiver_name
     )
@@ -130,7 +125,6 @@ def api_orders():
         "order_ids": order_ids,
     })
 
-
 @bp.post("/orders/<order_id>/confirm")
 def api_confirm_receipt(order_id):
     """用户确认收货：订单置为「已完成」。仅订单归属人可操作。"""
@@ -140,7 +134,6 @@ def api_confirm_receipt(order_id):
     from 售后.order import confirm_receipt
     ok, msg, status = confirm_receipt(order_id, user["id"])
     return jsonify({"ok": ok, "message": msg, "order_status": status}), (200 if ok else 400)
-
 
 @bp.post("/orders/<order_id>/pay")
 def api_pay_order(order_id):
@@ -155,7 +148,6 @@ def api_pay_order(order_id):
     from 售后.order import pay_by_order
     ok, msg = pay_by_order(order_id, user["id"])
     return jsonify({"ok": ok, "message": msg}), (200 if ok else 400)
-
 
 @bp.post("/orders/<order_id>/cancel")
 def api_cancel_order(order_id):

@@ -26,10 +26,7 @@ _R_DAYS = [(7, 5), (14, 4), (30, 3), (60, 2)]      # 距今 <=N 天 → 分数
 _F_COUNT = [(1, 2), (3, 3), (5, 4)]                # 订单数 <=N → 分数（>=6 给 5）
 _M_AMOUNT = [(300, 2), (1000, 3), (3000, 4)]       # 消费额 <N → 分数（>=3000 给 5）
 
-
-# ------------------------------------------------------------
 # 数据读取（MySQL + products.json + Mongo 埋点）
-# ------------------------------------------------------------
 def _safe(sql, params=None):
     try:
         conn = get_conn()
@@ -44,10 +41,8 @@ def _safe(sql, params=None):
     finally:
         conn.close()
 
-
 def _users():
     return _safe("SELECT id, name, age, sex FROM `user` ORDER BY id")
-
 
 def _orders():
     return _safe(
@@ -55,21 +50,17 @@ def _orders():
         "merchant_name, create_time FROM `order` ORDER BY create_time DESC"
     )
 
-
 def _reviews():
     return _safe("SELECT product_id, user_id, user_name, rating FROM `review`")
 
-
 def _products():
     return store.list_products(include_offline=True)
-
 
 def _amount(order):
     try:
         return round(float(order.get("price") or 0) * int(order.get("quantity") or 0), 2)
     except (TypeError, ValueError):
         return 0.0
-
 
 def _days_since(value):
     """距今多少天；value 是 datetime / 字符串，解析失败返回 None。"""
@@ -90,7 +81,6 @@ def _days_since(value):
     except Exception:
         return None
 
-
 def _score(value, table, ceil=None):
     """按阈值表打分；value 为 None 返回 0。ceil 命中即满分。"""
     if value is None:
@@ -99,7 +89,6 @@ def _score(value, table, ceil=None):
         if value <= bound:
             return score
     return ceil if ceil is not None else len(table) + 1
-
 
 def _level(r, f, m):
     """按 RFM 分数归客户分层。"""
@@ -116,7 +105,6 @@ def _level(r, f, m):
     if r <= 2:
         return "一般保持客户"
     return "流失预警客户"
-
 
 def _load_ctx():
     """一次性把数据读出来，避免每算一个用户就打一轮库。"""
@@ -156,7 +144,6 @@ def _load_ctx():
         "beh_matrix": behavior.matrix(),
     }
 
-
 def _match_product(order, ctx):
     """把一条订单对应到商品字典（优先 product_id，其次商品名兜底）。"""
     pid = str(order.get("product_id") or "")
@@ -169,10 +156,7 @@ def _match_product(order, ctx):
         name = str(order.get("goodsname") or "")
     return ctx["pname"].get(name)
 
-
-# ------------------------------------------------------------
 # 单个画像
-# ------------------------------------------------------------
 def _profile_of(user, ctx):
     uid = str(user.get("id"))
     orders = ctx["orders_by_user"].get(uid, [])
@@ -253,17 +237,12 @@ def _profile_of(user, ctx):
         "tags": tags,
     }
 
-
-# ------------------------------------------------------------
-# 对外
-# ------------------------------------------------------------
 def list_profiles():
     """全部顾客画像，按消费额倒序。"""
     ctx = _load_ctx()
     rows = [_profile_of(u, ctx) for u in _users()]
     rows.sort(key=lambda x: x["amount"], reverse=True)
     return rows
-
 
 def build_profile(uid):
     """单个顾客画像（含订单明细与服务记录数），不存在返回 None。"""
@@ -288,7 +267,6 @@ def build_profile(uid):
         })
     profile["orders"] = detail
     return profile
-
 
 def profiles_by_merchant(mid):
     """只在指定商家下过单 / 有行为的顾客（商户「顾客洞察」用）。"""

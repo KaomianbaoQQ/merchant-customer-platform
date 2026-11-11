@@ -8,7 +8,6 @@ from ..common import resolve_user
 
 bp = Blueprint("after_sales", __name__, url_prefix="/api")
 
-
 @bp.post("/after-sales")
 def api_after_sales():
     data = request.get_json(silent=True) or {}
@@ -30,7 +29,6 @@ def api_after_sales():
     result["session_id"] = session_id
     return jsonify(result)
 
-
 @bp.get("/after-sales")
 def api_after_sales_history():
     """恢复售后客服历史消息（刷新后调用）。"""
@@ -43,7 +41,6 @@ def api_after_sales_history():
     if not session_id:
         return jsonify({"ok": True, "messages": [], "session_id": None})
 
-    # 点进售后面板 = 已读：先把客服 / 机器人发来的消息标成已读，再返回带标记的列表
     mark_session_read(session_id)
     rows = get_recent_messages(session_id, limit=50)
     messages = []
@@ -53,12 +50,10 @@ def api_after_sales_history():
             "id": f"{session_id}-{len(messages)}",
             "role": "user" if role == "user" else "bot",
             "text": r.get("content") or "",
-            # 已读标记：自己发的看 read_agent（客服是否已读），收到的看 read_user（自己是否已读）
             "read_user": bool(r.get("read_user", role != "user")),
             "read_agent": bool(r.get("read_agent", role != "user")),
         })
     return jsonify({"ok": True, "messages": messages, "session_id": session_id})
-
 
 def data_from_query(args):
     """把 query string 转成 resolve_user 需要的 dict。"""

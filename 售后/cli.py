@@ -19,8 +19,6 @@ from .user import verify_user
 from .order import execute_ops, parse_ops_payload, build_user_orders
 from .chat import ensure_chat_table, new_session_id, save_message
 
-
-# ============================ 一、登录 ============================
 def login():
     """
     登录并返回用户信息 dict：
@@ -56,7 +54,6 @@ def login():
         "is_admin": False, "age": info.get("age"), "sex": info.get("sex"),
     }
 
-
 def print_user_scope(user):
     """打印当前用户能操作的数据范围"""
     if user["is_admin"]:
@@ -64,8 +61,6 @@ def print_user_scope(user):
     else:
         print(f"🔒 权限：普通用户，仅能增删改查自己的订单（user_id={user['id']}）")
 
-
-# ============================ 二、业务处理 ============================
 def print_ops(ops_list, biz_source):
     print(f"\n=====【业务操作JSON - 完整数组（来源字段：{biz_source}）】=====")
     print(json.dumps(ops_list, ensure_ascii=False, indent=2))
@@ -73,7 +68,6 @@ def print_ops(ops_list, biz_source):
     for idx, op in enumerate(ops_list):
         print(f"\n【操作{idx + 1}】operate = {op.get('operate')}")
         print(json.dumps(op, ensure_ascii=False, indent=2))
-
 
 def run_ops(ops_list, user):
     """执行操作、打印结果，并返回给对话记录用的文本行"""
@@ -92,7 +86,6 @@ def run_ops(ops_list, user):
             print("   返回结果：" + json.dumps(res["data"], ensure_ascii=False))
         lines.append(f"[{res['operate']}] {res['message']}")
     return lines
-
 
 def handle_business(biz_raw, biz_source, user):
     """把 Dify 返回的业务字段落地：非 JSON 只打印；JSON 先校验权限再执行。
@@ -131,8 +124,6 @@ def handle_business(biz_raw, biz_source, user):
     lines += run_ops(allowed, user)
     return lines
 
-
-# ============================ 三、对话循环 ============================
 def call_workflow(user_input, user):
     """调用 Dify 工作流。上传：库里的真实身份 + 当前用户已有的订单。"""
     print("\n=====正在调用Dify工作流=====")
@@ -152,7 +143,6 @@ def call_workflow(user_input, user):
         print("❌ 调用Dify工作流失败，跳过后续业务逻辑")
         return None
     return result
-
 
 def print_branches(result):
     """打印闲聊 / 安慰 / 节点错误 / 全空，并返回给对话记录用的文本行"""
@@ -179,7 +169,6 @@ def print_branches(result):
         lines.append("（无业务操作、无闲聊、无安慰返回）")
     return lines
 
-
 def ask_user_input():
     """读取一条对话内容，返回 None 表示退出"""
     print("\n=====请输入参数(输入exit退出)=====")
@@ -192,7 +181,6 @@ def ask_user_input():
         print("👋 程序退出")
         return None
     return text
-
 
 def run_chat_loop(user):
     ensure_chat_table()
@@ -226,8 +214,6 @@ def run_chat_loop(user):
         save_message(session_id, user["id"], user["name"], "assistant",
                      "\n".join(reply_lines))
 
-
-# ============================ 四、入口 ============================
 def run_cli():
     ok, msg = ensure_chat_table()
     if not ok:

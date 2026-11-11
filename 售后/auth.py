@@ -6,14 +6,12 @@
 """
 from .order import get_order_owner
 
-
 def check_is_admin(user_id: str, user_name: str, admin_list: list) -> bool:
     """校验是否为管理员"""
     for admin in admin_list:
         if admin["user_id"] == user_id and admin["user_name"] == user_name:
             return True
     return False
-
 
 def check_ops_permission(ops_list, user):
     """
@@ -37,7 +35,6 @@ def check_ops_permission(ops_list, user):
         target_id = str(op.get(field) or "").strip() if field else ""
 
         # 只有"点名了具体订单ID"的操作才需要在这里判定归属；
-        # 不带 ID 的 select / delete（按商品名）由 order.py 在 SQL 层限定 user_id
         if operate in id_field and target_id:
             owner = get_order_owner(target_id)
             if owner is None:

@@ -29,10 +29,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(ROOT_DIR, "config.json")
 
 DEFAULT_BASE_URL = "https://uapis.cn/api/v1"
-# API Key 不写进代码：优先环境变量，其次 config.json 的 express_tracking.api_key
-# （config.json 已被 .gitignore 排除，避免密钥进版本库）
 DEFAULT_API_KEY = os.environ.get("KB_EXPRESS_API_KEY", "")
-# 实测：即使查不到数据，一次请求也要 18~20 秒（官方文档称 1-2 秒，实际偏慢），
 # 因此默认超时给到 30 秒，并可在 config.json 里调整。
 DEFAULT_TIMEOUT = 30
 
@@ -41,7 +38,6 @@ QUERY_PATH = "/misc/tracking/query"
 # 系统内部运单号：7 位纯数字
 INTERNAL_WAYBILL_RE = re.compile(r"^\d{7}$")
 
-# uapis 的 status_code → 本系统 5 档进度（0 待发货 / 1 已发货 / 2 运输中 / 3 派送中 / 4 已签收）
 STATUS_STEP = {
     "pending": 0,
     "picked_up": 1,
@@ -51,7 +47,6 @@ STATUS_STEP = {
     "exception": 2,
     "unknown": 0,
 }
-
 
 def _config():
     """读取 config.json 里的 express_tracking 配置（api_key / base_url）。"""
@@ -67,17 +62,14 @@ def _config():
         "timeout": int(cfg.get("timeout") or DEFAULT_TIMEOUT),
     }
 
-
 def is_external_waybill(code):
     """非 7 位纯数字 → 视为外部真实快递单号（走 uapis 真实接口）。"""
     return not INTERNAL_WAYBILL_RE.match(str(code or "").strip())
-
 
 # 本系统 5 档进度的文案（外部单号用这套，保证与进度条一致）
 STEP_TEXTS = {0: "待揽收", 1: "已发货", 2: "运输中", 3: "派送中", 4: "已签收"}
 
 # 从轨迹文本推断真实状态：快递公司的 status 字段有时偏保守
-# （实测圆通最新一条已是「快件已领取」，接口仍返回 in_transit / is_completed=false），
 # 因此以轨迹文本为准做一次校正，只往上取、不回退。
 _TRACK_RULES = (
     # 已签收：包含快递柜 / 驿站取出、代收等真实妥投说法
@@ -97,7 +89,6 @@ _TRACK_RULES = (
     ("picked_up", ("已揽收", "已收寄", "已收件", "已揽件", "揽件", "揽收")),
 )
 
-
 def _track_status(tracks):
     """按时间倒序扫轨迹，取最新一条能识别出状态的轨迹。
 
@@ -111,7 +102,6 @@ def _track_status(tracks):
             if any(k in text for k in keys):
                 return STATUS_STEP.get(code, 0), code, str(t.get("time") or "")
     return None, None, ""
-
 
 def _normalize(payload, tracking_number):
     """把 uapis 返回整理成本系统统一的物流结构。"""
@@ -162,7 +152,6 @@ def _normalize(payload, tracking_number):
         "estimated_arrival": None,
         "address": "",
     }
-
 
 def query(tracking_number, phone="", carrier_code="", timeout=None):
     """查询外部真实快递单号。返回 (是否成功, 提示信息, 结果 dict 或 None)。

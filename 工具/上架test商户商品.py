@@ -15,7 +15,6 @@ from 公共 import store, inventory  # noqa: E402
 OWNER_ID = "2"
 OWNER_NAME = "laihan"
 
-# 商品清单：(id, 名称, 类目, 主价, 描述, 参数, [(规格名, 价格, 库存)])
 PRODUCTS = [
     ("LH_LAPTOP14", "星岚 Book Air 14 轻薄本", "数码", 5299,
      "14 英寸 2.8K 高色域屏，全金属机身 1.28kg，双风扇四热管散热，支持 65W PD 快充。",
@@ -78,7 +77,6 @@ PRODUCTS = [
      [("小鹿印花 5 条", 39, 80), ("云朵印花 5 条", 39, 75)]),
 ]
 
-
 def main():
     existing = {p.get("id") for p in store.list_products(include_offline=True)}
     created, skipped = 0, 0
@@ -107,7 +105,6 @@ def main():
         print(f"{'✓' if ok else '✗'} {pid} {name}  SKU {len(defs)} 个 {msg if not ok else ''}")
         created += 1
 
-    # 复核
     print("\n=== test 商户商品总览 ===")
     rows = inventory.stock_rows()
     by_sku = {sid: r for pid_rows in rows.values() for sid, r in pid_rows.items()}
@@ -120,7 +117,6 @@ def main():
             parts.append(f"{d['name']} ¥{d['price']} 存{r.get('stock', 0)}")
         print(f"{total:2d}. [{p.get('tag')}] {p['name']} —— " + " / ".join(parts))
     print(f"\n共 {created} 个新上架，跳过 {skipped} 个；test 商户当前商品总数 {total}。")
-
 
 if __name__ == "__main__":
     main()

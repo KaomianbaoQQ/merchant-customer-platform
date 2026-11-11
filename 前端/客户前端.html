@@ -205,7 +205,7 @@
   .review-item-stars{color:var(--star);font-size:15px;letter-spacing:1px;margin-bottom:6px;}
   .review-item-content{color:var(--ink-2);font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
   .review-empty{padding:24px;text-align:center;color:var(--ink-3);font-size:14px;border:1px dashed #e4e4ea;border-radius:12px;}
-  /* 订单未完成时的评价说明（表单隐藏，但规则要看得见） */
+  
   .review-rule{
     margin:0 0 20px;padding:12px 16px;border-radius:10px;
     background:#f6f7f9;border:1px solid #e8e9ee;color:var(--ink-2);font-size:13.5px;
@@ -276,8 +276,7 @@
   }
   .step:first-child::before{display:none;}
   .step.done::before{background:var(--blue);}
-  /* 连到「当前这一步」的那段线也要上色：否则走到最后一步（已签收）时
-     最后一段线会一直是灰色，看起来像没连上（当前步只有 now、没有 done） */
+  
   .step.now::before{background:var(--blue);}
   .eta-box{margin-top:24px;padding:18px 20px;background:#fff;border-radius:14px;border:1px solid #ececef;}
   .eta-box .row{display:flex;justify-content:space-between;font-size:14px;padding:6px 0;}
@@ -347,7 +346,7 @@
   #cartTotal{font-size:26px;font-weight:700;letter-spacing:-.02em;}
   .cart-checkout{display:block;width:100%;padding:13px 0;font-size:16px;font-weight:500;border-radius:12px;text-align:center;}
 
-  /* ===== 商品详情页：商家客服入口（右侧信息区最上方，最显眼） ===== */
+  
   .detail-cs-top{display:flex;justify-content:flex-end;margin-bottom:14px;}
   .detail-cs-btn{
     display:inline-flex;align-items:center;gap:7px;
@@ -455,7 +454,7 @@
     margin-top:12px;padding:9px 12px;border-radius:10px;background:#f2f7ff;
     color:#0b5cad;font-size:12.5px;line-height:1.5;
   }
-  /* 一个订单里有多件商品时：先在面板里选要咨询哪件（不再默认第一件） */
+  
   .cs-pick-tip{font-size:12px;color:#5b6577;margin-bottom:6px;}
   .cs-pick-list{display:flex;flex-wrap:wrap;gap:6px;}
   .cs-pick{
@@ -507,7 +506,7 @@
   .cs-input .cs-human{background:#fff;color:var(--ink);border:1px solid var(--line);font-weight:600;}
   .cs-input .cs-human:hover{border-color:var(--blue);color:var(--blue);}
 
-  /* ===== 登录 / 地址弹窗 ===== */
+  
   .modal-overlay{
     position:fixed;inset:0;background:rgba(0,0,0,.34);z-index:210;
     display:flex;align-items:center;justify-content:center;padding:20px;
@@ -518,7 +517,7 @@
     width:min(420px,100%);background:#fff;border-radius:20px;padding:26px 24px;
     box-shadow:0 24px 60px rgba(0,0,0,.2);transform:translateY(12px) scale(.98);
     transition:transform .25s cubic-bezier(.2,.7,.2,1);
-    /* 内容再多也不许撑出屏幕：超出部分在弹窗内部滚动（上下不再被裁掉） */
+    
     max-height:calc(100vh - 40px);overflow-y:auto;overscroll-behavior:contain;
   }
   .modal-overlay.open .modal{transform:translateY(0) scale(1);}
@@ -545,7 +544,7 @@
   .modal-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:18px;}
   .modal-actions .btn{padding:10px 22px;border-radius:980px;font-size:15px;}
 
-  /* 登录方式标签页（密码登录 / 邮箱验证码） */
+  
   .auth-tabs{
     display:flex;gap:6px;background:#f5f5f7;border-radius:12px;padding:4px;margin-bottom:16px;
   }
@@ -567,7 +566,7 @@
   }
   .code-btn:disabled{opacity:.55;cursor:not-allowed;}
 
-  /* ===== 地址簿（下单弹窗内） ===== */
+  
   .addr-book{margin-top:14px;padding:12px;border:1px solid #eceef1;border-radius:14px;background:var(--bg-soft);}
   .addr-book-head{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;}
   .addr-book-head span{font-size:11.5px;font-weight:400;color:var(--ink-3);}
@@ -604,7 +603,7 @@
   .order-result.show{display:block;}
   .order-result b{color:#0071e3;}
 
-  /* 下单成功：独立小弹窗（不再塞进地址表单里，避免弹窗过高、上下被遮） */
+  
   .success-modal{width:min(380px,100%);text-align:center;padding:30px 26px 24px;}
   .success-modal .ok-mark{font-size:44px;line-height:1;margin-bottom:10px;}
   .success-modal h3{font-size:19px;}
@@ -615,7 +614,7 @@
   }
   .success-modal .modal-actions{justify-content:center;margin-top:20px;}
 
-  /* 申请退换货弹窗：可自选数量（一件一件退/换） */
+  
   .return-modal{width:min(420px,100%);}
   .rt-row{display:flex;align-items:center;gap:10px;margin-top:16px;}
   .rt-row .rt-label{font-size:13.5px;color:var(--ink-2);}
@@ -636,7 +635,7 @@
   .return-modal textarea{min-height:96px;}
   .return-modal .sub{margin-top:6px;line-height:1.6;}
 
-  /* ===== 我的订单 / 退换货 ===== */
+  
   .orders-page{max-width:900px;margin:0 auto;padding:120px 22px 80px;}
   .orders-page h1{font-size:clamp(30px,5vw,48px);font-weight:700;letter-spacing:-.02em;}
   .orders-page .lead{color:var(--ink-2);font-size:16px;margin-top:10px;}
@@ -646,7 +645,7 @@
     color:var(--ink-2);font-size:15px;text-align:center;
   }
 
-  /* ===== 个人中心（账号信息 / 地址簿 / 修改密码） ===== */
+  
   .account-card{
     margin-top:18px;padding:20px 22px;border:1px solid #f0f0f2;border-radius:16px;background:#fff;
   }
@@ -735,7 +734,6 @@
 </head>
 <body>
 
-<!-- ===== 导航 ===== -->
 <nav class="nav">
   <div class="nav-inner">
     <div class="nav-logo" onclick="navigate('home')">Kaomianbao</div>
@@ -760,7 +758,6 @@
   </div>
 </nav>
 
-<!-- ===== 视图：首页 ===== -->
 <div class="view active" id="view-home">
   <section class="hero">
     <h1>好产品，<br>让日常更从容。</h1>
@@ -798,7 +795,6 @@
   </section>
 </div>
 
-<!-- ===== 视图：商品详情 ===== -->
 <div class="view" id="view-detail">
   <div class="detail">
     <div class="breadcrumb">
@@ -810,7 +806,7 @@
         <div class="detail-thumbs" id="dThumbs"></div>
       </div>
       <div class="detail-info">
-        <!-- 商家客服入口：放在商品右侧最上方，最显眼的位置（对接本商品所属商家） -->
+        
         <div class="detail-cs-top">
           <button class="cs-opener detail-cs-btn" onclick="openProductCS()">
             <span class="ico">💬</span>联系商家客服
@@ -832,11 +828,11 @@
     <div class="reviews" id="dReviews">
       <h3>商品评价</h3>
       <div id="dReviewSummary" class="review-summary"></div>
-      <!-- 不能评价时的说明（订单未完成）：表单会隐藏，但这行规则要看得见 -->
+      
       <div id="dReviewRule" class="review-rule" style="display:none"></div>
-      <!-- 可以评价时，明示是靠哪笔已签收订单 -->
+      
       <div id="dReviewOrder" class="review-order" style="display:none"></div>
-      <!-- 默认隐藏：只有后端确认可评价（该商品有已签收订单）时才显示，避免闪现 -->
+      
       <div class="review-form" id="dReviewForm" style="display:none">
         <div class="review-form-title">写下你的评价</div>
         <div class="stars" id="dStars">
@@ -857,7 +853,6 @@
   </div>
 </div>
 
-<!-- ===== 视图：物流查询 ===== -->
 <div class="view" id="view-logistics">
   <div class="logistics">
     <h1>查询你的包裹</h1>
@@ -894,7 +889,6 @@
   </div>
 </div>
 
-<!-- ===== 视图：我的订单 / 退换货 ===== -->
 <div class="view" id="view-orders">
   <div class="orders-page">
     <h1>我的订单</h1>
@@ -903,7 +897,6 @@
   </div>
 </div>
 
-<!-- ===== 视图：个人中心（账号信息 / 地址簿 / 修改密码） ===== -->
 <div class="view" id="view-account">
   <div class="orders-page">
     <h1>个人中心</h1>
@@ -920,7 +913,6 @@
   </div>
 </footer>
 
-<!-- ===== 购物袋抽屉 ===== -->
 <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
 <aside class="cart-drawer" id="cartDrawer" role="dialog" aria-label="购物袋">
   <div class="cart-head">
@@ -934,7 +926,6 @@
   </div>
 </aside>
 
-<!-- ===== 悬浮客服按钮（只保留售后客服） & 面板 ===== -->
 <button class="cs-fab" id="csFab" onclick="toggleCS()" aria-label="售后客服" aria-expanded="false">🛠️</button>
 
 <div class="cs-panel" id="csPanel" role="dialog" aria-label="客服">
@@ -959,7 +950,6 @@
   </div>
 </div>
 
-<!-- ===== 登录弹窗 ===== -->
 <div class="modal-overlay" id="loginOverlay">
   <div class="modal">
     <h3 id="loginTitle">登录</h3>
@@ -1019,8 +1009,6 @@
   </div>
 </div>
 
-
-<!-- ===== 视图：找回账号 / 重置密码（登录页入口，未登录） ===== -->
 <div class="modal-overlay" id="forgetPwdOverlay">
   <div class="modal">
     <h3>找回账号 / 重置密码</h3>
@@ -1058,7 +1046,6 @@
   </div>
 </div>
 
-<!-- ===== 收货地址弹窗 ===== -->
 <div class="modal-overlay" id="addressOverlay">
   <div class="modal">
     <h3>填写收货地址</h3>
@@ -1086,7 +1073,6 @@
   </div>
 </div>
 
-<!-- ===== 售前客服：先选店铺 / 商品（不再只有「去挑选商品」这一条死路） ===== -->
 <div class="modal-overlay" id="presaleOverlay">
   <div class="modal presale-modal">
     <h3>咨询售前客服</h3>
@@ -1098,7 +1084,6 @@
   </div>
 </div>
 
-<!-- ===== 申请退换货（可按件申请，一件一件退/换） ===== -->
 <div class="modal-overlay" id="returnOverlay">
   <div class="modal return-modal">
     <h3 id="rtTitle">申请退货</h3>
@@ -1123,7 +1108,6 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- ===== 下单成功（独立小弹窗） ===== -->
 <div class="modal-overlay" id="orderSuccessOverlay">
   <div class="modal success-modal">
     <div class="ok-mark">✅</div>
@@ -1138,36 +1122,17 @@
 </div>
 
 <script>
-/* ============================================================
-   商品图片 & 后端地址
-   ------------------------------------------------------------
-   商品数据来自 GET /api/products（商家在「商户中心」上架）。
-   图片由商家后台上传，通过 /images/<文件名> 对外提供。
-   直接双击打开 html(file://) 时，自动指向本地后端 127.0.0.1:8000。
-   ============================================================ */
+
 const API_ORIGIN = (location.protocol === 'file:') ? 'http://127.0.0.1:8000' : '';
 function IMG(filename){
   return API_ORIGIN + '/images/' + encodeURIComponent(filename);
 }
 
-/* ------------------------------------------------------------
-   顾客登录令牌（Authorization: Bearer）
-   ------------------------------------------------------------
-   购物袋逻辑（usingServerCart / loadCart）在脚本靠前位置就要用到它，
-   因此必须在这里最先声明并读盘；否则会触发「暂时性死区」错误，
-   导致整段脚本中断、页面所有按钮失效。
-   ------------------------------------------------------------ */
 let authToken = null;
 try {
   authToken = localStorage.getItem('kb_token') || null;
 } catch (e) { authToken = null; }
 
-/* ============================================================
-   商品数据（由商家后台上传，通过接口动态获取）
-   ------------------------------------------------------------
-   商家在「商户中心」上架任意商品、任意类目后，客户前端从
-   GET /api/products 拉取并展示，前端不再写死任何商品与类目。
-   ============================================================ */
 let PRODUCTS = [];
 let CATEGORIES = ['全部'];
 let currentCat = '全部';
@@ -1207,7 +1172,6 @@ function productImages(p){
   return imgs.filter(Boolean);
 }
 
-/* 图片地址：商家后台上传到 /images/<文件名> */
 function productImage(p, idx){
   const imgs = productImages(p);
   if (!imgs.length) return '';
@@ -1228,7 +1192,6 @@ function setCategory(cat){
   renderGrid();
 }
 
-/* 点商品卡片上的类目标 = 按这个类目筛选（以前这里只是普通文字，鼠标却是手型，点了没反应） */
 function filterByTag(tag){
   if (!tag) return;
   setCategory(tag);
@@ -1236,9 +1199,6 @@ function filterByTag(tag){
   if (el) window.scrollTo({ top: el.offsetTop - 60, behavior: 'smooth' });
 }
 
-/* ============================================================
-   视图路由
-   ============================================================ */
 function navigate(view){
   document.querySelectorAll('.view').forEach(function(el){ el.classList.remove('active'); });
   const target = document.getElementById('view-' + view);
@@ -1253,7 +1213,7 @@ function navigate(view){
 }
 
 function goProducts(){
-  // 从某件商品点「去挑选商品」时，保留它所属的类目，落到同一栏而不是整个列表从头开始
+  
   const keepTag = currentProduct && currentProduct.tag;
   if (keepTag && CATEGORIES.indexOf(keepTag) !== -1) currentCat = keepTag;
   navigate('home');
@@ -1265,9 +1225,6 @@ function goProducts(){
   });
 }
 
-/* ============================================================
-   商品网格 / 详情
-   ============================================================ */
 function renderGrid(){
   const grid = document.getElementById('productGrid');
   const list = currentCat === '全部'
@@ -1374,7 +1331,7 @@ function starStr(n){
 
 function loadReviews(productId){
   let url = API_ORIGIN + '/api/products/' + encodeURIComponent(productId) + '/reviews';
-  // 带上登录身份，后端返回 can_review：只有该商品有已签收订单才允许评价
+  
   if (currentUser){
     url += '?user_id=' + encodeURIComponent(currentUser.id) +
            '&user_name=' + encodeURIComponent(currentUser.name);
@@ -1389,7 +1346,6 @@ function loadReviews(productId){
     });
 }
 
-/* 评价是订单完成之后的事：没有该商品的已签收订单时，隐藏表单但把规则明说出来 */
 function renderReviewFormGate(data){
   const form = document.getElementById('dReviewForm');
   if (!form) return;
@@ -1403,7 +1359,7 @@ function renderReviewFormGate(data){
           ? '订单完成后才能评价这件商品：登录后，确认收货（已签收）即可评价。'
           : '订单完成后才能评价这件商品：这件商品你还没有「已签收」的订单，确认收货后这里会出现写评价的入口。');
   }
-  // 可以评价时，明示是靠哪笔已签收订单（让顾客知道"我确实买过、已收货"）
+  
   const orderEl = document.getElementById('dReviewOrder');
   if (orderEl){
     const ord = data.review_order;
@@ -1507,7 +1463,6 @@ async function submitReview(){
   }
 }
 
-/* 打开商品详情时上报一次浏览量（失败不影响页面）；带登录身份时后端同时记一条浏览行为 */
 function trackProductView(id){
   try {
     const body = { product_id: id };
@@ -1520,7 +1475,6 @@ function trackProductView(id){
   } catch (e) {}
 }
 
-/* 行为埋点上报（浏览 / 加购），供「智能分析」做用户画像与购买预测 */
 function reportBehavior(event, productId){
   if (!currentUser || !productId) return;   // 未登录无法归属到某位顾客，不记录
   try {
@@ -1551,16 +1505,11 @@ document.getElementById('dThumbs').addEventListener('click', function(e){
   setDetailImage(Number(thumb.dataset.idx), thumb);
 });
 
-/* ============================================================
-   购物袋
-   ============================================================ */
 const CART_KEY = 'kaomianbao_cart';
 let cart = [];
 
-// 登录后购物车存服务端（/api/cart，按用户）；未登录仍用本地 localStorage
 function usingServerCart(){ return !!authToken; }
 
-// 初始同步加载（本地优先，保证首屏即时渲染）；已登录则改由初始化块末尾异步拉取服务端购物车
 try {
   const raw = localStorage.getItem(CART_KEY);
   if (raw) cart = JSON.parse(raw) || [];
@@ -1736,12 +1685,8 @@ function closeCart(){
   document.getElementById('cartOverlay').classList.remove('open');
 }
 
-/* ============================================================
-   收货地址：省 / 市 / 区级联选择（数据来自后端行政区划接口）
-   下单必须从全国行政区划数据中选择省市区，详细地址单独填写
-   ============================================================ */
-let REGIONS_CACHE = null;   // {省: {市: [区, ...]}}，进入页面即预取，打开下单弹窗时直接可用
-let REGIONS_FAILED = false; // 上次拉取是否失败（失败时下拉会提示「点这里重试」）
+let REGIONS_CACHE = null;   
+let REGIONS_FAILED = false; 
 
 function fillSelect(sel, placeholder, values){
   sel.innerHTML = '';
@@ -1757,7 +1702,7 @@ function fillSelect(sel, placeholder, values){
 
 async function ensureRegions(){
   if (REGIONS_CACHE) return REGIONS_CACHE;
-  // 弱网 / 隧道抖动时偶发失败：重试 3 次再放弃，别让下拉永久空着还不提示
+  
   for (let i = 0; i < 3; i++){
     try {
       const res = await fetch(API_ORIGIN + '/api/regions');
@@ -1785,7 +1730,6 @@ async function populateRegionSelects(){
   fillSelect(distEl, '选择区/县', []);
 }
 
-/* 地区数据没拉出来时，用户一点下拉就自动重试一次 */
 async function retryRegionsIfEmpty(){
   const provEl = document.getElementById('addrProvince');
   if (!REGIONS_FAILED || (provEl && provEl.options.length > 1)) return;
@@ -1814,11 +1758,10 @@ async function onRegionCityChange(){
 }
 
 async function resetRegionSelects(){
-  // 重新拉取（有缓存）并重置省/市/区三个下拉
+  
   await populateRegionSelects();
 }
 
-/* ---------- 地址簿：保存 / 复用 / 增删改 / 默认地址 ---------- */
 let addressBook = [];        // 当前用户的地址簿
 let editingAddressId = null; // 正在编辑的地址 ID（为空表示新增）
 
@@ -1881,7 +1824,6 @@ function renderAddressBook(){
   }).join('');
 }
 
-/* 把一条地址填进表单（含省 / 市 / 区三级下拉的联动回填） */
 async function fillAddressForm(a){
   document.getElementById('addrName').value  = a.receiver_name || '';
   document.getElementById('addrPhone').value = a.phone || '';
@@ -1983,7 +1925,6 @@ async function saveAddressBook(){
   }
 }
 
-/* 下单成功后把这条地址自动存进地址簿：以后下单可直接选用 */
 async function rememberAddress(form){
   const addr = fullAddress(form);
   if (addressBook.some(function(a){ return (a.address || '') === addr; })) return;
@@ -1998,10 +1939,7 @@ async function rememberAddress(form){
   } catch (e) { /* 存地址失败不影响下单结果 */ }
 }
 
-/* ============================================================
-   个人中心：账号信息 / 地址簿管理 / 修改密码
-   ============================================================ */
-let maEditingId = null;   // 个人中心里正在编辑的地址 ID（空 = 新增）
+let maEditingId = null;   
 
 function openAccount(){
   if (!currentUser){ openLogin(function(){ openAccount(); }, '请先登录后查看个人中心'); return; }
@@ -2221,7 +2159,6 @@ async function maDelete(id){
   } catch (e) { toast('网络异常，请稍后重试'); }
 }
 
-/* ---------- 修改密码 ---------- */
 function accountPasswordHtml(){
   return '<div class="account-card"><h2>修改密码</h2>' +
     '<div class="acc-field" style="max-width:320px"><label>验证方式</label>' +
@@ -2309,7 +2246,7 @@ async function checkout(){
   document.getElementById('addrTip').textContent = '';
   document.getElementById('addrTip').classList.remove('ok');
   document.getElementById('orderResult').classList.remove('show');
-  // 重置下单表单（防止上次下单成功后按钮仍处于禁用态）
+  
   const submitBtn = document.getElementById('addrSubmit');
   submitBtn.disabled = false;
   submitBtn.textContent = '提交订单';
@@ -2318,7 +2255,7 @@ async function checkout(){
   resetAddressBookSave();
   document.getElementById('addrSetDefault').checked = false;
   await resetRegionSelects();
-  // 预填收货人姓名（登录用户），并带出地址簿里的默认地址
+  
   const nameEl = document.getElementById('addrName');
   if (nameEl && !nameEl.value) nameEl.value = currentUser.name || '';
   document.getElementById('addrPhone').value = '';
@@ -2371,7 +2308,7 @@ async function doCheckout(){
 
     tip.textContent = '';
     const okMsg = data.message || '下单成功，等待商家发货';
-    // 地址弹窗直接关掉，用独立的小弹窗告知结果（弹窗尺寸固定，不会上下被遮）
+    
     closeAddress();
     showOrderSuccess(okMsg, addr);
 
@@ -2383,7 +2320,7 @@ async function doCheckout(){
     tip.classList.remove('ok');
     tip.textContent = '网络异常，请稍后重试';
   } finally {
-    // 成功后保持锁定（购物袋已清空，避免重复提交空单）；失败才允许重试
+    
     if (succeeded){
       btn.textContent = '订单已提交';
       document.getElementById('addrDetail').disabled = true;
@@ -2426,21 +2363,16 @@ document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') { closeCart(); closeCS(); }
 });
 
-/* ============================================================
-   登录 / 用户状态
-   ============================================================ */
 const USER_KEY = 'kaomianbao_user';
 let currentUser = null;
 let afterLogin = null;
 let currentProduct = null;
-// authToken 已在脚本开头（API_ORIGIN 之后）声明并读盘，此处不再重复声明
 
 try {
   const rawUser = localStorage.getItem(USER_KEY);
   if (rawUser) currentUser = JSON.parse(rawUser) || null;
 } catch (e) { currentUser = null; }
 
-// 带鉴权头的请求头；未登录（无 token）时仅带 Content-Type，后端按旧式 id+name 兼容
 function authHeaders(){
   const h = { 'Content-Type': 'application/json' };
   if (authToken) h['Authorization'] = 'Bearer ' + authToken;
@@ -2454,13 +2386,13 @@ function renderUser(){
 }
 
 function onUserClick(){
-  // 已登录：进个人中心（账号信息 / 地址簿 / 修改密码，退出登录也在里面）；未登录：弹登录
+  
   if (currentUser) openAccount();
   else openLogin(null);
 }
 
 function clearAuthForms(){
-  // 登录 / 注册退出后强制清空曾经填写的信息
+  
   ['loginName','loginPassword','loginEmail','loginCode',
    'regName','regPassword','regPassword2','regAge','regEmail','regCode'].forEach(function(id){
     const el = document.getElementById(id);
@@ -2502,14 +2434,13 @@ function showLoginBox(){
   document.getElementById('loginBox').style.display = '';
   document.getElementById('registerBox').style.display = 'none';
   document.getElementById('loginSub').textContent = '还没有账号？点「注册新账号」用姓名 + 密码新建一个';
-  switchLoginMode('pwd');   // 每次打开都回到密码登录，避免上次停在邮箱模式
+  switchLoginMode('pwd');   
   // 切回登录时清空注册区残留
   ['regName','regPassword','regPassword2','regAge'].forEach(function(id){
     const el = document.getElementById(id); if (el) el.value = '';
   });
 }
 
-/* ---------- 登录方式切换：密码登录 / 邮箱验证码 ---------- */
 let loginMode = 'pwd';   // 'pwd' | 'email'
 
 function switchLoginMode(mode){
@@ -2530,8 +2461,7 @@ function switchLoginMode(mode){
   }, 60);
 }
 
-/* ---------- 找回账号 / 重置密码：两种用途切换 ---------- */
-let fpMode = 'email';   // 'email' 重置密码 | 'account' 找回账号名
+let fpMode = 'email';   
 
 function switchFpMode(mode){
   fpMode = (mode === 'account') ? 'account' : 'email';
@@ -2551,7 +2481,6 @@ function switchFpMode(mode){
   if (tip){ tip.textContent = ''; tip.classList.remove('ok'); }
 }
 
-/* ---------- 邮箱验证码发送（通用，带 60 秒倒计时） ---------- */
 const _codeTimers = {};   // 按钮 id -> interval
 
 function _startCountdown(btnId, seconds){
@@ -2575,7 +2504,7 @@ function _startCountdown(btnId, seconds){
 }
 
 async function sendEmailCode(email, purpose, btnId){
-  // 提示显示在各自弹窗里：登录 / 注册 / 重置 / 找回账号 / 绑定邮箱
+  
   const TIP_OF = {
     login: 'emailTip', register: 'regCodeTip', reset: 'fpTip',
     forgot: 'fpAccResult', bind: 'bindTip'
@@ -2664,7 +2593,6 @@ function closeLogin(){
   clearAuthForms();
 }
 
-/* ---------- 找回账号 / 重置密码（登录页入口，未登录） ---------- */
 function openForgotPassword(){
   closeLogin();
   const tip = document.getElementById('fpTip');
@@ -2894,15 +2822,6 @@ async function doRegister(){
   }
 }
 
-/* ============================================================
-   悬浮客服（商品咨询 / 联系商家 / 售后客服）
-   ------------------------------------------------------------
-   售前客服（consult）：只与**具体商家**的客服沟通 —— 入口只有两个：
-       1. 商品详情页「咨询这件商品」→ 该商品所属商家
-       2. 我的订单卡片「联系商家客服」→ 该订单所属商家
-       不再有「平台公共客服」，每次打开都是一段全新对话（不恢复历史记录）。
-   售后客服（after）：调用后端 /api/after-sales → 售后模块（需登录）
-   ============================================================ */
 let csMode = 'after';
 const csHistory = { consult: [], after: [] };
 const CS_META = {
@@ -2918,16 +2837,15 @@ const CS_META = {
 let merchantTimer = null;
 const merchantSeen = {};
 let merchantChatId = null;   // 当前正在沟通的商户（商品所属商家）
-const consultCache = {};     // 每个商家各存一份本地聊天记录，切换商家时不串号
-let chatGeneration = 0;      // 切换账号 / 退出时自增，丢弃过期的异步响应
+const consultCache = {};     
+let chatGeneration = 0;      
 let humanNoticed = false;    // 是否已显示过"转人工"提示（避免重复）
-let consultMerchant = null;  // 本次售前客服对接的商家 {id, name}
-let consultProduct = null;   // 本次售前客服咨询的商品（可为 null，从订单入口进入时）
-let consultCandidates = [];  // 订单里有多件商品时的候选列表（面板里让顾客自己选）
+let consultMerchant = null;  
+let consultProduct = null;   
+let consultCandidates = [];  
 let csAfterSession = null;
 let csSending = false;
 
-/* 售后 session_id 持久化，刷新后恢复 */
 function getAfterSessionKey(){
   if (!currentUser) return null;
   return 'kaomianbao_after_session_' + currentUser.id;
@@ -2947,16 +2865,12 @@ function saveAfterSession(sid){
   } catch(e){}
 }
 
-/* 「人工」转接由后端判定：顾客累计说出满 3 次“人工”，
-   后端把会话标记 needs_human 并通知商家（此处不再前端计数）*/
-
 function toggleCS(){
   const panel = document.getElementById('csPanel');
   if (panel.classList.contains('open')) closeCS();
   else openAfterSales();   // 右下角悬浮按钮 = 售后客服
 }
 
-/* 售前客服入口一：商品详情页「咨询这件商品」→ 绑定该商品所属商家 */
 function openProductCS(){
   if (!currentProduct){
     toast('请先打开一件商品');
@@ -2972,10 +2886,8 @@ function openProductCS(){
   openCS('consult');
 }
 
-/* 售前客服入口二：首页「咨询售前客服」→ 先选店铺 / 商品
-   （原来只有「去挑选商品」一个按钮，顾客有问题却找不到咨询入口） */
 function openPresalePicker(){
-  // 正在看某件商品：直接找这件商品的店铺，不用再选
+  
   if (currentProduct && currentProduct.owner_id){
     openProductCS();
     return;
@@ -3021,7 +2933,7 @@ function renderPresaleList(){
     '</div>';
   }).join('');
 }
-/* 选定店铺（可选带一件商品）→ 打开售前客服 */
+
 function startConsult(merchantId, merchantName, productId){
   closePresalePicker();
   consultMerchant = { id: String(merchantId || ''), name: merchantName || '商家客服' };
@@ -3031,14 +2943,12 @@ function startConsult(merchantId, merchantName, productId){
   openCS('consult');
 }
 
-/* 售前客服入口三：我的订单「联系商家客服」→ 绑定该订单所属商家；
-   订单里有多件商品时，先把候选商品带进面板让顾客自己选（不再默认第一件） */
 function openOrderMerchantCS(merchantId, merchantName, productId){
   let mid = merchantId || '';
   let mname = merchantName || '商家客服';
   let items = [];
 
-  // 新写法：直接把按钮传进来，从 data-* 读商家与候选商品
+  
   if (merchantId && typeof merchantId === 'object' && merchantId.dataset){
     const el = merchantId;
     mid = el.dataset.mid || '';
@@ -3110,14 +3020,14 @@ function setCSMode(mode){
   const csInput = document.getElementById('csInput');
   csInput.placeholder = meta.ph;
   csInput.title = meta.title || meta.ph;   // 鼠标悬停可看完整提示（窄屏也不会丢信息）
-  // 「人工」按钮只在售后客服面板提供（连续 3 次由后端自动转人工）
+  
   const humanBtn = document.getElementById('csHuman');
   if (humanBtn) humanBtn.style.display = (mode === 'after') ? '' : 'none';
   updateCSProduct();
   renderCSMessages();
 
   if (mode === 'consult'){
-    // 售前客服：打开时显示与该商家的历史记录（每个商家各一份，可回看），并开始轮询商家回复
+    
     if (merchantTimer){ clearInterval(merchantTimer); merchantTimer = null; }
     if (ensureMerchantThread()) loadConsultHistory();
     startMerchantPolling();
@@ -3138,7 +3048,7 @@ function updateCSProduct(){
     box.innerHTML = '';
     return;
   }
-  // 一个订单里有多件商品：先让顾客选咨询哪一件
+  
   if ((consultCandidates || []).length > 1){
     box.style.display = 'block';
     box.innerHTML = '<div class="cs-pick-tip">要咨询哪件商品？（不选也可以直接问店铺）</div>' +
@@ -3162,7 +3072,6 @@ function updateCSProduct(){
   }
 }
 
-/* 顾客身份：已登录用账号，否则用本地游客 ID，保证商家能区分会话 */
 function getChatUser(){
   if (currentUser) return { id: String(currentUser.id), name: currentUser.name };
   let gid = null;
@@ -3174,13 +3083,11 @@ function getChatUser(){
   return { id: gid, name: '游客 ' + gid.slice(-4) };
 }
 
-/* 本次售前客服对接的商家：只认显式入口指定的商家，没有就返回 null（不再有平台公共客服） */
 function currentMerchant(){
   if (consultMerchant && consultMerchant.id) return consultMerchant;
   return null;
 }
 
-/* 切换到不同商家时把聊天记录存回该商家自己的桶，再取新商家的桶，避免消息混在一起 */
 function ensureMerchantThread(){
   const m = currentMerchant();
   if (!m) return null;
@@ -3193,13 +3100,12 @@ function ensureMerchantThread(){
   return m;
 }
 
-/* 打开某商家的售前客服：把与这家商家的历史记录读出来上屏（每个商家独立，可回看） */
 async function loadConsultHistory(){
   const u = getChatUser();
   const m = currentMerchant();
   if (!m) return;
   const gen = chatGeneration;
-  // 先把该商家自己的本地桶清空，用服务端记录重建（切换商家不会互相串）
+  
   csHistory.consult = [];
   Object.keys(merchantSeen).forEach(function(k){ delete merchantSeen[k]; });
   renderCSMessages();
@@ -3239,13 +3145,13 @@ async function loadMerchantMessages(initial){
     const hist = csHistory[csMode] || [];
     (data.messages || []).forEach(function(msg){
       const role = msg.role === 'user' ? 'user' : 'bot';
-      // 已经上屏的同一条：只同步最新已读状态（商家点进会话 → 我这条要翻成「已读」）
+      
       const known = hist.find(function(m){ return m.serverId === msg.id; });
       if (known){ applyReadFlags(known, msg); return; }
       if (merchantSeen[msg.id]) return;
       merchantSeen[msg.id] = true;
-      // 与发送时已乐观渲染、但尚未拿到服务端 id 的本地气泡对账：
-      // 按时间顺序找到最早一条未关联的同角色同文本气泡，只关联不重复插入
+      
+      
       const local = hist.find(function(m){
         return m.role === role && m.text === msg.text && !m.linked;
       });
@@ -3255,14 +3161,14 @@ async function loadMerchantMessages(initial){
         applyReadFlags(local, msg);
         return;
       }
-      // user=顾客气泡；bot/merchant 都按机器/商家回答气泡展示
+      
       const entry = { role: role, text: msg.text, linked: true, serverId: msg.id };
       applyReadFlags(entry, msg);
       hist.push(entry);
       added = true;
     });
     renderCSMessages();
-  } catch (e) { /* 静默 */ }
+  } catch (e) {  }
 }
 
 /* 加载售后客服历史消息（刷新后恢复） */
@@ -3282,7 +3188,7 @@ async function loadAfterMessages(){
                   read_user: msg.read_user, read_agent: msg.read_agent });
     });
     renderCSMessages();
-  } catch(e){ /* 静默 */ }
+  } catch(e){  }
 }
 
 function startMerchantPolling(){
@@ -3292,7 +3198,6 @@ function startMerchantPolling(){
   }, 4000);
 }
 
-/* ---------- 售后「转人工」：轮询人工客服（平台侧）的回复 ---------- */
 let afterHumanTimer = null;
 const afterHumanSeen = {};
 
@@ -3306,7 +3211,6 @@ function stopAfterHumanPolling(){
   if (afterHumanTimer){ clearInterval(afterHumanTimer); afterHumanTimer = null; }
 }
 
-/* 只取人工客服（role=merchant）的回复追加到售后会话，避免重复显示自己的消息 */
 async function pollAfterHuman(){
   if (!currentUser) return;
   try {
@@ -3318,16 +3222,15 @@ async function pollAfterHuman(){
     (data.messages || []).forEach(function(msg){
       if (msg.role !== 'merchant' || afterHumanSeen[msg.id]) return;
       afterHumanSeen[msg.id] = true;
-      // 客服回复我，说明我之前的消息都被读过了；这条回复此刻正显示在面板里 → 已读
+      
       markOwnAfterRead(false);
       csHistory.after.push({ role: 'bot', text: msg.text, read_user: true, read_agent: true });
       added = true;
     });
     if (added && csMode === 'after') renderCSMessages();
-  } catch (e) { /* 静默 */ }
+  } catch (e) {  }
 }
 
-/* 客服已经回复 → 我之前发的消息在服务端已被标记「客服已读」，本地同步过来 */
 function markOwnAfterRead(rerender){
   let changed = false;
   (csHistory.after || []).forEach(function(m){
@@ -3337,7 +3240,6 @@ function markOwnAfterRead(rerender){
   return changed;
 }
 
-/* 「人工」按钮：等同于顾客说一次「人工」，连续 3 次由后端自动转人工客服 */
 function askHuman(){
   const input = document.getElementById('csInput');
   if (!input) return;
@@ -3345,7 +3247,6 @@ function askHuman(){
   csSend();
 }
 
-/* 登录 / 退出 / 切换账号时清空本地聊天状态，避免看到上一个账号的记录 */
 function resetChatState(){
   chatGeneration++;
   humanNoticed = false;
@@ -3389,7 +3290,6 @@ function renderCSMessages(){
   box.scrollTop = box.scrollHeight;
 }
 
-/* 消息后面的「已读 / 未读」小字：自己发的看对方是否已读，收到的看自己是否已读 */
 function csReadLabel(m){
   if (m.role !== 'user' && m.role !== 'bot' && m.role !== 'merchant') return '';
   const own = m.role === 'user';
@@ -3411,7 +3311,7 @@ function csPush(role, text){
   const own = role === 'user';
   const entry = {
     role: role, text: text, linked: false,
-    // 自己发的：顾客侧已读、等对方读（显示「未读」）；收到的：自己正在看 → 顾客侧已读
+    
     read_user: true, read_merchant: !own, read_agent: !own,
   };
   csHistory[csMode].push(entry);
@@ -3482,13 +3382,13 @@ async function csSend(){
     showTyping(false);
 
     if (csMode === 'after'){
-      // 售后客服：回复字段是 reply（服务端已把问答存入历史，立即上屏）
+      
       if (!res.ok || data.ok === false){
         csPush('bot', data.reply || data.error || '抱歉，暂时无法回答。');
       } else if (data.reply){
         csPush('bot', data.reply);
       }
-      // 客服已经回复：自己刚发的那条在服务端已被标记「客服已读」，本地立刻同步（不再一直显示未读）
+      
       if (data.reply || data.needs_human) markOwnAfterRead();
       // 已转人工：开始轮询人工客服的回复
       if (data.needs_human) startAfterHumanPolling();
@@ -3504,7 +3404,7 @@ async function csSend(){
       return;
     }
 
-    // 统一客服：标记刚发送的用户消息，并把本地乐观气泡关联上，避免轮询重复渲染
+    
     if (data.message && data.message.id){
       merchantSeen[data.message.id] = true;
       const mine = (csHistory.consult || []).slice().reverse().find(function(m){
@@ -3519,14 +3419,14 @@ async function csSend(){
     }
 
     if (data.needs_human){
-      // 满 3 次"人工" → 已转人工，等待商家真人回复
+      
       if (!humanNoticed){
         humanNoticed = true;
         csPush('sys', '已为您转接人工客服，商家会尽快回复，请稍候。');
       }
       startMerchantPolling();
     } else if (!data.bot){
-      // 无自动回答（通常已在转人工后），交给轮询拉取商家回复
+      
       startMerchantPolling();
     }
   } catch (e) {
@@ -3545,37 +3445,12 @@ document.addEventListener('click', function(e){
   const fab   = document.getElementById('csFab');
   if (!panel.classList.contains('open')) return;
   if (panel.contains(e.target) || fab.contains(e.target)) return;
-  // 点击开启客服的按钮 / 弹窗时不关闭，避免“刚打开就被关掉”
+  
   if (e.target.closest && e.target.closest('.cs-opener, .modal-overlay, .nav-user')) return;
   closeCS();
 });
 
-/* ============================================================
-   物流查询
-   ------------------------------------------------------------
-   所有业务数据（是否存在、承运商、发货时间、预计送达、当前状态）
-   均由后端 Python 返回，前端只做：
-     1. 调用接口并区分「未查到 / 服务异常 / 网络异常」
-     2. 用后端返回的预计送达时间减去当前时间，得出剩余时长
-     3. 按后端返回的 statusStep 点亮进度条
-
-   后端接口约定：
-   GET  {API_BASE}/api/logistics/{code}
-
-   200 OK：
-   {
-     "code": "KM202609001",
-     "carrier": "Kaomianbao 速运",
-     "shippedAt": "2026-09-08T10:30:00",
-     "estimatedArrival": "2026-09-11T18:00:00",
-     "statusStep": 2,
-     "statusText": "运输中"        // 可选，缺省时前端用内置文案
-   }
-
-   404 Not Found：
-   { "message": "未查询到该物流单号" }   // 或 FastAPI 默认的 "detail"
-   ============================================================ */
-const API_BASE = API_ORIGIN;   // 同源留空；跨域时填后端地址，例如 'http://127.0.0.1:8000'
+const API_BASE = API_ORIGIN;   
 
 const STEPS       = ['已下单', '已发货', '运输中', '派送中', '已签收'];
 const BADGE_CLASS = ['badge-gray', 'badge-blue', 'badge-blue', 'badge-orange', 'badge-green'];
@@ -3584,11 +3459,6 @@ let trackController = null;   // 用于取消上一次未完成的请求
 let trackData       = null;   // 最近一次查询结果
 let trackTimer      = null;   // 每秒刷新计时器
 
-/* 物流状态实时计算（与后端 db_logistics.compute_status 规则一致）
-   now >= 预计送达                    → 4 已签收
-   剩余 <= min(1小时, 总时长 25%)      → 3 派送中
-   已用 < 总时长 15%                   → 1 已发货
-   其余                                → 2 运输中 */
 const DELIVERY_WINDOW_MS = 3600 * 1000;
 function computeTrackStep(shippedAt, estimatedArrival, now){
   const s = new Date(String(shippedAt == null ? '' : shippedAt).replace(' ', 'T')).getTime();
@@ -3696,7 +3566,7 @@ function renderTrackView(){
   const d = trackData;
   if (!d) return;
 
-  // 状态由前端根据「发货时间 / 预计送达 / 当前时间」实时计算
+  
   const step = computeTrackStep(d.shippedAt, d.estimatedArrival);
 
   // 状态徽章
@@ -3762,13 +3632,6 @@ document.getElementById('csInput').addEventListener('keydown', function(e){
   if (e.key === 'Enter') { e.preventDefault(); csSend(); }
 });
 
-/* ============================================================
-   我的订单 / 退换货
-   ------------------------------------------------------------
-   · 登录后在「我的订单」查看自己的全部订单与物流状态
-   · 已签收的订单可申请退换货 → 后端校验物流状态并生成新的退货物流单号
-   · 用户点「我已发出」后，按寄出时计算的时间倒计时，到时自动完成退换
-   ============================================================ */
 let myOrdersData = [];
 let myReturnsData = [];
 let ordersTimer = null;
@@ -3833,8 +3696,8 @@ function groupOrders(orders){
   const map = {};
   const groups = [];
   orders.forEach(function(o){
-    // 已发货按运单号合并（一个运单号对应一家店铺的包裹）；
-    // 未发货按「结算分组 + 商家」拆分：混合下单时不同店铺各自成单、各自发货
+    
+    
     const key = o.waybill ? ('W:' + o.waybill)
               : ('G:' + (o.group_id || o.id) + ':M' + (o.merchant_id || ''));
     if (!map[key]){
@@ -3865,12 +3728,12 @@ function renderOrderGroup(g){
     let btns = '';
     if (avail > 0){
       if (unshipped){
-        // 未发货：退款 / 退货都无需理由、直接完成；不能申请换货
+        
         btns =
           '<button class="mini-btn primary" onclick="applyReturn(\'' + o.id + '\',\'refund\',' + avail + ',false,true)">申请退款（无需理由）</button>' +
           '<button class="mini-btn" onclick="applyReturn(\'' + o.id + '\',\'return\',' + avail + ',false,true)">申请退货（无需理由）</button>';
       } else {
-        // 已发货未签收也允许退/换/退款；未签收只能全部退回，数量固定为整单
+        
         const returnTip = received ? '申请退货' : '申请退货(整单)';
         const exchangeTip = received ? '申请换货' : '申请换货(整单)';
         btns =
@@ -3893,11 +3756,11 @@ function renderOrderGroup(g){
       '</div>';
   }).join('');
 
-  // 联系商家客服：只对接这笔订单所属的商家（没有商家归属时不显示）
-  // class 必须带 cs-opener：页面底部「点空白处关闭客服面板」的监听会跳过 .cs-opener，
-  // 否则一次点击会先打开面板、再被同一个点击事件冒泡关掉（表现成「点了没反应」）
+  
+  
+  
   const mid = g.merchant_id || (g.items[0] && g.items[0].merchant_id) || '';
-  // 一笔订单可能有多件商品：把候选商品一起带上，进面板后由顾客自己选（不再默认第一件）
+  
   const csItems = [];
   const csSeen = {};
   g.items.forEach(function(o){
@@ -3912,7 +3775,7 @@ function renderOrderGroup(g){
         '" onclick="openOrderMerchantCS(this)">联系商家客服</button>'
     : '';
 
-  // 生命周期状态（业务状态机）：待发货 / 待收货 / 已完成 / 已取消
+  
   const os = (g.items[0] && g.items[0].order_status) || 'pending_shipment';
   const OS_TEXT = { pending_shipment: '待发货', shipped: '待收货', completed: '已完成', cancelled: '已取消' };
   const osText = OS_TEXT[os] || '待发货';
@@ -3942,7 +3805,6 @@ function renderOrderGroup(g){
     '</div>';
 }
 
-// 确认收货 / 取消订单：遍历该分组下每个订单调用后端端点（带顾客令牌）
 async function confirmReceipt(orderIds){
   if (!orderIds || !orderIds.length) return;
   for (const oid of orderIds){
@@ -3978,15 +3840,15 @@ function renderReturnCard(r){
   else if (code === 'shipping' || code === 'received' || code === 'returning' || code === 'delivering') cls = 'badge-orange';
   else if (code === 'rejected') cls = 'badge-gray';
   const typeText = r.type_text || '退货';
-  // 退款经平台仲裁判定支持顾客后，也会进入与退货一致的「凭平台单号寄回」阶段
+  
   const remain = (code === 'shipping')
     ? '<div class="return-remain" data-eta="' + escapeHtml(r.estimated_arrival || '') + '"></div>'
     : '';
 
   let action = '';
   if (code === 'approved' || code === 'pending'){
-    // 商家同意（或平台仲裁支持顾客）后即可寄回：顾客填写寄回物流单号，再点「我已发出」。
-    // 换货必须由顾客自己填寄回单号；退货可用平台生成的单号。
+    
+    
     const prefill = (r.type === 'exchange') ? '' : (r.return_waybill || '');
     action =
       '<input class="track-input" id="waybill_' + escapeHtml(r.id) + '" maxlength="32" ' +
@@ -4061,7 +3923,7 @@ function tickReturns(){
     el.textContent = '剩余 ' + (h ? h + ' 小时 ' : '') + (m ? m + ' 分钟 ' : '') + s + ' 秒';
   });
 
-  /* 倒计时结束后切换状态：退货→退换完成；换货→商家已签收，等商家重新发货 */
+  
   document.querySelectorAll('[data-return-badge]').forEach(function(badge){
     const row = myReturnsData.find(function(x){ return x.id === badge.dataset.returnBadge; });
     if (!row || row.status_code !== 'shipping' || !row.estimated_arrival) return;
@@ -4081,12 +3943,6 @@ function tickReturns(){
   });
 }
 
-/* ============================================================
-   申请退 / 换 / 退款
-   ------------------------------------------------------------
-   一律走弹窗：可选数量（一件一件退），必填原因（未发货可不填）。
-   原来的 window.prompt 只能一次退整单，且很多浏览器会拦。
-   ============================================================ */
 let rtCtx = null;
 
 function applyReturn(orderId, type, maxQty, received, unshipped){
@@ -4113,7 +3969,7 @@ function applyReturn(orderId, type, maxQty, received, unshipped){
 
   const qtyEl = document.getElementById('rtQty');
   qtyEl.max = String(max);
-  qtyEl.value = String(isReceived ? 1 : max);   // 已签收默认 1 件（一件一件退），整单情形默认全部
+  qtyEl.value = String(isReceived ? 1 : max);   
   const locked = (!isReceived && !isUnshipped);  // 已发出未签收 → 整单
   qtyEl.disabled = locked;
   document.getElementById('rtMinus').disabled = locked;
@@ -4206,7 +4062,7 @@ async function submitReturn(){
 
 async function markReturnShipped(returnId){
   if (!currentUser) return;
-  // 换货等场景需要顾客自己填写寄回物流单号（退货可用平台生成的单号）
+  
   const input = document.getElementById('waybill_' + returnId);
   const waybill = (input ? input.value : '').trim();
   if (!waybill){ toast('请先填写你寄回的快递单号'); return; }
@@ -4242,9 +4098,6 @@ async function requestArbitration(returnId){
   }
 }
 
-/* ============================================================
-   Toast
-   ============================================================ */
 let toastTimer = null;
 function toast(msg){
   const el = document.getElementById('toast');
@@ -4254,21 +4107,19 @@ function toast(msg){
   toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2000);
 }
 
-/* ============================================================
-   初始化
-   ============================================================ */
 renderCart();
 renderUser();
 setCSMode('after');
 navigate('home');
 loadProducts();
-ensureRegions();   // 预取省市区数据：点开「填写收货地址」时下拉已经就绪，不会先空一下
+ensureRegions();   
 if (authToken) loadCart();   // 已登录：用服务端购物车覆盖本地缓存
 
-/* 切回这个页面时重新拉一次商品：平台刚下架的商品立刻消失，不会停留在旧列表里 */
 document.addEventListener('visibilitychange', function(){
   if (document.visibilityState === 'visible') loadProducts();
 });
 </script>
+<script src="i18n/core.js"></script>
+<script src="i18n/customer.js"></script>
 </body>
 </html>

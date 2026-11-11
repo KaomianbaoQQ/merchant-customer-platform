@@ -4,8 +4,6 @@ import requests
 
 from 公共.app_config import dify_workflow
 
-# 密钥只从 config.json → dify.workflows.after_sales.api_key 读取
-# （或环境变量 KB_DIFY_AFTER_SALES_KEY），代码里不写明文。
 _CFG = dify_workflow("after_sales")
 API_KEY = _CFG["api_key"]
 DIFY_BASE_URL = _CFG["base_url"]
@@ -16,9 +14,7 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# Dify 中承载业务操作的输出字段（单操作="json"，多操作="ops_json"）
 BIZ_KEYS = ("ops_json", "json")
-
 
 def _pick_biz_payload(outputs):
     """
@@ -35,13 +31,11 @@ def _pick_biz_payload(outputs):
             return key, value
     return None, None
 
-
 def _resp_text(resp):
     try:
         return resp.text
     except Exception:
         return "无"
-
 
 def run_dify_workflow(user_input: str, user_id: str, user_role: str, user_name: str,
                       user_orders: str = "") -> dict:

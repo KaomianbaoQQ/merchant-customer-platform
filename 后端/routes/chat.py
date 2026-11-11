@@ -13,7 +13,6 @@ from 客服.auto_reply_service import handle_chat_message
 
 bp = Blueprint("merchant_chat", __name__, url_prefix="/api")
 
-
 @bp.post("/chat")
 def api_send():
     data = request.get_json(silent=True) or {}
@@ -36,12 +35,10 @@ def api_send():
     store.mark_read(merchant_id, str(user.get("id") or "guest").strip() or "guest", "user")
     return jsonify(result)
 
-
 @bp.get("/chat")
 def api_poll():
     merchant_id = str(request.args.get("merchant_id") or "platform").strip() or "platform"
     user_id = str(request.args.get("user_id") or "guest").strip() or "guest"
-    # 先标已读再取会话：返回的消息里已读标记就是最新的（商家 / 机器人发来的显示「已读」）
     store.mark_read(merchant_id, user_id, "user")
     thread = store.get_thread(merchant_id, user_id)
     return jsonify({

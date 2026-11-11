@@ -34,7 +34,6 @@ PRODUCTS_FILE = os.path.join(MERCHANT_DIR, "products.json")
 CHAT_FILE = os.path.join(MERCHANT_DIR, "chat.json")
 KNOWLEDGE_MAP_FILE = os.path.join(MERCHANT_DIR, "knowledge_map.json")
 IMAGE_DIR = os.path.join(MERCHANT_DIR, "images")
-# 商品资料目录（与 公共/knowledge.py 的默认值一致；如需自定义见 config.json 的 product_dir）
 PRODUCT_DOC_DIR = os.path.join(ROOT_DIR, "商品咨询")
 
 # MySQL 里要清空的业务表（region 是行政区划参考数据，必须保留）
@@ -46,7 +45,6 @@ MYSQL_TABLES = [
     "email_code", "user", "merchant",
 ]
 MONGO_COLLECTIONS = ["presale_threads", "after_sales_messages", "user_behaviors"]
-
 
 def _mysql_preview():
     conn = get_conn()
@@ -64,12 +62,10 @@ def _mysql_preview():
     finally:
         conn.close()
 
-
 def _mongo_preview():
     from 公共.chat_store import get_client
     db = get_client()[MONGO_CONFIG["database"]]
     return {c: db[c].count_documents({}) for c in MONGO_COLLECTIONS}
-
 
 def _file_preview():
     items = []
@@ -87,11 +83,9 @@ def _file_preview():
             items.append((IMAGE_DIR + "/*", "商品图片", f"{len(imgs)} 个文件"))
     return items
 
-
 def _write_json(path, value):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(value, f, ensure_ascii=False, indent=2)
-
 
 def clear_mysql():
     conn = get_conn()
@@ -99,7 +93,6 @@ def clear_mysql():
         with conn.cursor() as cur:
             cur.execute("SHOW TABLES")
             existing = {list(r.values())[0] for r in cur.fetchall()}
-            # 关掉外键检查，避免被引用表（order → return_order 等）挡住 TRUNCATE
             cur.execute("SET FOREIGN_KEY_CHECKS=0")
             for t in MYSQL_TABLES:
                 if t not in existing:
@@ -115,13 +108,11 @@ def clear_mysql():
     finally:
         conn.close()
 
-
 def clear_mongo():
     from 公共.chat_store import get_client
     db = get_client()[MONGO_CONFIG["database"]]
     for c in MONGO_COLLECTIONS:
         db[c].delete_many({})
-
 
 def clear_files():
     _write_json(PRODUCTS_FILE, [])
@@ -140,7 +131,6 @@ def clear_files():
             full = os.path.join(IMAGE_DIR, name)
             if os.path.isfile(full):
                 os.remove(full)
-
 
 def main():
     execute = "--yes" in sys.argv
@@ -179,7 +169,6 @@ def main():
     clear_files()
     print("✅ 商品 / 聊天文件 / 平台状态 / 知识库映射 / 商品资料 / 上传图片已清空")
     print("完成。")
-
 
 if __name__ == "__main__":
     main()

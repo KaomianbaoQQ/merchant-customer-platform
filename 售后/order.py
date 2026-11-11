@@ -56,7 +56,6 @@ CREATE TABLE IF NOT EXISTS `order` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单表';
 """
 
-# 订单生命周期（业务状态机，由事件驱动；与物流进度 status_step 0~4 区分）：
 #   pending_shipment 待发货（已下单，商家未发货）
 #   shipped          待收货（已发货，用户未确认）
 #   completed        已完成（用户确认收货 / 已签收）
@@ -89,7 +88,6 @@ CREATE TABLE IF NOT EXISTS `operate_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单操作日志表';
 """
 
-
 def _column_exists(cur, table_name, column_name):
     cur.execute(
         "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
@@ -97,7 +95,6 @@ def _column_exists(cur, table_name, column_name):
         (table_name, column_name),
     )
     return cur.fetchone() is not None
-
 
 def ensure_tables():
     """确保 cs.order 与 cs.operate_log 两张表都已存在。返回 (是否成功, 提示信息)"""
@@ -115,7 +112,6 @@ def ensure_tables():
                     f"ALTER TABLE {TABLE} "
                     "ADD COLUMN `quantity` INT DEFAULT 1 COMMENT '数量' AFTER `waybill`"
                 )
-                # 把老数据 goodsname 里的 " xN" 拆到 quantity，商品名还原为纯名字
                 cur.execute(f"SELECT id, goodsname FROM {TABLE}")
                 for row in cur.fetchall():
                     name, qty = split_goods_qty(row.get("goodsname"))
@@ -161,7 +157,6 @@ def ensure_tables():
                     f"ALTER TABLE {TABLE} "
                     "ADD COLUMN `phone` VARCHAR(32) DEFAULT NULL COMMENT '收货人电话' AFTER `address`"
                 )
-            # SKU 库存相关列：老表逐列补齐（CREATE TABLE IF NOT EXISTS 不会改已有表）
             new_columns = (
                 ("sku_id", "ADD COLUMN `sku_id` VARCHAR(128) DEFAULT NULL COMMENT 'SKU ID'"),
                 ("sku_name", "ADD COLUMN `sku_name` VARCHAR(255) DEFAULT NULL COMMENT '规格名称'"),
@@ -193,7 +188,6 @@ def ensure_tables():
     finally:
         conn.close()
 
-
 def _backfill_merchants(cur):
     """按 product_id 给存量订单补商家归属（商品已删除的订单保留 NULL，走名称兜底）。"""
     try:
@@ -217,7 +211,6 @@ def _backfill_merchants(cur):
                 (owner[0], owner[1], row["id"]),
             )
 
-
 def _write_log(cur, operate, order_id, goodsname, old_goodsname, operator):
     """
     写一条操作日志（复用业务操作同一个事务/游标，保证原子）。
@@ -230,7 +223,6 @@ def _write_log(cur, operate, order_id, goodsname, old_goodsname, operator):
         (operate, order_id, goodsname, old_goodsname,
          operator.get("name"), operator.get("id"), operator.get("role")),
     )
-
 
 def get_logs(limit=50):
     """查看最近的操作日志（按时间倒序）"""
@@ -251,7 +243,6 @@ def get_logs(limit=50):
     finally:
         conn.close()
 
-
 def _gen_id():
     """用户没给 insert_id 时，自动生成一个订单号。
 
@@ -260,17 +251,14 @@ def _gen_id():
     """
     return "ORD" + datetime.now().strftime("%Y%m%d%H%M%S") + uuid.uuid4().hex[:8].upper()
 
-
 def _s(value):
     """把 None / 非字符串统一转成去掉首尾空格的字符串"""
     if value is None:
         return ""
     return str(value).strip()
 
-
 # 商品名末尾的 " x5" / " ×5" 数量后缀
 _QTY_SUFFIX_RE = re.compile(r"\s*[xX×*]\s*(\d+)\s*$")
-
 
 def split_goods_qty(goodsname):
     """把 "机械键盘 x5" 拆成 ("机械键盘", 5)；无后缀则返回 (原名字, None)。"""
@@ -279,7 +267,6 @@ def split_goods_qty(goodsname):
     if not m:
         return name, None
     return name[:m.start()].strip(), int(m.group(1))
-
 
 def effective_quantity(row):
     """订单数量：优先用 quantity 字段；老数据从 goodsname 的 " xN" 后缀解析；默认 1。"""
@@ -294,21 +281,17 @@ def effective_quantity(row):
     _name, q = split_goods_qty(row.get("goodsname"))
     return q or 1
 
-
 def base_goodsname(goodsname):
     """去掉数量后缀后的商品名。"""
     return split_goods_qty(goodsname)[0]
 
-
 # 7 位纯数字快递单号（商家发货时填写）
 WAYBILL_RE = re.compile(r"^\d{7}$")
-
 
 def normalize_waybill(waybill):
     """校验并返回 7 位快递单号；不合法返回空字符串。"""
     code = _s(waybill)
     return code if WAYBILL_RE.match(code) else ""
-
 
 def order_status(row):
     """订单当前的物流档位和文案。
@@ -330,11 +313,8 @@ def order_status(row):
         return 0, "待发货"
     return 4, "已签收"
 
-
-# ==================== 一、严格识别 Dify 返回的业务数据 ====================
 # ID 是编号，不会含空格，可以按逗号/顿号/分号/空白拆分
 _ID_SPLIT_RE = re.compile(r"[,，、;；\s]+")
-# 商品名可能自带空格（如 "iPhone 15"），只按逗号/顿号/分号拆分，不能按空白拆
 _GOODS_SPLIT_RE = re.compile(r"[,，、;；]+")
 
 # 每种操作对应自己的 ID 字段与商品名字段
@@ -351,7 +331,6 @@ _GOODS_FIELD = {
     "select": "query_goodsname",
 }
 
-
 def _strip_code_fence(text):
     """去掉 ```json ... ``` 这类 markdown 包裹"""
     t = text.strip()
@@ -364,14 +343,12 @@ def _strip_code_fence(text):
         t = "\n".join(lines).strip()
     return t
 
-
 def _split_multi(value, pattern=None):
     """把 "X1,X2,X3" / "A1、A2、A3" 拆成 ['X1','X2','X3']"""
     s = _s(value)
     if not s:
         return []
     return [p for p in (pattern or _ID_SPLIT_RE).split(s) if p]
-
 
 def _expand_op(op):
     """
@@ -409,7 +386,6 @@ def _expand_op(op):
                 new_op[goods_field] = goods_list[i] if i < len(goods_list) else ""
         expanded.append(new_op)
     return expanded
-
 
 def parse_ops_payload(raw):
     """
@@ -462,8 +438,6 @@ def parse_ops_payload(raw):
         normalized.extend(_expand_op(item))
     return normalized, None
 
-
-# ============================ 归属查询 ============================
 def get_order_owner(order_id):
     """
     查询某个订单属于哪个用户，返回 user_id（字符串）；订单不存在返回 None。
@@ -481,8 +455,6 @@ def get_order_owner(order_id):
     finally:
         conn.close()
 
-
-# ==================== 用户订单列表（含运单号/物流状态，供上传工作流 / 我的订单） ====================
 def get_orders_by_user(user_id, limit=None):
     """
     查询某个用户自己的订单，LEFT JOIN cs.logistics 带出运单号与物流状态。
@@ -542,8 +514,6 @@ def get_orders_by_user(user_id, limit=None):
                 r[k] = format_datetime(r[k])
     return rows
 
-
-# ==================== 用户订单文本（无论输入什么都上传全部订单） ====================
 def build_user_orders(user, limit=None):
     """
     把当前用户的【全部】订单（含运单号 / 物流状态）整理成文本，随工作流入参上传。
@@ -572,8 +542,6 @@ def build_user_orders(user, limit=None):
             "用户提到退款/退货/换货时，请根据此列表确认具体订单，不要反问是哪一单）"
     return text
 
-
-# ============================ 增 ============================
 def insert_order(op, operator, scope_user_id=None):
     """scope_user_id 这里用不到：新增时的操作人本来就取自当前登录用户。"""
     order_id = _s(op.get("insert_id"))
@@ -610,8 +578,6 @@ def insert_order(op, operator, scope_user_id=None):
     finally:
         conn.close()
 
-
-# ==================== 下单（电商结算写入 order，带地址） ====================
 def create_checkout_orders(items, operator, address, waybill=None, phone=None,
                            receiver_name=None, group_id=None, lines=None,
                            reservation_id=None):
@@ -642,8 +608,6 @@ def create_checkout_orders(items, operator, address, waybill=None, phone=None,
     if len(address or "") > 255:
         return False, "收货地址过长（最多 255 字）", []
 
-    # 服务端按 product_id / sku_id 重新取权威商品与规格数据，防止前端篡改名称、价格、规格。
-    # lines 由库存预占阶段传入（已校验并合并同一 SKU）；未传时自行规范化，兼容旧调用。
     if lines is None:
         from 公共 import inventory
         ok, msg, lines = inventory.normalize_order_items(items)
@@ -707,7 +671,6 @@ def create_checkout_orders(items, operator, address, waybill=None, phone=None,
     finally:
         conn.close()
 
-
 def set_pay_status(reservation_id, status):
     """按库存预占单号批量更新一次结算的订单支付状态。"""
     rid = _s(reservation_id)
@@ -727,7 +690,6 @@ def set_pay_status(reservation_id, status):
         return False
     finally:
         conn.close()
-
 
 def pay_by_order(order_id, user_id=None):
     """模拟支付成功：把该订单所在结算组（同 reservation_id）置为已支付，
@@ -767,8 +729,6 @@ def pay_by_order(order_id, user_id=None):
         return False, "库存预占已失效（可能已超时），请重新下单：" + str(msg_c)
     return True, "支付成功，库存已扣减"
 
-
-# ============================ 删 ============================
 def delete_order(op, operator, scope_user_id=None):
     order_id = _s(op.get("delete_id"))
     goods = _s(op.get("delete_goodsname"))
@@ -812,8 +772,6 @@ def delete_order(op, operator, scope_user_id=None):
     finally:
         conn.close()
 
-
-# ============================ 改 ============================
 def update_order(op, operator, scope_user_id=None):
     order_id = _s(op.get("update_id"))
     goods = _s(op.get("update_goodsname"))
@@ -849,8 +807,6 @@ def update_order(op, operator, scope_user_id=None):
     finally:
         conn.close()
 
-
-# ============================ 查 ============================
 def select_order(op, operator, scope_user_id=None):
     order_id = _s(op.get("query_id"))
     goods = _s(op.get("query_goodsname"))
@@ -904,15 +860,12 @@ def select_order(op, operator, scope_user_id=None):
     finally:
         conn.close()
 
-
-# ============================ 统一分发 ============================
 OPERATIONS = {
     "insert": insert_order,
     "delete": delete_order,
     "update": update_order,
     "select": select_order,
 }
-
 
 def execute_ops(ops_list, user_name="", user_id="", user_role=""):
     """
@@ -954,8 +907,6 @@ def execute_ops(ops_list, user_name="", user_id="", user_role=""):
 
     return results
 
-
-# ==================== 商家销量统计（按商品聚合订单） ====================
 def product_order_stats(products):
     """按商品汇总订单，供商户后台展示「浏览量 / 销量 / 销售额 / 买家」。
 
@@ -1033,8 +984,6 @@ def product_order_stats(products):
         del item["_buyers"]
     return stats
 
-
-# ==================== 商家订单管理（查看全部订单 / 发货） ====================
 def _order_owned_by(order, product_ids, product_names, strict=False, merchant_id=None):
     """订单是否属于该商户。
 
@@ -1054,7 +1003,6 @@ def _order_owned_by(order, product_ids, product_names, strict=False, merchant_id
             return True
         return (not strict) and (base_goodsname(order.get("goodsname")) in product_names)
     return base_goodsname(order.get("goodsname")) in product_names
-
 
 def _order_entry(r):
     """把一行订单 + 物流整理成商家 / 聊天界面可用的字典。"""
@@ -1083,7 +1031,6 @@ def _order_entry(r):
         "status_text": text,
         "create_time": str(r.get("create_time") or ""),
     }
-
 
 def _query_orders(user_id=None, limit=1000, where_extra="", params_extra=None):
     """查询订单（LEFT JOIN 物流）。where_extra 为额外 SQL 条件（以 AND 开头）。"""
@@ -1117,7 +1064,6 @@ def _query_orders(user_id=None, limit=1000, where_extra="", params_extra=None):
     finally:
         conn.close()
 
-
 def list_orders_for_owner(product_ids, product_names, user_id=None, status=None,
                           limit=1000, merchant_id=None):
     """商户订单列表：只包含该商户商品的订单，可按顾客 / 发货状态过滤。
@@ -1133,7 +1079,6 @@ def list_orders_for_owner(product_ids, product_names, user_id=None, status=None,
     params_extra = []
     if mid:
         # 新订单：按 merchant_id 精确匹配；
-        # 老订单（merchant_id 为空）：product_id 或商品名仍属于本店
         legacy_match = []
         legacy_params = []
         if ids:
@@ -1181,7 +1126,6 @@ def list_orders_for_owner(product_ids, product_names, user_id=None, status=None,
         result = [e for e in result if e.get("can_ship")]
     return result
 
-
 def orders_belong_to_merchant(order_ids, merchant_id, product_ids, product_names):
     """给定一组订单ID，返回其中确实属于该商家的订单ID集合（用于物流物权校验）。"""
     ids_list = [str(x) for x in (order_ids or []) if str(x)]
@@ -1208,7 +1152,6 @@ def orders_belong_to_merchant(order_ids, merchant_id, product_ids, product_names
             owned.add(str(r["id"]))
     return owned
 
-
 def get_order_detail(order_id):
     """按订单号查询单条订单（含物流），不存在返回 None。"""
     ensure_logistics()
@@ -1229,7 +1172,6 @@ def get_order_detail(order_id):
             return cur.fetchone()
     finally:
         conn.close()
-
 
 def ship_orders(order_id, waybill, product_ids, product_names, delay_second=None, merchant_id=None):
     """商家发货：填写 7 位快递单号，把同一次结算中属于该商户的待发货订单一起发出。
@@ -1309,7 +1251,6 @@ def ship_orders(order_id, waybill, product_ids, product_names, delay_second=None
         tip += f"；另有 {len(skipped)} 笔因已申请售后未发出（{', '.join(skipped)}）"
     return True, tip, logistics
 
-
 def confirm_receipt(order_id, user_id):
     """用户确认收货：仅当订单为「待收货(shipped)」时置为「已完成(completed)」。
 
@@ -1348,7 +1289,6 @@ def confirm_receipt(order_id, user_id):
     finally:
         conn.close()
 
-
 def cancel_order(order_id, user_id):
     """发货前取消订单：仅当「待发货(pending_shipment)」时可取消。
 
@@ -1377,9 +1317,6 @@ def cancel_order(order_id, user_id):
             if status != "pending_shipment":
                 return False, "订单已发货或已完成，无法取消", status
             # 取消时按支付状态分别处理库存：
-            #   未支付 —— 预占还在（status=reserved），直接释放，货回到可售；
-            #   已支付 —— 支付时预占已 confirm（stock 已扣、sold 已加），
-            #             release 会因状态不是 reserved 失败，此时必须走
             #             「退款流水 + 库存回补」，否则订单取消了货却白扣。
             rid = _s(row.get("reservation_id"))
             paid = str(row.get("pay_status") or "") == "paid"

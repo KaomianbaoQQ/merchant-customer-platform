@@ -42,7 +42,6 @@ DEFAULTS = {
 _ensured = False
 _ensure_lock = threading.Lock()
 
-
 class InsufficientStock(Exception):
     """某个 SKU 可售数量不足。"""
     def __init__(self, sku_name, need, available):
@@ -50,7 +49,6 @@ class InsufficientStock(Exception):
         self.sku_name = sku_name
         self.need = need
         self.available = available
-
 
 def settings():
     """读取 config.json 的 inventory 段，缺失项用默认值补齐。"""
@@ -68,11 +66,9 @@ def settings():
             pass
     return out
 
-
 def _make_sku_id(pid, name):
     digest = hashlib.md5((str(pid) + "|" + str(name)).encode("utf-8")).hexdigest()[:12]
     return f"{pid}::{digest}"
-
 
 def sku_definitions(product):
     """返回商品的全部 SKU 定义；没有 skus 字段的旧商品自动补一个默认 SKU。
@@ -107,10 +103,7 @@ def sku_definitions(product):
         out.append({"sku_id": f"{pid}::default", "name": "默认规格", "price": base_price})
     return out
 
-
-# ------------------------------------------------------------
 # 表结构
-# ------------------------------------------------------------
 CREATE_SQL = (
     """
     CREATE TABLE IF NOT EXISTS `sku_stock` (
@@ -159,7 +152,6 @@ CREATE_SQL = (
     """,
 )
 
-
 def ensure_tables():
     """建表（幂等）。返回 (是否成功, 提示)。"""
     global _ensured
@@ -185,17 +177,13 @@ def ensure_tables():
         finally:
             conn.close()
 
-
 def _conn():
     ok, msg = ensure_tables()
     if not ok:
         raise RuntimeError(msg)
     return get_conn()
 
-
-# ------------------------------------------------------------
 # SKU 定义同步与查询
-# ------------------------------------------------------------
 def sync_skus(product, stocks=None):
     """把商品 JSON 里的 SKU 定义同步到库存表。
 
@@ -245,7 +233,6 @@ def sync_skus(product, stocks=None):
     finally:
         conn.close()
 
-
 def sync_all_products():
     """启动时为所有现有商品初始化 SKU 库存（不覆盖已有库存）。"""
     try:
@@ -258,7 +245,6 @@ def sync_all_products():
         if not ok:
             return False, msg
     return True, f"已同步 {len(products)} 个商品的 SKU 库存"
-
 
 def adjust_stock(sku_id, delta, reason=None):
     """增减库存（补货 / 盘盈盘亏）。delta 可正可负；扣减时不能低于已预占数。
@@ -301,7 +287,6 @@ def adjust_stock(sku_id, delta, reason=None):
     finally:
         conn.close()
 
-
 def restock(sku_id, qty, reason=None):
     """售后退款/退货完成时把货品退回可售库存（sold 回退、stock 增加）。
 
@@ -320,7 +305,6 @@ def restock(sku_id, qty, reason=None):
     try:
         conn.begin()
         with conn.cursor() as cur:
-            # sold 不允许被减成负数（历史数据可能没走 confirm），用 GREATEST 兜底
             cur.execute(
                 "UPDATE `sku_stock` SET stock=stock+%s, sold=GREATEST(sold-%s, 0), "
                 "version=version+1 WHERE sku_id=%s",
@@ -336,7 +320,6 @@ def restock(sku_id, qty, reason=None):
         return False, f"库存回补失败：{e}"
     finally:
         conn.close()
-
 
 def stock_rows(product_ids=None):
     """批量取库存行。返回 {product_id: {sku_id: row}}。"""
@@ -362,7 +345,6 @@ def stock_rows(product_ids=None):
     for r in rows:
         out.setdefault(str(r["product_id"]), {})[str(r["sku_id"])] = r
     return out
-
 
 def decorate_products(products):
     """给商品列表附加 skus（含实时库存）与 available（可售总数）。"""
@@ -393,10 +375,7 @@ def decorate_products(products):
         p["available"] = total
     return products
 
-
-# ------------------------------------------------------------
 # 下单项规范化
-# ------------------------------------------------------------
 def normalize_order_items(items):
     """服务端按商品/SKU 重新校验名称、规格、价格并合并数量。
 
@@ -452,10 +431,7 @@ def normalize_order_items(items):
             return False, f"下单失败：「{line['name']}」单件购买数量不能超过 999", []
     return True, "", lines
 
-
-# ------------------------------------------------------------
 # 预占 / 确认 / 释放
-# ------------------------------------------------------------
 def reserve(items, user_id=None, ttl_seconds=None):
     """原子预占一次结算的全部 SKU。返回 (是否成功, 提示, reservation_id, lines)。"""
     ok, msg, lines = normalize_order_items(items)
@@ -508,7 +484,6 @@ def reserve(items, user_id=None, ttl_seconds=None):
         return False, f"库存预占失败：{e}", None, lines
     finally:
         conn.close()
-
 
 def _finish(reservation_id, target_status, remark=None):
     """确认或释放预占。返回 (是否成功, 提示)。"""
@@ -565,17 +540,14 @@ def _finish(reservation_id, target_status, remark=None):
     finally:
         conn.close()
 
-
 def confirm(reservation_id):
     """支付成功：预占转为实际扣减（接支付网关时在支付回调里调用）。"""
     return _finish(reservation_id, "confirmed", "payment_confirmed")
-
 
 def release(reservation_id, reason="cancelled"):
     """取消订单 / 支付失败：释放预占，库存重新可售。"""
     status = "expired" if reason == "expired" else "released"
     return _finish(reservation_id, status, reason)
-
 
 def release_expired():
     """扫描并释放所有超时未支付的预占。返回释放的单数。"""
@@ -594,7 +566,6 @@ def release_expired():
         ok, _ = release(rid, reason="expired")
         count += 1 if ok else 0
     return count
-
 
 def get_reservation(reservation_id):
     """预占单详情（供支付 / 取消 / 排查使用）。"""
@@ -622,7 +593,6 @@ def get_reservation(reservation_id):
     finally:
         conn.close()
 
-
 def start_cleanup_worker():
     """启动后台守护线程，定时释放超时预占。重复调用只会启动一次。"""
     global _cleanup_started
@@ -643,6 +613,5 @@ def start_cleanup_worker():
     t.start()
     _cleanup_started = True
     return t
-
 
 _cleanup_started = False

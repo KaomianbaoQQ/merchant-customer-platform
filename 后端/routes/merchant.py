@@ -28,10 +28,6 @@ from 智能分析 import 购买预测 as predict_mod
 
 bp = Blueprint("merchant_admin", __name__, url_prefix="/api/merchant")
 
-
-# ------------------------------------------------------------
-# 鉴权
-# ------------------------------------------------------------
 def _token_from_request():
     auth = request.headers.get("Authorization") or ""
     if auth.lower().startswith("bearer "):
@@ -41,10 +37,8 @@ def _token_from_request():
             or (request.get_json(silent=True) or {}).get("token")
             or "")
 
-
 def current_merchant():
     return get_merchant_by_token(_token_from_request())
-
 
 def require_merchant():
     m = current_merchant()
@@ -52,10 +46,6 @@ def require_merchant():
         return None, (jsonify({"ok": False, "error": "请先登录商户账号", "code": "NO_AUTH"}), 401)
     return m, None
 
-
-# ------------------------------------------------------------
-# 账号
-# ------------------------------------------------------------
 @bp.post("/register")
 def api_merchant_register():
     data = request.get_json(silent=True) or {}
@@ -70,7 +60,6 @@ def api_merchant_register():
         return jsonify({"ok": False, "error": msg}), 400
     return jsonify({"ok": True, "merchant": info, "message": msg}), 201
 
-
 @bp.post("/login")
 def api_merchant_login():
     data = request.get_json(silent=True) or {}
@@ -79,12 +68,10 @@ def api_merchant_login():
         return jsonify({"ok": False, "error": msg}), 401
     return jsonify({"ok": True, "merchant": info, "token": info.get("token")})
 
-
 @bp.post("/logout")
 def api_merchant_logout():
     logout_merchant(_token_from_request())
     return jsonify({"ok": True})
-
 
 @bp.get("/me")
 def api_merchant_me():
@@ -93,10 +80,6 @@ def api_merchant_me():
         return err
     return jsonify({"ok": True, "merchant": m})
 
-
-# ------------------------------------------------------------
-# 商品
-# ------------------------------------------------------------
 @bp.get("/products")
 def api_merchant_products():
     m, err = require_merchant()
@@ -120,7 +103,6 @@ def api_merchant_products():
         "products": products,
         "merchant": m,
     })
-
 
 @bp.get("/products/<pid>/orders")
 def api_merchant_product_orders(pid):
@@ -172,7 +154,6 @@ def api_merchant_product_orders(pid):
         "buyers": buyer_list,
     })
 
-
 @bp.post("/products")
 def api_merchant_create_product():
     m, err = require_merchant()
@@ -192,7 +173,6 @@ def api_merchant_create_product():
     async_sync_knowledge("create", product)
     return jsonify({"ok": True, "product": product}), 201
 
-
 @bp.put("/products/<pid>")
 def api_merchant_update_product(pid):
     m, err = require_merchant()
@@ -210,7 +190,6 @@ def api_merchant_update_product(pid):
     async_sync_knowledge("update", product)
     return jsonify({"ok": True, "product": product})
 
-
 @bp.delete("/products/<pid>")
 def api_merchant_delete_product(pid):
     m, err = require_merchant()
@@ -225,10 +204,7 @@ def api_merchant_delete_product(pid):
     async_sync_knowledge("delete", {"id": pid})
     return jsonify({"ok": True})
 
-
-# ------------------------------------------------------------
 # 库存维护（商家：查看 / 设置 / 增减 SKU 库存）
-# ------------------------------------------------------------
 @bp.get("/inventory")
 def api_merchant_inventory():
     """本商户全部商品的 SKU 实时库存（stock / locked / sold / available）。"""
@@ -239,7 +215,6 @@ def api_merchant_inventory():
     products = store.list_products(owner_id=m["id"], include_offline=True)
     products = inventory.decorate_products(products)
     return jsonify({"ok": True, "products": products})
-
 
 @bp.post("/inventory/<pid>")
 def api_merchant_set_inventory(pid):
@@ -287,7 +262,6 @@ def api_merchant_set_inventory(pid):
     updated = inventory.decorate_products([product])[0]
     return jsonify({"ok": True, "message": msg, "product": updated})
 
-
 @bp.post("/upload")
 def api_merchant_upload():
     m, err = require_merchant()
@@ -299,16 +273,12 @@ def api_merchant_upload():
     stored = store.save_image(file.filename, file.read())
     return jsonify({"ok": True, "filename": stored, "url": "/images/" + stored})
 
-
-# ------------------------------------------------------------
 # 订单管理（商家：查看全部订单 / 随时发货）
-# ------------------------------------------------------------
 def _owner_products(m):
     """当前商户的商品，返回 (product_ids, product_names)。"""
     products = store.list_products(owner_id=m["id"])
     return ([str(p.get("id")) for p in products if p.get("id")],
             [p.get("name") for p in products if p.get("name")])
-
 
 @bp.get("/orders")
 def api_merchant_orders():
@@ -334,13 +304,11 @@ def api_merchant_orders():
         "stats": {
             "total": len(orders),
             # 待发货红点：只数「还需要发货」的订单。已申请退货/退款完成等
-            # 无需再发货的订单（can_ship=False）不再计入，避免红点永远消不掉。
             "pending": sum(1 for o in orders
                            if int(o.get("status_step") or 0) == 0 and o.get("can_ship", True)),
             "shipped": sum(1 for o in orders if int(o.get("status_step") or 0) > 0),
         },
     })
-
 
 @bp.post("/orders/<order_id>/ship")
 def api_merchant_ship_order(order_id):
@@ -356,10 +324,7 @@ def api_merchant_ship_order(order_id):
     )
     return jsonify({"ok": ok, "message": msg, "logistics": logistics}), (200 if ok else 400)
 
-
-# ------------------------------------------------------------
 # 物流查询（商家）
-# ------------------------------------------------------------
 @bp.get("/logistics")
 def api_merchant_logistics():
     m, err = require_merchant()
@@ -385,7 +350,6 @@ def api_merchant_logistics():
 
     return jsonify({"ok": True, "logistics": row})
 
-
 def _logistics_belongs_to_merchant(row, product_ids, product_names, merchant_id=None):
     """该物流是否至少关联一笔属于当前商户的订单（按订单ID精确核对）。"""
     raw = (row or {}).get("order_ids")
@@ -400,13 +364,9 @@ def _logistics_belongs_to_merchant(row, product_ids, product_names, merchant_id=
     )
     return len(owned) > 0
 
-
-# ------------------------------------------------------------
 # 售后处理（退货 / 换货 / 退款，商家）
-# ------------------------------------------------------------
 def _merchant_product_names(m):
     return [p.get("name") for p in store.list_products(owner_id=m["id"])]
-
 
 @bp.get("/refunds")
 def api_merchant_refunds():
@@ -416,7 +376,6 @@ def api_merchant_refunds():
     # 顾客通过售后客服或订单页提交的退货 / 换货 / 退款全部要展示给商家确认
     refunds = list_returns_for_owner(m["id"], _merchant_product_names(m))
     return jsonify({"ok": True, "refunds": refunds})
-
 
 @bp.post("/refunds/<rid>/status")
 def api_merchant_refund_status(rid):
@@ -432,7 +391,6 @@ def api_merchant_refund_status(rid):
     )
     return jsonify({"ok": ok, "message": msg, "refund": data}), (200 if ok else 400)
 
-
 @bp.post("/refunds/<rid>/reship")
 def api_merchant_refund_reship(rid):
     """换货：商家签收顾客寄回的商品后，填写新的 7 位运单号重新发货。"""
@@ -446,10 +404,7 @@ def api_merchant_refund_reship(rid):
     )
     return jsonify({"ok": ok, "message": msg, "refund": data}), (200 if ok else 400)
 
-
-# ------------------------------------------------------------
 # 顾客会话
-# ------------------------------------------------------------
 @bp.get("/chats")
 def api_merchant_chats():
     m, err = require_merchant()
@@ -464,7 +419,6 @@ def api_merchant_chats():
         "platform_human": sum(1 for c in store.list_conversations(merchant_id="platform")
                               if c.get("waiting_human")),
     })
-
 
 @bp.get("/chats/search")
 def api_merchant_chats_search():
@@ -483,14 +437,12 @@ def api_merchant_chats_search():
         ),
     })
 
-
 @bp.get("/chats/thread")
 def api_merchant_thread():
     m, err = require_merchant()
     if err:
         return err
     user_id = str(request.args.get("user_id") or "").strip()
-    # 会话归属强制取当前登录商家，忽略请求参数：防止商家伪造 merchant_id 读别人的会话
     merchant_id = m["id"]
     if not user_id:
         return jsonify({"ok": False, "error": "缺少 user_id"}), 400
@@ -498,7 +450,6 @@ def api_merchant_thread():
     store.mark_read(merchant_id, user_id, "merchant")
     thread = store.get_thread(merchant_id, user_id)
     return jsonify({"ok": True, "thread": thread})
-
 
 @bp.post("/chats/reply")
 def api_merchant_reply():
@@ -520,10 +471,7 @@ def api_merchant_reply():
     )
     return jsonify({"ok": True, "message": message})
 
-
-# ------------------------------------------------------------
 # 知识库同步（异步后台同步到 Dify 知识库）
-# ------------------------------------------------------------
 @bp.post("/knowledge/update")
 def api_merchant_knowledge():
     """商品新增 / 修改 / 删除时同步到 Dify 知识库。
@@ -538,10 +486,7 @@ def api_merchant_knowledge():
     result = async_sync_knowledge(action, product)
     return jsonify(result)
 
-
-# ------------------------------------------------------------
 # 智能分析（顾客洞察 / 商品购买可能性）
-# ------------------------------------------------------------
 @bp.get("/analytics/customers")
 def api_merchant_analytics_customers():
     """本店相关顾客画像：在本店下过单、或浏览 / 加购过本店商品的顾客。"""
@@ -550,14 +495,12 @@ def api_merchant_analytics_customers():
         return err
     return jsonify({"ok": True, "profiles": profiles_mod.profiles_by_merchant(m["id"])})
 
-
 @bp.get("/analytics/purchase")
 def api_merchant_analytics_purchase():
     """本店商品的购买可能性：潜在买家排名 + 全部「顾客×商品」概率前 20。"""
     m, err = require_merchant()
     if err:
         return err
-    # merchant_id 强制取登录商家，忽略请求参数：商家只看得到自己店铺的分析
     return jsonify({
         "ok": True,
         "products": predict_mod.product_prospects(mid=m["id"]),

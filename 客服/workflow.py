@@ -21,7 +21,6 @@ import requests
 
 from 公共.app_config import dify_workflow
 
-# 密钥只从 config.json → dify.workflows.consult.api_key 读取
 # （或环境变量 KB_DIFY_CONSULT_KEY），代码里不写明文。
 _CFG = dify_workflow("consult")
 CONSULT_API_KEY = _CFG["api_key"]
@@ -37,22 +36,17 @@ _HEADERS = {
     "Content-Type": "application/json",
 }
 
-# 去掉 deepseek 的 <think>...</think> 思考内容（支持标签内有属性/空格）
 _THINK_RE = re.compile(r"<think[^>]*>.*?</think>", re.DOTALL | re.IGNORECASE)
-# 备用：处理未闭合的 <think> 标签——仅当后续没有 </think> 时才截断到末尾
 # 使用负向先行断言 (?!.*?</think>)，确保不会误删有效内容
 _THINK_RE_BACKUP = re.compile(r"<think[^>]*>(?!.*?</think>).*$", re.DOTALL | re.IGNORECASE)
-
 
 def _clean(text):
     if not isinstance(text, str):
         return ""
     # 第一次清理：移除所有完整闭合的 <think>...</think>
     text = _THINK_RE.sub("", text)
-    # 第二次清理：仅移除未闭合的 <think> 及其后续内容（不影响已闭合标签后的正文）
     text = _THINK_RE_BACKUP.sub("", text)
     return text.strip()
-
 
 def build_product_prompt(message, product=None, conversation_history=None, orders=None,
                          merchant_id=None, merchant_name=None):
@@ -124,7 +118,6 @@ def build_product_prompt(message, product=None, conversation_history=None, order
 
     parts.append(f"用户问题：{message}")
     return "\n".join(parts)
-
 
 def ask_product_service(user_input, product=None, user_id="web", conversation_history=None,
                         orders=None, merchant_id=None, merchant_name=None):

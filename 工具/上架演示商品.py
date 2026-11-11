@@ -9,7 +9,6 @@ import urllib.error
 B = "http://127.0.0.1:8000"
 OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
-
 def call(path, data=None, token=None, method=None):
     body = json.dumps(data).encode() if data is not None else None
     req = urllib.request.Request(B + path, data=body, method=method or ("POST" if body else "GET"))
@@ -25,7 +24,6 @@ def call(path, data=None, token=None, method=None):
             return e.code, json.loads(raw)
         except Exception:
             return e.code, {"raw": raw}
-
 
 USERNAME = "demo_shop"
 PASSWORD = "demo123456"
@@ -88,7 +86,6 @@ for p in PRODUCTS:
     else:
         print(f"create {p['id']}: FAIL", st, body)
 
-# 设置库存：手机 SKU 分别 8/12/5，耳机 20/20，杯子 30/15
 STOCK = {
     "DEMO_PHONE":   {"DEMO_PHONE_BLK128": 8, "DEMO_PHONE_BLK256": 12, "DEMO_PHONE_BLU256": 5},
     "DEMO_EARBUDS": {"DEMO_EARBUDS_WHT": 20, "DEMO_EARBUDS_BLK": 20},

@@ -24,7 +24,6 @@ DEFAULT = {"merchants": {}, "products": {}, "fines": []}
 
 _thread_lock = threading.RLock()
 
-
 @contextmanager
 def _locked():
     with _thread_lock:
@@ -37,7 +36,6 @@ def _locked():
         finally:
             fcntl.flock(handle, fcntl.LOCK_UN)
             handle.close()
-
 
 def _load():
     if not os.path.exists(STATE_FILE):
@@ -56,7 +54,6 @@ def _load():
         data["fines"] = []
     return data
 
-
 def _save(data):
     os.makedirs(MERCHANT_DIR, exist_ok=True)
     tmp = STATE_FILE + ".tmp"
@@ -64,14 +61,10 @@ def _save(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
     os.replace(tmp, STATE_FILE)
 
-
 def _now():
     return time.strftime("%Y-%m-%d %H:%M:%S")
 
-
-# ------------------------------------------------------------
 # 商家：停用 / 禁言 / 罚款
-# ------------------------------------------------------------
 def merchant_state(merchant_id):
     """返回 {"disabled": bool, "muted": bool}。"""
     mid = str(merchant_id or "").strip()
@@ -79,14 +72,11 @@ def merchant_state(merchant_id):
     item = data["merchants"].get(mid) or {}
     return {"disabled": bool(item.get("disabled")), "muted": bool(item.get("muted"))}
 
-
 def is_merchant_disabled(merchant_id):
     return merchant_state(merchant_id)["disabled"]
 
-
 def is_merchant_muted(merchant_id):
     return merchant_state(merchant_id)["muted"]
-
 
 def set_merchant_flag(merchant_id, key, value):
     """设置商家的 disabled / muted 标记。返回设置后的状态 dict。"""
@@ -100,7 +90,6 @@ def set_merchant_flag(merchant_id, key, value):
         item["update_time"] = _now()
         _save(data)
         return {"disabled": bool(item.get("disabled")), "muted": bool(item.get("muted"))}
-
 
 def add_fine(merchant_id, merchant_name, amount, reason):
     """给商家记一笔罚款。返回 (是否成功, 提示, 罚款记录)。"""
@@ -127,7 +116,6 @@ def add_fine(merchant_id, merchant_name, amount, reason):
         _save(data)
     return True, f"已对「{entry['merchant_name'] or entry['merchant_id']}」罚款 {entry['amount']} 元", entry
 
-
 def list_fines(merchant_id=None):
     """罚款记录，可按商家过滤（最新在前）。"""
     mid = str(merchant_id or "").strip()
@@ -136,14 +124,10 @@ def list_fines(merchant_id=None):
     items.sort(key=lambda x: str(x.get("time") or ""), reverse=True)
     return items
 
-
 def fine_total(merchant_id):
     return round(sum(float(f.get("amount") or 0) for f in list_fines(merchant_id)), 2)
 
-
-# ------------------------------------------------------------
 # 商品：下架 / 恢复
-# ------------------------------------------------------------
 def product_state(product_id):
     """返回 {"offline": bool, "reason": str, "time": str}。"""
     pid = str(product_id or "").strip()
@@ -155,10 +139,8 @@ def product_state(product_id):
         "time": item.get("time") or "",
     }
 
-
 def is_product_offline(product_id):
     return product_state(product_id)["offline"]
-
 
 def set_product_offline(product_id, offline, reason=""):
     """平台下架 / 恢复商品。返回设置后的状态 dict。"""
@@ -177,7 +159,6 @@ def set_product_offline(product_id, offline, reason=""):
             data["products"].pop(pid, None)
         _save(data)
     return product_state(pid)
-
 
 def offline_product_ids():
     data = _load()

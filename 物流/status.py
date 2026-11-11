@@ -15,11 +15,9 @@ from datetime import datetime
 
 STATUS_TEXTS = ["待发货", "已发货", "运输中", "派送中", "已签收"]
 
-# 派送中窗口：距离预计送达不足 min(1 小时, 总时长 25%) 时进入派送中
 DELIVERY_WINDOW_SECONDS = 3600
 DELIVERY_WINDOW_RATIO = 0.25
 SHIPPED_RATIO = 0.15
-
 
 def parse_datetime(value):
     """把 datetime / 字符串统一解析成 datetime，失败返回 None。"""
@@ -35,11 +33,9 @@ def parse_datetime(value):
             continue
     return None
 
-
 def format_datetime(dt):
     """统一输出 ISO 8601（带 T），方便浏览器 new Date() 解析。"""
     return dt.strftime("%Y-%m-%dT%H:%M:%S") if dt is not None else None
-
 
 def compute_status(shipped_at, estimated_arrival, now=None):
     """根据发货时间 / 预计送达时间 / 当前时间，动态计算物流档位。
@@ -60,7 +56,6 @@ def compute_status(shipped_at, estimated_arrival, now=None):
 
     elapsed = (now - shipped_at).total_seconds()
     if elapsed < 0:
-        # 刚下单时 MySQL 按秒取整可能让发货时间比 now 晚零点几秒，视为已发货
         elapsed = 0
 
     remaining = (estimated_arrival - now).total_seconds()

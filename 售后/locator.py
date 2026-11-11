@@ -14,8 +14,6 @@ import requests
 
 from 公共.app_config import dify_workflow
 
-# 密钥只从 config.json → dify.workflows.order_locate.api_key 读取
-# （或环境变量 KB_DIFY_ORDER_LOCATE_KEY），代码里不写明文。
 _CFG = dify_workflow("order_locate")
 API_KEY = _CFG["api_key"]
 BASE_URL = _CFG["base_url"]
@@ -25,7 +23,6 @@ HEADERS = {
     "Authorization": f"Bearer {API_KEY}",
     "Content-Type": "application/json",
 }
-
 
 def parse_pick(raw):
     """解析「订单定位」输出的 JSON（容忍 LLM 偶尔包一层 ```json 代码块）。"""
@@ -42,7 +39,6 @@ def parse_pick(raw):
         except (ValueError, TypeError):
             return None
     return data if isinstance(data, dict) else None
-
 
 def locate(user_input, user_orders, timeout=60):
     """

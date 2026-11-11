@@ -11,12 +11,10 @@ import threading
 import time
 
 _lock = threading.Lock()
-# token -> {"id", "name", "role", "age", "sex", "issued_at"}
 _tokens = {}
 
 # 令牌有效期（秒）。演示场景设长一点（7 天），生产可改小。
 TOKEN_TTL = 7 * 24 * 3600
-
 
 def issue_customer_token(user):
     """给校验通过的顾客签发一个新令牌。user 含 id / name / age / sex。"""
@@ -32,7 +30,6 @@ def issue_customer_token(user):
         }
     return token
 
-
 def verify_customer_token(token):
     """校验顾客令牌，有效且未过期则返回用户信息 dict；否则 None。"""
     token = str(token or "").strip()
@@ -47,7 +44,6 @@ def verify_customer_token(token):
             _tokens.pop(token, None)
         return None
     return dict(info)
-
 
 def revoke_customer_token(token):
     """退出登录时吊销令牌。"""

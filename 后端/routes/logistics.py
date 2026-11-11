@@ -18,7 +18,6 @@ from ..common import resolve_user
 
 bp = Blueprint("logistics", __name__, url_prefix="/api")
 
-
 def _identity():
     """从前端参数解析并校验当前用户。返回 (user, err_response)。"""
     user = resolve_user({
@@ -28,7 +27,6 @@ def _identity():
     if user is None:
         return None, (jsonify({"ok": False, "error": "请先登录后再查询物流"}), 401)
     return user, None
-
 
 @bp.get("/logistics")
 def api_logistics_list():
@@ -43,14 +41,12 @@ def api_logistics_list():
             return jsonify({"ok": False, "error": "无权查看他人的物流记录"}), 403
     return jsonify({"ok": True, "list": get_logistics_by_user(target)})
 
-
 @bp.get("/logistics/<waybill>")
 def api_logistics(waybill):
     user, err = _identity()
     if err:
         return err
 
-    # 非 7 位单号 = 外部真实快递，本页不提供查询（平台管理页「快递查询」专用）
     if is_external_waybill(waybill):
         return jsonify({
             "ok": False,
@@ -66,7 +62,6 @@ def api_logistics(waybill):
         if owner and owner != user["id"]:
             return jsonify({"ok": False, "error": "无权查看他人的物流信息"}), 403
 
-    # status_step / status_text 由后端按当前时间动态计算；
     # 前端拿到时间戳后也会每秒本地重算，保证「实时」。
     return jsonify({
         "ok": True,

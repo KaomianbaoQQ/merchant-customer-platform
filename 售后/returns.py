@@ -49,9 +49,6 @@ CARRIER = "Kaomianbao 速运"
 TYPE_TEXTS = {"return": "退货", "exchange": "换货", "refund": "退款"}
 VALID_TYPES = tuple(TYPE_TEXTS.keys())
 
-# 退款（商家处理）状态流转：待商家处理 → 退回中 → 派送中 → 商家签收 → 已退款
-# 退款被平台仲裁判定支持顾客后，会进入与退货一致的「平台生成单号 → 买家寄回」流程，
-# 因此这里也要能显示 approved / shipping 等寄回阶段的状态。
 REFUND_STATUS_TEXTS = {
     "requested": "待商家处理",
     "returning": "退回中",
@@ -68,9 +65,6 @@ REFUND_FLOW = ["requested", "returning", "delivering", "received", "refunded"]
 REFUND_TERMINAL = ("refunded", "rejected")
 
 # 退货 / 换货状态流转：
-#   requested 待商家确认 → approved 商家已同意（用户填写退货快递单号并寄出）
-#   → shipping 退货运输中 → done 退换完成；任意时刻可 rejected 商家拒绝
-#   pending 为历史兼容状态（旧版申请即生成单号），行为与 approved 一致
 RETURN_STATUS_TEXTS = {
     "requested": "待商家确认",
     "approved": "商家已同意，请填写寄回物流单号并寄出",
@@ -122,7 +116,6 @@ CREATE TABLE IF NOT EXISTS `return_order` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退换货/退款表';
 """
 
-# 退款流水：每一笔「真正发生资金变动」的售后（退款完成 / 退货退款完成）记一行，
 # 哪怕没有接真实支付网关，也记录金额与去向，便于对账与演示讲解交易闭环。
 CREATE_REFUND_LEDGER_SQL = """
 CREATE TABLE IF NOT EXISTS `refund_ledger` (
@@ -146,8 +139,6 @@ CREATE TABLE IF NOT EXISTS `refund_ledger` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款流水表';
 """
 
-
-# ============================ 建表 / 迁移 ============================
 def _column_exists(cur, table_name, column_name):
     cur.execute(
         "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
@@ -156,10 +147,8 @@ def _column_exists(cur, table_name, column_name):
     )
     return cur.fetchone() is not None
 
-
 _ensure_done = False
 _ensure_lock = threading.Lock()
-
 
 def ensure_return_table():
     """确保 cs.return_order 存在，并补齐字段。返回 (是否成功, 提示信息)。
@@ -177,7 +166,6 @@ def ensure_return_table():
         if ok:
             _ensure_done = True
         return ok, msg
-
 
 def _ensure_return_table_once():
     """真正执行建表 / 补字段（仅进程内首次调用时执行）。"""
@@ -226,12 +214,8 @@ def _ensure_return_table_once():
     finally:
         conn.close()
 
-
-# ============================ 工具 ============================
 def _gen_return_id():
-    # 随机后缀 8 位十六进制：4 位时同一秒内并发提交售后会撞主键（与订单号同理）
     return "RE" + datetime.now().strftime("%Y%m%d%H%M%S") + uuid.uuid4().hex[:8].upper()
-
 
 def _new_return_waybill(cur, user_id, address):
     """生成一个不与现有运单 / 物流冲突的 7 位新物流单号"""
@@ -248,7 +232,6 @@ def _new_return_waybill(cur, user_id, address):
         return waybill
     return f"{generate_7digit(uid, address or ''):07d}"
 
-
 def format_return_row(row):
     """补上动态状态 / 类型文案，并把时间格式化为 ISO 字符串。"""
     code, text = compute_return_status(row)
@@ -264,7 +247,6 @@ def format_return_row(row):
         if row.get(key) is not None:
             row[key] = format_datetime(row[key])
     return row
-
 
 def record_refund_ledger(return_id, channel="原路退回(模拟)", remark=None):
     """售后单到达资金终态时记一笔退款流水（幂等：同一售后单只记一次）。
@@ -330,7 +312,6 @@ def record_refund_ledger(return_id, channel="原路退回(模拟)", remark=None)
                  remark or f"{TYPE_TEXTS.get(rtype, '售后')}完成退款"),
             )
         conn.commit()
-        # 资金已退且商品真的扣过库存 -> 回补可售库存（放在事务外，避免跨连接嵌套事务）
         if restock_sku and restock_qty > 0:
             try:
                 from 公共 import inventory
@@ -343,7 +324,6 @@ def record_refund_ledger(return_id, channel="原路退回(模拟)", remark=None)
         return False
     finally:
         conn.close()
-
 
 def get_refund_ledger(owner_id=None, user_id=None, limit=200):
     """查询退款流水（平台 / 商户 / 顾客视角）。"""
@@ -371,7 +351,6 @@ def get_refund_ledger(owner_id=None, user_id=None, limit=200):
         return rows
     finally:
         conn.close()
-
 
 def compute_return_status(row, now=None):
     """状态文案。
@@ -402,8 +381,6 @@ def compute_return_status(row, now=None):
         return "done", RETURN_STATUS_TEXTS["done"]
     return "shipping", RETURN_STATUS_TEXTS["shipping"]
 
-
-# ============================ 原订单查询 / 校验 ============================
 def get_order_with_logistics(order_id):
     """查询订单及其物流信息；订单不存在返回 None。"""
     ensure_logistics()
@@ -424,7 +401,6 @@ def get_order_with_logistics(order_id):
             return cur.fetchone()
     finally:
         conn.close()
-
 
 def check_return_eligibility(order, return_type="return"):
     """
@@ -482,8 +458,6 @@ def check_return_eligibility(order, return_type="return"):
                 received, received_at)
     return True, step, text, "可以申请", received, received_at
 
-
-# ============================ 申请退货 / 换货 ============================
 def _find_owner_id(order, product_name):
     """找到商品所属商户 ID：优先用下单时的商家快照，再按商品当前归属兜底。"""
     # 下单时已固化商家归属，即使商品后来被删除/转交也不影响售后路由
@@ -502,8 +476,6 @@ def _find_owner_id(order, product_name):
             return str(product.get("owner_id") or "")
     return ""
 
-
-# ============================ 申请退货 / 换货 / 退款 ============================
 def create_return(order_id, user, reason="", return_type="return", quantity=None):
     """
     申请退货 / 换货 / 退款：
@@ -559,7 +531,6 @@ def create_return(order_id, user, reason="", return_type="return", quantity=None
     owner_id = _find_owner_id(order, product_name)
     now = datetime.now()
     if unshipped:
-        # 货还没发出：直接置为终态（退款=已退款 / 退货=退换完成），不进商家待办、不走仲裁
         init_status = "refunded" if is_refund else "done"
     else:
         # 退货 / 换货 / 退款一律先进入「待商家确认」，商家同意后才进入后续环节
@@ -607,7 +578,6 @@ def create_return(order_id, user, reason="", return_type="return", quantity=None
 
             # 允许同订单多次申请：不再阻止已有进行中的售后单，只要还有可退数量即可
             return_id = _gen_return_id()
-            # 申请阶段一律不生成快递单号：商家同意后由平台生成 7 位 return_waybill
             cur.execute(
                 f"INSERT INTO {RETURN_TABLE} "
                 "(id, order_id, user_id, user_name, goodsname, owner_id, type, quantity, original_waybill, "
@@ -644,8 +614,6 @@ def create_return(order_id, user, reason="", return_type="return", quantity=None
                    f"请在「我的订单-退换货记录」里填写该单号并点击「我已发出」。")
     return True, message, data
 
-
-# ============================ 填写快递单号 ============================
 def update_return_waybill(return_id, waybill, user_id=None):
     """把客服给出的快递单号填入订单信息。返回 (是否成功, 提示, dict)。"""
     ok, msg = ensure_return_table()
@@ -684,8 +652,6 @@ def update_return_waybill(return_id, waybill, user_id=None):
     found, data = get_return(return_id)
     return True, f"快递单号已保存：{code}", data
 
-
-# ============================ 用户点击「我已发出」 ============================
 def mark_return_shipped(return_id, user_id=None, waybill=None):
     """
     用户点击「我已发出」：记录寄出时间，并按默认等待时间计算预计到仓时间。
@@ -733,8 +699,6 @@ def mark_return_shipped(return_id, user_id=None, waybill=None):
         f"已确认寄出（快递单号 {code}），预计 {format_datetime(eta)} 完成退换"
     ), data
 
-
-# ============================ 换货：商家签收后重新发货 ============================
 def reship_exchange(return_id, waybill, owner_id=None, product_names=None):
     """换货：商家收到顾客寄回的商品后，填写新的 7 位运单号重新发货。
 
@@ -793,8 +757,6 @@ def reship_exchange(return_id, waybill, owner_id=None, product_names=None):
     found, data = get_return(return_id)
     return True, f"换货已重新发货（新运单号 {code}），售后单 {return_id} 已完成", data
 
-
-# ============================ 查询 ============================
 def get_return(return_id):
     """按退换货单号 / 物流单号查询，返回 (是否找到, dict)。"""
     ok, _ = ensure_return_table()
@@ -819,7 +781,6 @@ def get_return(return_id):
         return False, None
     return True, format_return_row(row)
 
-
 def get_returns_by_user(user_id):
     """查询某用户的全部退换货记录（退货 + 换货）。"""
     ok, _ = ensure_return_table()
@@ -837,15 +798,11 @@ def get_returns_by_user(user_id):
         conn.close()
     return [format_return_row(r) for r in rows]
 
-
 # 这些售后单会阻止商家发货：
-#   requested / pending / approved / shipping / arbitrating —— 还没了结，
 #     未签收只能整单退回、原运单号不变，先发货会把售后流程搞乱；
-#   done / refunded —— 未发货订单的退款 / 退货提交即完成，货已经不用再发了。
 BLOCK_SHIP_STATUSES = (
     "requested", "pending", "approved", "shipping", "arbitrating", "done", "refunded",
 )
-
 
 def open_returns_by_order(order_ids):
     """批量查这些订单里「未了结」的售后单，返回 {订单ID: 售后行}（每单取最新一条）。
@@ -880,11 +837,9 @@ def open_returns_by_order(order_ids):
             result[oid] = format_return_row(row)
     return result
 
-
 def find_blocking_return(order_id):
     """该订单是否有「未了结」的售后单会阻止发货；有则返回最新一条，否则 None。"""
     return open_returns_by_order([order_id]).get(str(order_id or "").strip())
-
 
 def ship_block_message(row):
     """阻止发货时给商家的提示。"""
@@ -897,8 +852,6 @@ def ship_block_message(row):
     return (f"该订单已有进行中的{row.get('type_text') or '售后'}申请"
             f"（{row.get('id')}，{row.get('status_text')}），请先处理售后后再发货")
 
-
-# ============================ 换货 ↔ 退货 互改 ============================
 def get_active_return(order_id, user_id=None, types=None):
     """该订单下仍在进行中（未完成 / 未拒绝）的售后单，最新的一条；没有返回 None。
 
@@ -933,7 +886,6 @@ def get_active_return(order_id, user_id=None, types=None):
             continue
         return format_return_row(row)
     return None
-
 
 def change_return_type(return_id, new_type, user_id=None, reason=None):
     """把一笔进行中的换货 / 退货申请改成另一种（如：换货 → 退货）。
@@ -999,7 +951,6 @@ def change_return_type(return_id, new_type, user_id=None, reason=None):
     )
     return True, msg, data
 
-
 def change_active_return_type(order_id, new_type, user_id=None, reason=None):
     """把该订单下进行中的「另一种」售后申请改成 new_type（换货 → 退货 等）。
 
@@ -1012,7 +963,6 @@ def change_active_return_type(order_id, new_type, user_id=None, reason=None):
     if not active:
         return False, "该订单没有可改类型的进行中申请", None
     return change_return_type(active["id"], new_type, user_id=user_id, reason=reason)
-
 
 def delete_return(return_id):
     """删除退换货记录（管理员 / 测试用）。"""
@@ -1028,8 +978,6 @@ def delete_return(return_id):
     finally:
         conn.close()
 
-
-# ============================ 用户申请平台仲裁 ============================
 def request_arbitration(return_id, user_id=None):
     """用户对被商家拒绝的退货/换货申请平台介入仲裁。
 
@@ -1065,8 +1013,6 @@ def request_arbitration(return_id, user_id=None):
     found, data = get_return(return_id)
     return True, f"已提交平台仲裁（售后单号 {return_id}），平台会尽快介入处理", data
 
-
-# ============================ 商家侧：退款处理 ============================
 def _owns_return(row, owner_id, product_names=None):
     """判断一条售后单是否属于该商户（优先 owner_id，老数据按商品名兜底）。"""
     if owner_id is not None and str(row.get("owner_id") or "") == str(owner_id):
@@ -1075,7 +1021,6 @@ def _owns_return(row, owner_id, product_names=None):
         names = {base_goodsname(n) for n in product_names}
         return base_goodsname(row.get("goodsname")) in names
     return False
-
 
 def list_returns_for_owner(owner_id, product_names=None, types=None):
     """某个商户的售后单（退货/换货/退款）。types 可传 ("refund",) 只看退款。"""
@@ -1100,7 +1045,6 @@ def list_returns_for_owner(owner_id, product_names=None, types=None):
     result.sort(key=lambda r: str(r.get("create_time") or ""), reverse=True)
     return result
 
-
 def next_refund_status(current):
     """退款状态机：requested → returning → delivering → received → refunded。"""
     current = str(current or "requested")
@@ -1108,7 +1052,6 @@ def next_refund_status(current):
         idx = REFUND_FLOW.index(current)
         return REFUND_FLOW[min(idx + 1, len(REFUND_FLOW) - 1)]
     return "returning"
-
 
 def set_after_sale_status(return_id, status, owner_id=None, product_names=None,
                           reject_reason=""):
@@ -1201,7 +1144,6 @@ def set_after_sale_status(return_id, status, owner_id=None, product_names=None,
     finally:
         conn.close()
 
-    # 资金终态：记退款流水（幂等）。退款到 refunded/done，退货/换货到 done 视为退款完成。
     if (rtype == "refund" and status in ("refunded", "done")) or \
        (rtype in ("return", "exchange") and status == "done"):
         try:
@@ -1209,7 +1151,6 @@ def set_after_sale_status(return_id, status, owner_id=None, product_names=None,
         except Exception:
             pass
 
-    # 平台新生成的退货单号登记进物流表，使商家 / 客户都能按运单号查询这笔退货物流
     if status == "approved" and rtype in ("return", "exchange") and order_received:
         register_return_logistics(
             waybill, [row.get("order_id")], row.get("user_id"),
@@ -1219,15 +1160,12 @@ def set_after_sale_status(return_id, status, owner_id=None, product_names=None,
     found, data = get_return(return_id)
     return True, f"售后单 {return_id} 已更新为「{data.get('status_text')}」", data
 
-
 # 兼容旧名称
 def set_refund_status(return_id, status, owner_id=None, product_names=None):
     return set_after_sale_status(
         return_id, status, owner_id=owner_id, product_names=product_names
     )
 
-
-# ============================ 平台仲裁 ============================
 def list_arbitrations():
     """全部「平台仲裁中」的售后单（最新在前）。"""
     ok, _ = ensure_return_table()
@@ -1244,7 +1182,6 @@ def list_arbitrations():
     finally:
         conn.close()
     return [format_return_row(r) for r in rows]
-
 
 def search_returns(keyword="", status=None, limit=200):
     """平台侧按关键词查售后单（含「平台仲裁中」），便于仲裁期间核查进度。
@@ -1277,7 +1214,6 @@ def search_returns(keyword="", status=None, limit=200):
     if st:
         items = [r for r in items if str(r.get("status_code") or "") == st]
     return items
-
 
 def resolve_arbitration(return_id, favor_user=True, note=""):
     """平台处理一笔「仲裁中」的售后单。
@@ -1327,8 +1263,6 @@ def resolve_arbitration(return_id, favor_user=True, note=""):
         found, data = get_return(return_id)
         return True, f"已判定支持商家（售后单 {return_id} 维持拒绝），顾客可继续申诉", data
 
-    # 支持顾客：三种类型（退货 / 换货 / 退款）统一口径，与「商家同意」完全一致：
-    #   已签收 → 平台生成退货单号，状态置为「商家已同意，请凭平台退货单号寄出」，等买家填单号寄出；
     #   未签收 → 原运单号不变，整单退回（无需买家寄回）。
     order = get_order_with_logistics(row.get("order_id"))
     step, _ = order_status(order if isinstance(order, dict) else {})

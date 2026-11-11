@@ -25,15 +25,12 @@ AFTER_SALES_COLLECTION = "after_sales_messages"
 
 _client = None
 
-
 def _now():
     return time.strftime("%Y-%m-%d %H:%M:%S")
-
 
 def _brief(error):
     """把 pymongo 冗长的连接错误压成一行，日志才看得清。"""
     return str(error).split(", Topology Description")[0]
-
 
 def get_client():
     """MongoClient 单例（自带连接池，全程复用）。连不上也不抛异常。"""
@@ -46,10 +43,8 @@ def get_client():
         )
     return _client
 
-
 def _coll(name):
     return get_client()[MONGO_CONFIG["database"]][name]
-
 
 def ensure_indexes():
     """建索引（幂等）。返回 (是否成功, 提示信息)，供启动自检 / 健康检查调用。"""
@@ -64,21 +59,15 @@ def ensure_indexes():
     except Exception as e:
         return False, f"MongoDB 连接失败：{e}"
 
-
-# ------------------------------------------------------------
-# 售前：商户 ↔ 顾客会话（对应原 公共/store.py 的 chat 部分）
-# ------------------------------------------------------------
 def _thread_key(merchant_id, user_id):
     return "%s::%s" % (str(merchant_id or "platform").strip() or "platform",
                        str(user_id or "guest").strip() or "guest")
-
 
 def _thread_filter(merchant_id, user_id):
     return {
         "merchant_id": str(merchant_id or "platform").strip() or "platform",
         "user_id": str(user_id or "guest").strip() or "guest",
     }
-
 
 def append_message(merchant_id, user_id, user_name, role, text, merchant_name="",
                    suppress_unread=False):
@@ -97,7 +86,6 @@ def append_message(merchant_id, user_id, user_name, role, text, merchant_name=""
         "role": safe_role,
         "text": text,
         "time": _now(),
-        # 已读标记：read_user = 顾客侧已读，read_merchant = 商家侧已读（机器人消息算商家侧发出）。
         # 发出消息的那一侧天然是「已读」，对面要等点进这个会话才翻成已读。
         "read_user": safe_role == "user",
         "read_merchant": safe_role in ("merchant", "bot"),
@@ -134,8 +122,6 @@ def append_message(merchant_id, user_id, user_name, role, text, merchant_name=""
         "unread_merchant": 0,
         "unread_user": 0,
     }
-    # 同一字段不能同时出现在 $set / $inc / $push 与 $setOnInsert（Mongo 会报路径冲突 code 40）：
-    # messages 由 $push 建；被 $set / $inc 覆盖的字段也不再放进 $setOnInsert。
     used = set(set_fields) | set(inc_fields) | {"messages"}
     on_insert = {k: v for k, v in on_insert.items() if k not in used}
 
@@ -146,8 +132,6 @@ def append_message(merchant_id, user_id, user_name, role, text, merchant_name=""
     try:
         coll = _coll(PRESALE_COLLECTION)
         coll.update_one(_thread_filter(merchant_id, user_id), update, upsert=True)
-        # 商家 / 机器人已经回复 → 之前顾客发的消息算「商家侧已读」（顾客那边不再一直显示未读）。
-        # 注意：只改消息上的已读标记，不动 unread_merchant 计数（那是商家自己没看过的角标）。
         if safe_role in ("merchant", "bot"):
             try:
                 coll.update_one(
@@ -161,7 +145,6 @@ def append_message(merchant_id, user_id, user_name, role, text, merchant_name=""
         # 降级：只告警，消息照常返回，客服/下单流程不受影响
         print(f"⚠️ 聊天记录写入 MongoDB 失败（消息未落库）：{_brief(e)}")
     return message
-
 
 def mark_needs_human(merchant_id, user_id):
     """把会话标记为「需人工」，并给商家递增一次未读。会话不存在返回 False。
@@ -182,7 +165,6 @@ def mark_needs_human(merchant_id, user_id):
         print(f"⚠️ 标记转人工失败：{_brief(e)}")
         return False
 
-
 def mark_human_ack(merchant_id, user_id):
     """标记「已有客服接手这条待人工会话」（平台客服点开会话即算接手）。
 
@@ -198,7 +180,6 @@ def mark_human_ack(merchant_id, user_id):
         print(f"⚠️ 标记接手失败：{_brief(e)}")
         return False
 
-
 def set_thread_meta(merchant_id, user_id, meta):
     """更新会话的自定义元数据字段（如 unclear_count / asking_human）。"""
     try:
@@ -209,7 +190,6 @@ def set_thread_meta(merchant_id, user_id, meta):
         print(f"⚠️ 更新会话状态失败：{_brief(e)}")
         return False
 
-
 def get_thread(merchant_id, user_id):
     """取一个会话；不存在或读不到时返回空会话结构。"""
     merchant_id = str(merchant_id or "platform").strip() or "platform"
@@ -219,7 +199,6 @@ def get_thread(merchant_id, user_id):
                                                     {"_id": 0})
         if thread:
             thread.setdefault("messages", [])
-            # 历史消息（从 chat.json 迁移进来的）没有已读标记：按「发送方已读、接收方未读」补齐，
             # 前端据此显示已读 / 未读，不会因为字段缺失而显示错乱。
             for m in thread["messages"]:
                 m.setdefault("read_user", m.get("role") == "user")
@@ -234,7 +213,6 @@ def get_thread(merchant_id, user_id):
         "user_name": "",
         "messages": [],
     }
-
 
 def list_conversations(merchant_id=None, include_platform=True):
     """会话列表。merchant_id 为空返回全部；否则只返回该商户的会话。"""
@@ -272,7 +250,6 @@ def list_conversations(merchant_id=None, include_platform=True):
         })
     items.sort(key=lambda x: str(x.get("last_time") or ""), reverse=True)
     return items
-
 
 def search_threads(merchant_id=None, keyword="", since="", until=""):
     """按关键词 + 时间范围搜索会话（商户后台与平台后台共用）。
@@ -336,7 +313,6 @@ def search_threads(merchant_id=None, keyword="", since="", until=""):
     items.sort(key=lambda x: str(x.get("last_time") or ""), reverse=True)
     return items
 
-
 def mark_read(merchant_id, user_id, role):
     """把某一方的未读数清零，并把对面发来的消息标记成「已读」。
 
@@ -361,14 +337,9 @@ def mark_read(merchant_id, user_id, role):
     except Exception as e:
         print(f"⚠️ 更新未读状态失败：{_brief(e)}")
 
-
-# ------------------------------------------------------------
-# 售后：客服对话流水（对应原 售后/chat.py 的 cs.chat_log）
-# ------------------------------------------------------------
 def new_session_id(user_id):
     """生成一次登录的会话ID，如 99-20260910203015"""
     return f"{user_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
 
 def save_message(session_id, user_id, user_name, role, content):
     """保存一条对话消息。content 为空则跳过；出错只告警，返回 True/False。
@@ -404,7 +375,6 @@ def save_message(session_id, user_id, user_name, role, content):
         print(f"⚠️ 对话记录保存失败：{_brief(e)}")
         return False
 
-
 def mark_after_sales_read(session_id):
     """顾客点进售后面板：把客服 / 机器人已发出的消息标记为「已读」。"""
     sid = str(session_id or "").strip()
@@ -417,12 +387,10 @@ def mark_after_sales_read(session_id):
     except Exception as e:
         print(f"⚠️ 更新售后已读状态失败：{_brief(e)}")
 
-
 def save_turn(session_id, user, user_input, reply):
     """保存一问一答（用户 + 客服两条）"""
     save_message(session_id, user["id"], user["name"], "user", user_input)
     save_message(session_id, user["id"], user["name"], "assistant", reply)
-
 
 def count_recent_consecutive(session_id, match, scan=50):
     """从最近一条「顾客消息」往前数，连续满足 match(text) 的条数。
@@ -450,7 +418,6 @@ def count_recent_consecutive(session_id, match, scan=50):
         else:
             break
     return hits
-
 
 def get_recent_messages(session_id, limit=10):
     """某个会话最近的对话（时间正序），用于把上下文上传给 Dify。

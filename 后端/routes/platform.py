@@ -24,7 +24,6 @@ from 售后 import platform as pf
 
 bp = Blueprint("platform_admin", __name__, url_prefix="/api/platform")
 
-
 def _token_from_request():
     auth = request.headers.get("Authorization") or ""
     if auth.lower().startswith("bearer "):
@@ -34,16 +33,11 @@ def _token_from_request():
             or (request.get_json(silent=True) or {}).get("token")
             or "")
 
-
 def _require_admin():
     if not verify_token(_token_from_request()):
         return jsonify({"ok": False, "error": "请先登录平台管理员账号", "code": "NO_AUTH"}), 401
     return None
 
-
-# ------------------------------------------------------------
-# 登录
-# ------------------------------------------------------------
 @bp.post("/login")
 def api_platform_login():
     data = request.get_json(silent=True) or {}
@@ -55,12 +49,10 @@ def api_platform_login():
     token = issue_token(admin)
     return jsonify({"ok": True, "admin": admin, "token": token})
 
-
 @bp.post("/logout")
 def api_platform_logout():
     revoke_token(_token_from_request())
     return jsonify({"ok": True})
-
 
 @bp.get("/me")
 def api_platform_me():
@@ -70,10 +62,6 @@ def api_platform_me():
     admin = verify_token(_token_from_request())
     return jsonify({"ok": True, "admin": admin})
 
-
-# ------------------------------------------------------------
-# 总览
-# ------------------------------------------------------------
 @bp.get("/overview")
 def api_platform_overview():
     err = _require_admin()
@@ -81,17 +69,12 @@ def api_platform_overview():
         return err
     return jsonify({"ok": True, "overview": pf.overview()})
 
-
-# ------------------------------------------------------------
-# 商家
-# ------------------------------------------------------------
 @bp.get("/merchants")
 def api_platform_merchants():
     err = _require_admin()
     if err:
         return err
     return jsonify({"ok": True, "merchants": pf.list_merchants()})
-
 
 @bp.get("/merchants/<mid>")
 def api_platform_merchant_detail(mid):
@@ -102,7 +85,6 @@ def api_platform_merchant_detail(mid):
     if not detail:
         return jsonify({"ok": False, "error": "商家不存在"}), 404
     return jsonify({"ok": True, "detail": detail})
-
 
 @bp.post("/merchants/<mid>/state")
 def api_platform_merchant_state(mid):
@@ -119,7 +101,6 @@ def api_platform_merchant_state(mid):
             ("已禁言" if state["muted"] else "已解除禁言")
     return jsonify({"ok": True, "state": state, "message": f"商家 {mid} {label}"})
 
-
 @bp.get("/merchants/<mid>/fines")
 def api_platform_merchant_fines(mid):
     err = _require_admin()
@@ -127,7 +108,6 @@ def api_platform_merchant_fines(mid):
         return err
     return jsonify({"ok": True, "fines": platform_state.list_fines(mid),
                     "total": platform_state.fine_total(mid)})
-
 
 @bp.post("/merchants/<mid>/fines")
 def api_platform_add_fine(mid):
@@ -143,17 +123,13 @@ def api_platform_add_fine(mid):
     return jsonify({"ok": ok, "message": msg, "fine": entry,
                     "total": platform_state.fine_total(mid)}), (200 if ok else 400)
 
-
-# ------------------------------------------------------------
 # 商品：下架 / 恢复
-# ------------------------------------------------------------
 @bp.get("/products")
 def api_platform_products():
     err = _require_admin()
     if err:
         return err
     return jsonify({"ok": True, "products": pf.list_products()})
-
 
 @bp.post("/products/<pid>/offline")
 def api_platform_offline_product(pid):
@@ -169,17 +145,12 @@ def api_platform_offline_product(pid):
     msg = f"已下架商品「{product.get('name')}」" if offline else f"已恢复上架商品「{product.get('name')}」"
     return jsonify({"ok": True, "state": state, "message": msg})
 
-
-# ------------------------------------------------------------
-# 顾客
-# ------------------------------------------------------------
 @bp.get("/users")
 def api_platform_users():
     err = _require_admin()
     if err:
         return err
     return jsonify({"ok": True, "users": pf.list_users()})
-
 
 @bp.get("/users/<uid>")
 def api_platform_user_detail(uid):
@@ -191,17 +162,13 @@ def api_platform_user_detail(uid):
         return jsonify({"ok": False, "error": "顾客不存在"}), 404
     return jsonify({"ok": True, "detail": detail})
 
-
-# ------------------------------------------------------------
 # 会话（人机 / 人工）
-# ------------------------------------------------------------
 @bp.get("/conversations")
 def api_platform_conversations():
     err = _require_admin()
     if err:
         return err
     return jsonify({"ok": True, "conversations": pf.list_all_conversations()})
-
 
 @bp.get("/conversations/search")
 def api_platform_conversations_search():
@@ -219,7 +186,6 @@ def api_platform_conversations_search():
         ),
     })
 
-
 @bp.get("/conversations/thread")
 def api_platform_thread():
     err = _require_admin()
@@ -231,11 +197,9 @@ def api_platform_thread():
         return jsonify({"ok": False, "error": "缺少 user_id"}), 400
     # 先标已读再取会话：返回的消息里已读标记就是最新的（顾客那条会显示「已读」）
     store.mark_read(merchant_id, user_id, "merchant")
-    # 平台客服点开会话 = 已接手：不再闪动、也不再计入「待处理」（needs_human 保持不变，机器人继续让位）
     store.mark_human_ack(merchant_id, user_id)
     thread = store.get_thread(merchant_id, user_id)
     return jsonify({"ok": True, "thread": thread})
-
 
 @bp.post("/conversations/reply")
 def api_platform_conversation_reply():
@@ -255,10 +219,7 @@ def api_platform_conversation_reply():
     )
     return jsonify({"ok": True, "message": message})
 
-
-# ------------------------------------------------------------
 # 平台 ↔ 商家 对话
-# ------------------------------------------------------------
 @bp.get("/chats")
 def api_platform_chats():
     """平台与各商家的一对一会话列表（含未读）。"""
@@ -285,7 +246,6 @@ def api_platform_chats():
     items.sort(key=lambda x: str(x.get("last_time") or ""), reverse=True)
     return jsonify({"ok": True, "chats": items})
 
-
 @bp.get("/chats/thread")
 def api_platform_chat_thread():
     err = _require_admin()
@@ -296,7 +256,6 @@ def api_platform_chat_thread():
         return jsonify({"ok": False, "error": "缺少 merchant_id"}), 400
     thread = pf.platform_thread(mid)
     return jsonify({"ok": True, "thread": thread})
-
 
 @bp.post("/chats/reply")
 def api_platform_chat_reply():
@@ -312,17 +271,12 @@ def api_platform_chat_reply():
     ok, msg, message = pf.platform_reply(mid, body.get("text"), name)
     return jsonify({"ok": ok, "message": msg, "data": message}), (200 if ok else 400)
 
-
-# ------------------------------------------------------------
-# 仲裁
-# ------------------------------------------------------------
 @bp.get("/arbitrations")
 def api_platform_arbitrations():
     err = _require_admin()
     if err:
         return err
     return jsonify({"ok": True, "arbitrations": list_arbitrations()})
-
 
 @bp.get("/aftersales")
 def api_platform_aftersales():
@@ -342,7 +296,6 @@ def api_platform_aftersales():
         ),
     })
 
-
 @bp.post("/arbitrations/<rid>")
 def api_platform_resolve_arbitration(rid):
     err = _require_admin()
@@ -354,10 +307,6 @@ def api_platform_resolve_arbitration(rid):
     )
     return jsonify({"ok": ok, "message": msg, "arbitration": data}), (200 if ok else 400)
 
-
-# ------------------------------------------------------------
-# 评价
-# ------------------------------------------------------------
 @bp.get("/reviews")
 def api_platform_reviews():
     err = _require_admin()
@@ -365,10 +314,7 @@ def api_platform_reviews():
         return err
     return jsonify({"ok": True, "reviews": pf.list_all_reviews()})
 
-
-# ------------------------------------------------------------
 # 真实快递查询（外部单号，仅平台管理员）
-# ------------------------------------------------------------
 @bp.get("/tracking")
 def api_platform_tracking():
     """查外部真实快递单号（非 7 位），走 uapis.cn 真实接口。

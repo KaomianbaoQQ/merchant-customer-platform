@@ -18,23 +18,18 @@ from 智能分析 import 购买预测 as predict_mod
 
 bp = Blueprint("analytics", __name__, url_prefix="/api")
 
-
 def _admin():
     auth = request.headers.get("Authorization") or ""
     token = auth[7:].strip() if auth.lower().startswith("bearer ") else \
         (request.headers.get("X-Platform-Token") or request.args.get("token") or "")
     return verify_token(token)
 
-
 def _require_admin():
     if not _admin():
         return jsonify({"ok": False, "error": "请先登录平台管理员账号", "code": "NO_AUTH"}), 401
     return None
 
-
-# ------------------------------------------------------------
 # 行为埋点（客户前端调用）
-# ------------------------------------------------------------
 @bp.post("/behavior")
 def api_behavior():
     """记录顾客行为：event = view（浏览）/ cart（加购）。
@@ -59,17 +54,13 @@ def api_behavior():
     )
     return jsonify({"ok": True})
 
-
-# ------------------------------------------------------------
 # 平台：用户画像
-# ------------------------------------------------------------
 @bp.get("/platform/analytics/profiles")
 def api_platform_profiles():
     err = _require_admin()
     if err:
         return err
     return jsonify({"ok": True, "profiles": profiles_mod.list_profiles()})
-
 
 @bp.get("/platform/analytics/profile/<uid>")
 def api_platform_profile_detail(uid):
@@ -81,10 +72,7 @@ def api_platform_profile_detail(uid):
         return jsonify({"ok": False, "error": "顾客不存在"}), 404
     return jsonify({"ok": True, "profile": profile})
 
-
-# ------------------------------------------------------------
 # 平台：商品购买可能性
-# ------------------------------------------------------------
 @bp.get("/platform/analytics/purchase")
 def api_platform_purchase():
     err = _require_admin()

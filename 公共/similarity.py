@@ -12,13 +12,11 @@ import re
 # 地址相似度达到该阈值即视为命中（0.6 = 较宽松，适合演示 / 毕设场景）
 ADDRESS_MATCH_THRESHOLD = 0.6
 
-# 地址层级标记：在每个标记后切分，得到「江西省 / 南昌市 / 西湖区 / 中山路 / 123号」这样的片段
 _HIER = "省市区县镇乡村街道路巷弄里栋幢座单元号楼室层组队"
 
 _PUNCT = re.compile(
     r"[\s，。、（）()\[\]【】""''’'.,/\\_~!@#$%^&*+=|;:?<>．・-]"
 )
-
 
 def normalize(text):
     """归一化：全角转半角、去标点与空白、转小写，便于比对。"""
@@ -32,7 +30,6 @@ def normalize(text):
     s = _PUNCT.sub("", s).lower()
     return s
 
-
 def _segments(text):
     """把地址按层级标记切成有意义的片段列表。"""
     s = normalize(text)
@@ -45,7 +42,6 @@ def _segments(text):
     if buf:
         out.append(buf)
     return [x for x in out if x]
-
 
 def address_similarity(a, b):
     """返回 0~1 的地址相似度。

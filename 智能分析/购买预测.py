@@ -40,11 +40,9 @@ BIAS = -2.4             # 偏置：没有任何信号时概率很低
 
 _MIN_PROB = 0.02        # 展示下限，低于它的不列出
 
-
 def _pct(value):
     """0~1 保留一位小数的百分比字符串。"""
     return f"{round(value * 100, 1)}%"
-
 
 def _sales_map(products, orders):
     """{product_id: 销量件数}。"""
@@ -55,7 +53,6 @@ def _sales_map(products, orders):
             continue
         out[pid] = out.get(pid, 0) + int(o.get("quantity") or 0)
     return out
-
 
 def _context(mid=None):
     """准备打分所需的上下文：画像上下文 + 商品热度 / 销量 / 评分。
@@ -92,7 +89,6 @@ def _context(mid=None):
     ctx["hot"] = hot_by_pid
     return ctx
 
-
 def _tag_match(user_tags, product):
     """用户历史购买类目与该商品类目的匹配度（0~1）。"""
     tag = (product.get("tag") or "未分类")
@@ -101,7 +97,6 @@ def _tag_match(user_tags, product):
         return 0.0, tag
     got = sum(n for t, n in user_tags if t == tag)
     return round(got / total, 2), tag
-
 
 def score_pair(profile, product, beh, ctx):
     """给一个「顾客 × 商品」打分。返回 (概率, 理由列表)。"""
@@ -147,10 +142,8 @@ def score_pair(profile, product, beh, ctx):
         reasons.append("活跃顾客")
     return prob, reasons
 
-
 def _user_orders(profile, ctx):
     return ctx["orders_by_user"].get(str(profile["id"]), [])
-
 
 def _prepare_profiles(ctx):
     """用同一份 ctx 生成画像，并补上内部用的 (tag, qty) 元组。"""
@@ -159,10 +152,6 @@ def _prepare_profiles(ctx):
         p["top_tags_as_pairs"] = [(t["tag"], t["qty"]) for t in p["top_tags"]]
     return rows, {p["id"]: p for p in rows}
 
-
-# ------------------------------------------------------------
-# 对外
-# ------------------------------------------------------------
 def predict_for_user(uid, mid=None, top=None, min_prob=_MIN_PROB):
     """某顾客对各商品的购买概率（倒序）。mid 限定只算该商家的商品。"""
     uid = str(uid or "").strip()
@@ -194,7 +183,6 @@ def predict_for_user(uid, mid=None, top=None, min_prob=_MIN_PROB):
     results.sort(key=lambda x: x["prob"], reverse=True)
     return results[:top] if top else results
 
-
 def top_prospects(mid=None, k=30, min_prob=_MIN_PROB):
     """全部「顾客 × 商品」按购买概率排序的前 k 条。"""
     ctx = _context(mid)
@@ -224,7 +212,6 @@ def top_prospects(mid=None, k=30, min_prob=_MIN_PROB):
             })
     out.sort(key=lambda x: x["prob"], reverse=True)
     return out[:k]
-
 
 def product_prospects(mid=None, top_per_product=5, min_prob=_MIN_PROB):
     """按商品汇总潜在买家：每个商品列出「谁最可能买」。"""

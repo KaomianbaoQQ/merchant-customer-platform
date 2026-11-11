@@ -42,10 +42,7 @@ IMAGE_DIRS = (UPLOAD_IMAGE_DIR, LEGACY_IMAGE_DIR)
 _thread_lock = threading.RLock()
 _ALLOWED_EXT = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 
-
-# ------------------------------------------------------------
 # 底层读写
-# ------------------------------------------------------------
 @contextmanager
 def _locked():
     """进程内线程锁 + 跨进程文件锁。"""
@@ -60,7 +57,6 @@ def _locked():
             fcntl.flock(handle, fcntl.LOCK_UN)
             handle.close()
 
-
 def _load(path, default):
     if not os.path.exists(path):
         return default
@@ -70,7 +66,6 @@ def _load(path, default):
     except Exception:
         return default
 
-
 def _save(path, data):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = path + ".tmp"
@@ -78,10 +73,8 @@ def _save(path, data):
         json.dump(data, f, ensure_ascii=False, indent=2)
     os.replace(tmp, path)
 
-
 def _now():
     return time.strftime("%Y-%m-%d %H:%M:%S")
-
 
 def _to_int(value):
     try:
@@ -89,14 +82,9 @@ def _to_int(value):
     except (TypeError, ValueError):
         return 0
 
-
-# ------------------------------------------------------------
-# 商品
-# ------------------------------------------------------------
 def new_product_id(name):
     slug = re.sub(r"[^0-9a-zA-Z\u4e00-\u9fa5]+", "-", str(name or "")).strip("-")
     return (slug or "product") + "-" + time.strftime("%Y%m%d%H%M%S")
-
 
 def normalize_product(body, existing=None):
     """把任意商户提交的数据整理成统一商品结构。
@@ -161,7 +149,6 @@ def normalize_product(body, existing=None):
     else:
         product["created_at"] = src.get("created_at") or _now()
 
-    # SKU 定义落盘：稳定 sku_id + 规格名 + 价格；商户提交的 stock 等库存数值
     # 一律剥离，库存由 公共/inventory.py 在 MySQL 单点维护。
     from 公共 import inventory
     product["skus"] = [
@@ -171,7 +158,6 @@ def normalize_product(body, existing=None):
         })
     ]
     return product
-
 
 def list_products(owner_id=None, include_offline=False):
     """商品列表。owner_id 为空返回全部（客户前端）；否则只返回该商户的商品。
@@ -193,7 +179,6 @@ def list_products(owner_id=None, include_offline=False):
             data = [p for p in data if str(p.get("id")) not in offline]
     return data
 
-
 def get_product(pid, include_offline=False):
     """按 ID 取商品。include_offline=True 时可取到被平台下架的商品（商家/平台用）。"""
     pid = str(pid or "")
@@ -201,7 +186,6 @@ def get_product(pid, include_offline=False):
         if p.get("id") == pid:
             return p
     return None
-
 
 def create_product(body):
     product = normalize_product(body)
@@ -212,7 +196,6 @@ def create_product(body):
         data.append(product)
         _save(DATA_FILE, data)
     return product
-
 
 def update_product(pid, body):
     pid = str(pid or "")
@@ -232,7 +215,6 @@ def update_product(pid, body):
                 return merged
     return None
 
-
 def delete_product(pid):
     pid = str(pid or "")
     with _locked():
@@ -245,7 +227,6 @@ def delete_product(pid):
         _save(DATA_FILE, remain)
     return True
 
-
 def list_categories():
     """从现有商品中提取类目（去重、保序）。"""
     cats = []
@@ -254,7 +235,6 @@ def list_categories():
         if tag and tag not in cats:
             cats.append(tag)
     return cats
-
 
 def increment_views(pid):
     """商品浏览量 +1，返回新的浏览量；商品不存在返回 None。"""
@@ -272,10 +252,6 @@ def increment_views(pid):
                 return p["views"]
     return None
 
-
-# ------------------------------------------------------------
-# 图片
-# ------------------------------------------------------------
 def resolve_image(filename):
     """返回图片的绝对路径；找不到返回 None。"""
     name = os.path.basename(str(filename or ""))
@@ -287,7 +263,6 @@ def resolve_image(filename):
             return path
     return None
 
-
 def save_image(original_name, data):
     ext = os.path.splitext(str(original_name or ""))[1].lower()
     if ext not in _ALLOWED_EXT:
@@ -298,11 +273,4 @@ def save_image(original_name, data):
         f.write(data)
     return stored
 
-
-# ------------------------------------------------------------
 # 商户 ↔ 顾客 会话
-# ------------------------------------------------------------
-# 聊天记录已迁移到 MongoDB（NoSQL），实现见 公共/chat_store.py：
-# 本模块把 append_message / get_thread / list_conversations 等同名转发出去，
-# 客服（客服/auto_reply_service.py）、售后、平台后台、商户后台的调用点都不用改。
-# CHAT_FILE 常量保留，供一次性迁移脚本（工具/迁移聊天记录到Mongo.py）读取旧数据。

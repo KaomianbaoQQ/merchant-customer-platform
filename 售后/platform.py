@@ -27,10 +27,7 @@ from 售后.returns import get_returns_by_user, list_arbitrations
 PLATFORM_USER_ID = "platform"
 PLATFORM_USER_NAME = "平台管理员"
 
-
-# ------------------------------------------------------------
 # 基础查询
-# ------------------------------------------------------------
 def _safe(sql, params=None):
     try:
         conn = get_conn()
@@ -45,7 +42,6 @@ def _safe(sql, params=None):
     finally:
         conn.close()
 
-
 def _all_orders():
     return _safe(
         "SELECT id, product_id, goodsname, quantity, price, name, user_id, address, "
@@ -53,17 +49,14 @@ def _all_orders():
         "ORDER BY create_time DESC"
     )
 
-
 def _amount(order):
     try:
         return float(order.get("price") or 0) * int(order.get("quantity") or 0)
     except (TypeError, ValueError):
         return 0.0
 
-
 def _all_products():
     return store.list_products(include_offline=True)
-
 
 def _product_sales(products=None):
     """按商品汇总销量：{product_id: {"sales", "amount", "order_count", "buyers"}}。"""
@@ -91,7 +84,6 @@ def _product_sales(products=None):
         item["order_count"] += 1
         item["buyers"].add(str(o.get("user_id") or ""))
     return stats
-
 
 def _merchant_sales(products=None):
     """按商家汇总销量：{merchant_id: {...}}。订单优先按 merchant_id 归属，老订单按商品归属兜底。"""
@@ -121,16 +113,13 @@ def _merchant_sales(products=None):
         item["buyers"].add(str(o.get("user_id") or ""))
     return stats
 
-
 def _merchant_rows():
     return _safe(
         "SELECT id, username, name, shop_name, create_time FROM `merchant` ORDER BY id"
     )
 
-
 def _user_rows():
     return _safe("SELECT id, name, age, sex FROM `user` ORDER BY id")
-
 
 def _review_rows():
     return _safe(
@@ -138,14 +127,10 @@ def _review_rows():
         "FROM `review` ORDER BY create_time DESC"
     )
 
-
 def _fmt(value):
     return value.strftime("%Y-%m-%d %H:%M") if hasattr(value, "strftime") else str(value or "")
 
-
-# ------------------------------------------------------------
 # 平台总览
-# ------------------------------------------------------------
 def overview():
     products = _all_products()
     merchants = _merchant_rows()
@@ -179,10 +164,6 @@ def overview():
         "conversation_count": len(store.list_conversations()),
     }
 
-
-# ------------------------------------------------------------
-# 商家
-# ------------------------------------------------------------
 def list_merchants():
     products = _all_products()
     sales = _merchant_sales(products)
@@ -233,7 +214,6 @@ def list_merchants():
         })
     result.sort(key=lambda x: x["sales_amount"], reverse=True)
     return result
-
 
 def merchant_detail(mid):
     mid = str(mid or "").strip()
@@ -305,10 +285,6 @@ def merchant_detail(mid):
         "conversations": store.list_conversations(merchant_id=mid, include_platform=False),
     }
 
-
-# ------------------------------------------------------------
-# 顾客
-# ------------------------------------------------------------
 def list_users():
     orders = _all_orders()
     stats = {}
@@ -344,7 +320,6 @@ def list_users():
     result.sort(key=lambda x: x["amount"], reverse=True)
     return result
 
-
 def user_detail(uid):
     uid = str(uid or "").strip()
     user = next((u for u in list_users() if u["id"] == uid), None)
@@ -371,10 +346,7 @@ def user_detail(uid):
                           if str(c.get("user_id")) == uid],
     }
 
-
-# ------------------------------------------------------------
 # 商品 / 评价
-# ------------------------------------------------------------
 def list_products():
     products = _all_products()
     stats = _product_sales(products)
@@ -399,7 +371,6 @@ def list_products():
     result.sort(key=lambda x: x["sales_amount"], reverse=True)
     return result
 
-
 def list_all_reviews():
     products = {str(p.get("id")): p for p in _all_products()}
     merchant_names = {str(m.get("id")): (m.get("shop_name") or m.get("name") or "")
@@ -423,10 +394,7 @@ def list_all_reviews():
         })
     return result
 
-
-# ------------------------------------------------------------
 # 会话（人机 / 人工）
-# ------------------------------------------------------------
 def list_all_conversations():
     """全部会话，附带店铺名与「人机 / 人工」标记。"""
     merchant_names = {str(m.get("id")): (m.get("shop_name") or m.get("name") or "")
@@ -443,7 +411,6 @@ def list_all_conversations():
         result.append(item)
     return result
 
-
 def platform_thread(merchant_id, mark_read=True):
     """平台与某个商家的一对一会话（平台侧读）。"""
     mid = str(merchant_id or "").strip()
@@ -453,7 +420,6 @@ def platform_thread(merchant_id, mark_read=True):
     if mark_read:
         store.mark_read(mid, PLATFORM_USER_ID, "user")
     return thread
-
 
 def platform_reply(merchant_id, text, merchant_name=""):
     """平台以「平台管理员」身份给商家发消息，商家在「顾客消息」里可见并回复。"""

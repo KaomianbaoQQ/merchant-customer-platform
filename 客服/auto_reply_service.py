@@ -54,7 +54,6 @@ LOGISTICS_RE = re.compile(
     r"什么时候到|几天到|何时到|签收|收到|收货|配送|派送|运输|寄出|在路上|到货)"
 )
 
-
 def _order_line(o):
     """一行订单物流摘要（人话）。"""
     parts = [f"订单号 {o.get('id')}", f"物流状态 {o.get('status_text') or '—'}"]
@@ -65,7 +64,6 @@ def _order_line(o):
     if o.get("estimated_arrival"):
         parts.append(f"预计送达 {o['estimated_arrival']}")
     return "｜".join(parts)
-
 
 def product_orders_for_user(user_id, product):
     """该顾客在当前咨询商品上的订单（按时间倒序）；查不到返回 []。"""
@@ -88,7 +86,6 @@ def product_orders_for_user(user_id, product):
     from 售后.order import base_goodsname
     return [o for o in orders if base_goodsname(o.get("goodsname")) == base_goodsname(name)]
 
-
 def answer_product_logistics(user_id, product):
     """按「当前咨询商品」回答物流状态；没有该商品的订单时返回 None（交给 Dify）。"""
     orders = product_orders_for_user(user_id, product)
@@ -105,7 +102,6 @@ def answer_product_logistics(user_id, product):
     lines += [_order_line(o) for o in orders[:5]]
     lines.append("想看某一笔的详细物流，告诉我订单号即可。")
     return "\n".join(lines)
-
 
 def count_human_hits(thread):
     """从最近一条「顾客消息」往前数，连续命中「人工」关键词的条数。
@@ -124,7 +120,6 @@ def count_human_hits(thread):
             break
     return hits
 
-
 def build_conversation_history(thread):
     """把最近几条 user / bot / merchant 消息转成 [{role, text}]，供 Dify 判断意图。"""
     history = []
@@ -133,7 +128,6 @@ def build_conversation_history(thread):
         if role in ("user", "bot", "merchant"):
             history.append({"role": role, "text": str(m.get("text") or "")})
     return history
-
 
 def handle_chat_message(text, product, user, merchant_id, merchant_name):
     """
@@ -159,7 +153,6 @@ def handle_chat_message(text, product, user, merchant_id, merchant_name):
 
     thread = store.get_thread(merchant_id, user_id)
     # 只有「顾客正在等人工」（needs_human）时机器人才暂停自动回答。
-    # 商家回复过（human_handled=True）之后本次人工已结束，机器人恢复作答——
     # 这样顾客退出浏览器再进来，仍然有机器人应答，不会被永久静音。
     waiting_human = bool(thread.get("needs_human"))
 
@@ -208,7 +201,6 @@ def handle_chat_message(text, product, user, merchant_id, merchant_name):
                 "needs_human": True, "error": None}
 
     # 物流查询分流：直接查「当前咨询商品 + 当前顾客」的订单与运单状态作答。
-    # 查不到该商品的订单时返回 None，仍交给 Dify（泛问询如「一般几天发货」由知识库答）。
     if LOGISTICS_RE.search(text):
         reply = answer_product_logistics(user_id, product)
         if reply:
@@ -219,7 +211,6 @@ def handle_chat_message(text, product, user, merchant_id, merchant_name):
                     "bot_message_id": bot["id"] if bot else None,
                     "needs_human": False, "error": None}
 
-    # 未被转人工：调用知识库自动回答（把当前商品的订单物流一并上传，供物流分支引用）
     history = build_conversation_history(thread)
     result = ask_product_service(text, product=product, user_id=user_id,
                                  conversation_history=history,

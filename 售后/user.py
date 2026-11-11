@@ -15,7 +15,6 @@ from 公共.similarity import address_similarity, ADDRESS_MATCH_THRESHOLD
 # cs.user 的邮箱列：用于「邮箱验证码登录 / 找回密码」
 _EMAIL_COLUMN_READY = False
 
-
 def ensure_user_email_column():
     """确保 cs.user 有 email 列（及唯一索引）。进程内只检查一次。
 
@@ -58,7 +57,6 @@ def ensure_user_email_column():
     finally:
         conn.close()
 
-
 def get_user(user_id):
     """
     按 ID 查 cs.user，返回 {"id", "name", "age", "sex"}；不存在返回 None。
@@ -76,7 +74,6 @@ def get_user(user_id):
             return cur.fetchone()
     finally:
         conn.close()
-
 
 def verify_user(user_id, user_name, password=None):
     """
@@ -109,7 +106,6 @@ def verify_user(user_id, user_name, password=None):
         if user.get("password") != _hash_password(password):
             return False, user, "密码错误"
     return True, user, "校验通过"
-
 
 def verify_user_by_name(user_name, password):
     """
@@ -144,11 +140,9 @@ def verify_user_by_name(user_name, password):
             return True, u, "校验通过"
     return False, users[0], "密码错误"
 
-
 def _norm_addr(text):
     """地址比对前先去掉空格，避免「江西省 南昌市」与「江西省南昌市」判为不同。"""
     return re.sub(r"\s+", "", str(text or ""))
-
 
 def verify_profile(user_id, sex=None, address=None):
     """按个人资料核对身份（忘记原密码时用于重置密码）。
@@ -196,7 +190,6 @@ def verify_profile(user_id, sex=None, address=None):
         return False, "该账号没有可核对的性别 / 地址资料，请用原密码修改"
     return True, "资料核对通过"
 
-
 def _resolve_id_by_name(name):
     """按姓名取第一个匹配的账号 ID；不存在返回 None。
 
@@ -213,7 +206,6 @@ def _resolve_id_by_name(name):
     finally:
         conn.close()
     return row["id"] if row else None
-
 
 def change_password(user_id=None, user_name=None, new_password=None, password2=None,
                     old_password=None, sex=None, address=None):
@@ -277,7 +269,6 @@ def change_password(user_id=None, user_name=None, new_password=None, password2=N
     finally:
         conn.close()
 
-
 def reset_password_by_name(user_name, new_password, password2=None, sex=None, address=None):
     """忘记密码：未登录状态下，凭「姓名 + 性别 / 收货地址（相似匹配）」核对身份后重置密码。
 
@@ -320,7 +311,6 @@ def reset_password_by_name(user_name, new_password, password2=None, sex=None, ad
         return False, f"重置失败：{e}"
     finally:
         conn.close()
-
 
 def register_user(name, password, age=None, sex="未知", password2=None, email=None):
     """
@@ -380,9 +370,6 @@ def register_user(name, password, age=None, sex="未知", password2=None, email=
     finally:
         conn.close()
 
-
-# ==================== 邮箱验证码登录 / 绑定 / 找回密码 ====================
-
 def get_user_by_email(email):
     """按邮箱查账号，返回 {"id","name","age","sex","email"}；不存在返回 None。"""
     email = str(email or "").strip().lower()
@@ -410,7 +397,6 @@ def get_user_by_email(email):
     finally:
         conn.close()
 
-
 def email_bound_to_other(email, exclude_user_id=None):
     """邮箱是否已被【其它】账号占用。返回占用账号的姓名，未占用返回 None。"""
     email = str(email or "").strip().lower()
@@ -434,7 +420,6 @@ def email_bound_to_other(email, exclude_user_id=None):
     finally:
         conn.close()
 
-
 def verify_user_by_email_code(email, code):
     """邮箱验证码登录：邮箱必须已绑定账号，且验证码正确。
 
@@ -454,7 +439,6 @@ def verify_user_by_email_code(email, code):
     if not ok:
         return False, None, msg
     return True, user, "登录成功"
-
 
 def reset_password_by_email_code(email, code, new_password, password2=None):
     """忘记密码：邮箱验证码核验通过后重置密码。
@@ -495,7 +479,6 @@ def reset_password_by_email_code(email, code, new_password, password2=None):
     finally:
         conn.close()
 
-
 def find_account_by_email_code(email, code):
     """忘记账号：用邮箱验证码核验身份后，返回该邮箱绑定的账号资料。
 
@@ -518,7 +501,6 @@ def find_account_by_email_code(email, code):
     if not ok:
         return False, None, msg
     return True, user, "验证通过"
-
 
 def bind_email(user_id, email, code):
     """已登录用户绑定/更换邮箱（需邮箱验证码）。

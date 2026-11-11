@@ -50,7 +50,6 @@ CREATE TABLE IF NOT EXISTS `address_book` (
 _ensure_done = False
 _ensure_lock = threading.Lock()
 
-
 def ensure_address_table():
     """确保 cs.address_book 存在。返回 (是否成功, 提示信息)。
 
@@ -78,10 +77,8 @@ def ensure_address_table():
         finally:
             conn.close()
 
-
 def _s(value):
     return str(value if value is not None else "").strip()
-
 
 def normalize_address(data):
     """校验并整理一条地址。返回 (是否成功, 提示, 整理后的 dict)。
@@ -118,7 +115,6 @@ def normalize_address(data):
         "address": f"{province}{city}{district}{detail}",
     }
 
-
 def _format_row(row):
     if row is None:
         return None
@@ -127,7 +123,6 @@ def _format_row(row):
         if row.get(key) is not None:
             row[key] = str(row[key])
     return row
-
 
 def list_addresses(user_id):
     """某用户的全部地址，默认地址排在最前，其余按创建时间倒序。"""
@@ -147,7 +142,6 @@ def list_addresses(user_id):
         conn.close()
     return [_format_row(r) for r in rows]
 
-
 def get_address(user_id, addr_id):
     """按 ID 取一条属于该用户的地址；不存在返回 None。"""
     ok, _ = ensure_address_table()
@@ -165,10 +159,8 @@ def get_address(user_id, addr_id):
         conn.close()
     return _format_row(row)
 
-
 def _clear_default(cur, user_id):
     cur.execute(f"UPDATE {TABLE} SET is_default=0 WHERE user_id=%s", (str(user_id),))
-
 
 def create_address(user_id, data):
     """新增一条地址；第一条自动成为默认地址，也可显式要求设为默认。"""
@@ -190,7 +182,6 @@ def create_address(user_id, data):
                 first = int((cur.fetchone() or {}).get("c") or 0) == 0
                 if first:
                     # 第一条本身就是默认地址：不必再清空旧默认。
-                    # 空范围的 UPDATE 会加间隙锁，高并发插入时容易和插入意向锁互锁（死锁 1213）。
                     want_default = True
                 elif want_default:
                     _clear_default(cur, user_id)
@@ -220,7 +211,6 @@ def create_address(user_id, data):
         return False, "地址保存失败", None
     row = get_address(user_id, addr_id)
     return True, ("地址已保存并设为默认" if want_default else "地址已保存到地址簿"), row
-
 
 def update_address(user_id, addr_id, data):
     """修改一条地址（只允许改自己的）。"""
@@ -257,7 +247,6 @@ def update_address(user_id, addr_id, data):
 
     return True, "地址已更新", get_address(user_id, addr_id)
 
-
 def delete_address(user_id, addr_id):
     """删除一条地址；删掉默认地址后，剩余最新一条自动补为默认。"""
     ok, msg = ensure_address_table()
@@ -288,7 +277,6 @@ def delete_address(user_id, addr_id):
         return False, f"地址删除失败：{e}"
     finally:
         conn.close()
-
 
 def set_default_address(user_id, addr_id):
     """把某条地址设为默认（同一用户只会有一条默认地址）。"""
