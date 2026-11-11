@@ -1,0 +1,594 @@
+# Kaomianbao 商城 · 客服 / 售后 / 物流
+
+前端 + Flask 后端，客服与售后接入本地 Dify 工作流。代码按业务分门别类放在各自文件夹中，
+所有功能都封装在对应模块里，**入口 `main.py` 只负责调用，不含其它函数**。
+
+## 一、启动
+
+### 一键启动（推荐）
+
+| 双击 | 做什么 |
+| --- | --- |
+| `一键启动全部.command` | **全部**：Dify（Docker）+ MongoDB + 后端 + 打开顾客商城 / 商家后台 / 平台管理三个页面 |
+| `启动.command` | 只启动后端并打开统一入口页（不想开 Docker 时用） |
+| `工具/公网访问.command` | 把顾客商城发布到公网（公网地址由它打印） |
+
+「一键启动全部.command」做的事：Docker 没开就先拉起来 → 在 `~/dify/docker` 跑
+`docker compose up -d` → 等 Dify 响应 → 后端 8000 没在跑就启动 → 打开三个页面。
+Dify 装在别处时先 `export DIFY_DIR=/你的/dify/docker`。
+
+### 手动启动
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+
+# Web 后端（会自动建表 / 补字段）
+.venv/bin/python main.py
+# 浏览器打开 http://127.0.0.1:8000
+
+# 售后模块命令行对话
+.venv/bin/python main.py --cli
+```
+
+> 直接双击 `前端/客户前端.html`（file://）也能用，前端会自动请求 `http://127.0.0.1:8000`。
+
+### 公网访问（让不同网络的人打开顾客商城）
+
+```bash
+brew install cloudflared              # 只需装一次（已装可跳过）
+# 直接双击「工具/公网访问.command」即可：后端没在跑会顺手拉起
+```
+
+**公网地址只由「工具/公网访问.command」的终端窗口打印**（形如
+`https://xxx.trycloudflare.com`，框在 `===` 中间），把它发给别人，对方就能打开顾客商城。
+注意 `启动.command`、`一键启动全部.command` 只管本地的 Dify / 后端 / 页面，**都不显示公网地址**。
+
+- 前端页面在 http/https 下用**同源**地址调后端，所以经隧道访问时接口自动走同一域名，无需改代码；
+- **Dify（80）、MySQL（3306）仍只在本机运行**：隧道的请求先到 8000 的 Flask，
+  再由后端在本机调用 Dify（`客服/workflow.py`、`售后/workflow.py`），外部拿不到 Dify 地址与密钥；
+- `后端/public_access.py` 再叠一层白名单：外网只能访问 `/`（顾客商城）、`/images/*` 与顾客侧接口
+  （products / login / register / orders / addresses / returns / chat / consult / after-sales / logistics），
+  商户后台 `/merchant`、平台管理 `/platform`、`/api/merchant/*`、`/api/platform/*` 一律 403；
+  本机 `127.0.0.1` 不受限制，商户与平台界面照常用（局域网其它设备按“外部”处理）；
+- 隧道地址每次重启都会变；要固定域名需 Cloudflare 账号 + 自有域名（`cloudflared tunnel login` 后建命名隧道）。
+
+## 二、目录结构
+
+```
+模块/
+├── main.py                  唯一入口：只调用 run_server() / run_cli()
+├── 一键启动全部.command     双击 = Dify(Docker) + 后端 + 三个页面
+├── 启动.command             双击 = 只启动后端 + 打开统一入口页
+├── config.json              物流默认等待秒数 default_delay
+├── requirements.txt
+├── README.md
+│
+├── 前端/                    三个前端（全部放在一起，由同一个后端提供页面）
+│   ├── 入口.html            统一入口导航（顾客 / 商家 / 平台）
+│   ├── 客户前端.html        商城前端（商品、购物袋、售前 / 售后客服、物流）
+│   ├── 商户界面.html        商户后台（登录注册 / 商品 / 订单 / 顾客消息 / 售后）
+│   └── 平台界面.html        平台管理（仲裁 / 商家管控 / 商品 / 对话 / 评价）
+│
+├── 商品咨询/                商品资料（唯一图片来源）
+│   ├── 商品图片/            14 张商品图片
+│   └── 办公类商品完整详细产品信息大全（超全版）.md
+│
+├── 公共/
+│   ├── db_config.py         数据库连接配置（MySQL + MongoDB，各模块共用）
+│   ├── store.py             共享存储：商品 / 图片（聊天记录已转发到 chat_store）
+│   ├── chat_store.py        聊天记录（NoSQL）：售前会话 + 售后对话都存 MongoDB
+│   ├── behavior.py          用户行为埋点（NoSQL）：浏览 / 加购 / 下单，供智能分析
+│   ├── knowledge.py         商品资料落盘 + 同步 Dify 知识库（含商家元数据）
+│   ├── accounts.py          cs.merchant 商户账号（注册 / 登录 / token）
+│   └── platform_state.py    平台管控状态（商家停用 / 禁言、商品下架、罚款）
+│
+├── 智能分析/                用户画像 + 购买可能性（轻量可解释算法）
+│   ├── 用户画像.py          RFM 分层 + 行为统计 + 品类偏好 → 用户画像
+│   ├── 购买预测.py          顾客 × 商品 购买概率评分（每个分数都带中文依据）
+│   └── LSTM购买序列.py      参考「GitHub LSTM算法」的序列模型脚本（数据够时可跑）
+│
+├── 商户界面/                商户后台数据目录（页面已移至 前端/商户界面.html）
+│   ├── 后端服务 server.py        启动器（实际启动主后端 Flask）
+│   ├── products.json             商品数据（与客户前端共享）
+│   └── chat.json / images/       旧会话文件（历史数据，已迁到 MongoDB）与上传图片
+│
+├── 物流/                    物流模块
+│   ├── waybill.py           退换货单号生成 / 送达计时（订单运单号由商家填写）
+│   ├── status.py            物流状态动态计算（按时间段匹配）
+│   └── repository.py        cs.logistics 表 + cs.order 物流字段读写
+│
+├── 客服/                    在线客服（商品咨询）
+│   └── workflow.py          商品咨询 Dify 工作流调用
+│
+├── 售后/                    售后模块
+│   ├── config.py            读取 admin.json
+│   ├── auth.py              权限校验（管理员判定 / 订单归属）
+│   ├── user.py              cs.user     登录校验
+│   ├── order.py             cs.order    增删改查 / 下单 / 操作日志
+│   ├── address.py           cs.address_book 地址簿（保存 / 复用 / 增删改 / 默认地址）
+│   ├── chat.py              对话记录读写（已迁 MongoDB，见 公共/chat_store.py）
+│   ├── workflow.py          售后 Dify 工作流调用
+│   ├── service.py           售后主流程的 Web 封装
+│   ├── session_state.py     售后会话临时状态（待选订单 / 是否已转人工）
+│   ├── returns.py           退换货流程（校验物流 / 新运单 / 我已发出 / 换货重新发货）
+│   ├── cli.py               命令行对话流程 run_cli()
+│   ├── admin.json           管理员账号
+│   └── 客服.yml             售后工作流导出备份
+│
+├── 后端/                    Flask HTTP 层
+│   ├── app.py               应用工厂 / 启动 / CORS
+│   ├── common.py            请求用户解析
+│   ├── public_access.py     公网访问限制（外网只放行顾客商城）
+│   └── routes/              各接口蓝图
+│       ├── pages.py         页面 + 图片（含 /merchant 商户页）
+│       ├── health.py        健康检查
+│       ├── auth.py          客户登录 / 注册
+│       ├── consult.py       在线客服
+│       ├── after_sales.py   售后客服
+│       ├── orders.py        下单结算 + 我的订单
+│       ├── addresses.py     地址簿（增删改查 + 默认地址）
+│       ├── returns.py       退换货
+│       ├── logistics.py     物流查询
+│       ├── products.py      客户侧商品接口
+│       ├── chat.py          顾客 ↔ 商家留言
+│       └── merchant.py      商户后台接口（账号 / 商品 / 会话）
+│
+└── 工具/
+    ├── set_time_config.py   修改默认物流等待秒数
+    ├── test_waybill.py      运单号生成测试
+    ├── 迁移聊天记录到Mongo.py  一次性把 chat.json + cs.chat_log 历史数据导入 MongoDB
+    ├── 清空数据.py           一键清空全部业务数据（保留行政区划），默认只预览
+    ├── 仿真压测.py           模拟上千用户的注册/下单/退款/客服 + 商家上架（产出落 结果/）
+    ├── 公网访问.command       Cloudflare 隧道（只发布 8000 端口 / 顾客商城）
+    └── 全国行政区划数据.xlsx 省 / 市 / 区数据源
+```
+
+## 三、Dify 工作流
+
+密钥**不写在代码里**，全部来自 `config.json` 的 `dify.workflows` 段（首次配置运行
+`python 工具/初始化配置.py` 按提示填写；`config.json` 已在 `.gitignore` 中）。
+
+| 用途 | 配置项 | 工作流地址 |
+| --- | --- | --- |
+| 在线客服（商品咨询） | `dify.workflows.consult.api_key` | 网页 `http://localhost/workflow/<工作流ID>`，实际调用 `http://localhost/v1/workflows/run` |
+| 售后客服 | `dify.workflows.after_sales.api_key` | `http://localhost/v1/workflows/run` |
+| 订单定位 | `dify.workflows.order_locate.api_key` | `http://localhost/v1/workflows/run` |
+| 知识库（建库/检索） | `dify_knowledge.api_key` + `dataset_id` | `http://localhost/v1` |
+
+这些 Key 也支持用环境变量覆盖（`KB_DIFY_CONSULT_KEY` / `KB_DIFY_AFTER_SALES_KEY` /
+`KB_DIFY_ORDER_LOCATE_KEY` / `KB_DIFY_DATASET_KEY`），详见 `公共/app_config.py`。
+
+商品咨询工作流输出 `one`（单品咨询）/ `two`（多品对比）/ `three`（闲聊）/
+`four`（物流查询），后端自动去掉 `thinking` 思考内容。
+进入商品详情页点「咨询这件商品」时，会把当前商品名称、价格、参数，以及
+**该顾客在这件商品上的订单与物流**（`客服/workflow.py · build_product_prompt(orders=...)`）
+一起拼进 `user_input` 上传给 Dify，`four` 分支直接引用这段上下文作答。
+
+### 客服入口（只对接具体商家，无平台公共客服）
+
+- **商品详情页右侧顶部的「联系商家客服」按钮** → 绑定该商品所属商家（`openProductCS`，
+  入口就在商品名上方最显眼的位置，`.detail-cs-btn`）
+- **我的订单卡片「联系商家客服」** → 绑定该订单所属商家（`openOrderMerchantCS`）
+- 重新打开某商家的售前客服会**显示与该商家的历史聊天记录**（按商家各存一份，顾客可回看，
+  见 `前端/客户前端.html · loadConsultHistory`）
+- 顾客问物流时，后端会先按「当前商品 + 当前顾客」确定性作答（`客服/auto_reply_service.py ·
+  answer_product_logistics`）；查不到该商品订单时才交给 Dify 的 `four` 分支
+
+### 售前「机器人 ↔ 人工」的切换
+
+| 阶段 | 谁在回答 |
+| --- | --- |
+| 默认 | **Dify 机器人**自动回答（商品咨询工作流） |
+| 顾客**连续**说 3 次「人工」（机器人 / 商家回复不打断连续，中间说了别的就重新计数） | 会话标记「待人工」，机器人**暂停**，等商家真人回复（商家 / 平台出现强提醒） |
+| 商家在「顾客消息」里回复之后 | 本次人工结束，**机器人恢复自动回答** |
+
+- 「连续 3 次」判定见 `客服/auto_reply_service.py · count_human_hits`，与售后的
+  `售后/chat.py · count_recent_consecutive` 同一口径；
+- 暂停条件是「顾客正在等人工」（`needs_human`），**不是**「商家回复过」——
+  所以顾客退出浏览器再进来、继续提问，仍然有机器人应答，不会被历史消息永久静音；
+- `human_handled` 只作为「商家真人回复过」的记录（平台「全部对话」据此标注、前端不再重复提示「已转人工」）。
+
+### 客服按商家隔离（每个商家的客服互不串）
+
+| 层面 | 做法 |
+| --- | --- |
+| 会话 | 会话 key 是「商户 + 顾客」（`公共/chat_store.py · _thread_key`），同一顾客咨询不同商家是两段独立会话 |
+| 后端接口 | 商户后台读 / 回会话时 `merchant_id` **强制取当前登录商家**（`后端/routes/merchant.py`），伪造参数也读不到别人家的会话 |
+| 前端 | 每个商家各存一份本地聊天记录（`consultCache`），切商家不会把上一家的消息带过来 |
+| 知识库 | 上传商品时给知识库文档写 `merchant_id / merchant_name` 元数据（`公共/knowledge.py · _doc_set_metadata`），Dify 检索节点按它过滤 |
+
+知识库这一步需要你在 Dify 里配一次：
+
+1. 知识库（dataset `dab2daf8-8937-4048-ae08-faf089ae6fb2`）的元数据里**新建两个字段**：
+   `merchant_id`、`merchant_name`（都选字符串）——当前还没有这两个字段，没建的话后端写入时只会打印告警；
+2. 「商品咨询」工作流**开始节点**加两个入参：`merchant_id`、`merchant_name`（文本、可空，后端已经在传）；
+3. **检索节点**开「元数据过滤」：`merchant_id 等于 {{#开始.merchant_id#}}`，设为严格匹配；
+4. 已有商品重新打标：在商户后台对每个商品点一次「同步知识库」（走 update，正文与元数据都会重写）。
+
+> 若检索节点的元数据过滤不方便配，替代方案是「每个商家一个 dataset」：在 Dify 里各建一个知识库，
+> 把 dataset_id 配进 `config.json`，再改 `knowledge.py` 按店主选库。
+
+### 聊天记录（MongoDB / NoSQL）
+
+售前（顾客 ↔ 商家 / 机器人）与售后的**全部聊天记录都存在 MongoDB**，MySQL 只留订单、售后单等业务数据。
+
+| 集合 | 内容 |
+| --- | --- |
+| `presale_threads` | 售前会话：一条会话一个文档，`messages[]` 放消息，另带未读、是否待人工等状态 |
+| `after_sales_messages` | 售后对话：一条消息一个文档（按 `session_id` 分组，MySQL 原自增 id 存在 `legacy_id`） |
+| `user_behaviors` | 用户行为埋点（浏览 / 加购 / 下单），供「智能分析」做画像与购买预测 |
+
+```bash
+# 容器（「一键启动全部.command」会自动拉起）
+docker run -d --name kaomianbao-mongo -p 127.0.0.1:27017:27017 \
+  -v kaomianbao_mongo_data:/data/db --restart unless-stopped mongo:7
+
+# 历史数据一次性导入（幂等，可重复跑；加 --dry-run 只看条数不写库）
+.venv/bin/python 工具/迁移聊天记录到Mongo.py
+
+# 看数据
+docker exec kaomianbao-mongo mongosh kaomianbao_chat --eval "db.presale_threads.countDocuments()"
+```
+
+- 连接配置在 `公共/db_config.py · MONGO_CONFIG`（不放 config.json，避免被 `工具/set_time_config.py` 整体覆盖）；
+- 实现都在 `公共/chat_store.py`；`公共/store.py` 与 `售后/chat.py` 只做同名转发，调用点没改；
+- MongoDB 连不上时**只打印告警、不影响下单与客服**（只是聊天记录写不进去）；
+- `cs.chat_log` 表与历史数据保留不删，只是不再写入。
+
+### 消息的已读 / 未读
+
+每条消息后面都会跟一个小字：**自己发的看对方有没有读，对方发来的看自己有没有读**；
+**点进这个会话就算读过了**（没点进去一直显示未读）。
+
+| 界面 | 小字 class | 判读 |
+| --- | --- | --- |
+| 顾客的客服面板（售前 `cs-read`） | 自己发的看 `read_merchant`，商家 / 机器人发的看 `read_user` | 打开面板（GET `/api/chat`）、或刚发完消息（POST `/api/chat`）即标已读 |
+| 顾客的售后面板 | 自己发的看 `read_agent`，客服回复的看 `read_user` | 打开面板（GET `/api/after-sales`）、客服发出回复时各自标记 |
+| 商户后台「顾客消息」/ 平台「全部对话」 | 自己（商家 / 平台客服）发的看 `read_user`，顾客 / 机器人发的看 `read_merchant` | 打开会话（`/api/merchant/chats/thread`、`/api/platform/conversations/thread`）即标已读 |
+
+标记存在 MongoDB 的消息里（售前 `read_user` / `read_merchant`，售后 `read_user` / `read_agent`）；
+从 `chat.json` 迁移进来的历史消息没有这两个字段，读取时按「发送方已读、接收方未读」补齐。
+
+### 聊天记录查询（商家 / 平台）
+
+两边的对话界面都带**关键词 + 时间范围**的聊天记录查询（数据源就是 MongoDB 里的历史消息）：
+
+| 界面 | 位置 | 接口 |
+| --- | --- | --- |
+| 商户后台 | 「顾客消息」页顶部搜索框 + 时间下拉（全部 / 今天 / 近 7 天 / 近 30 天） | `GET /api/merchant/chats/search?q=&since=&until=` —— **只搜本店会话**（后端按登录商家过滤） |
+| 平台后台 | 「全部对话」页顶部同样的搜索框 | `GET /api/platform/conversations/search?q=&since=&until=` —— 搜全部会话（含售后转人工） |
+
+- 关键词同时匹配**顾客姓名 / 顾客 ID**与**任意一条消息内容**，结果里会显示「命中内容」原文；
+- 点结果里的会话即可在右侧 / 抽屉里读**完整对话记录**（含每条消息的已读 / 未读）；
+- 商户侧查询时不会被轮询刷新覆盖（`chatSearching` 标记），点「清除」回到正常会话列表。
+
+### 商品评价门槛
+
+评价是**订单完成之后**的事：只有该商品存在一笔属于本人、**已签收**的订单才允许评价
+（`售后/review.py · can_review`，提交时二次校验）。前端行为：
+
+| 情况 | 表单 `#dReviewForm` | 提示 |
+| --- | --- | --- |
+| 有该商品「已签收」订单 | 显示 | `#dReviewOrder` **明示靠哪笔订单**：「可以评价：订单 ORD…（商品 ×N，已签收）」（数据来自接口 `review_order`，由 `售后/review.py · reviewable_order` 给出，与 `can_review` 同一份判断） |
+| 没下单 / 还没签收 / 未登录 | 隐藏 | `#dReviewRule` 明说规则：「订单完成后才能评价这件商品：这件商品你还没有「已签收」的订单，确认收货后这里会出现写评价的入口。」 |
+
+- 评价表单**默认隐藏**（HTML 里就带 `display:none`），只在后端确认可评价时才显示，不会出现「还没买就能写评价」的错觉；
+- **同一顾客对同一商品只有一条评价**（`review` 表唯一键 `uq_product_user`），再次提交是**更新**原评价而不是新增；
+- 一个商品的多条评价（不同顾客）会**全部展示**，按时间倒序。
+
+### 顾客「个人中心」（地址簿 / 修改密码）
+
+顾客登录后点右上角 👤 进入「个人中心」（`前端/客户前端.html · openAccount`），三块内容：
+
+| 区块 | 能力 |
+| --- | --- |
+| 账号信息 | 顾客ID / 姓名 / 性别 / 年龄（资料由平台维护）+ 退出登录 |
+| 我的地址簿 | 读 `cs.address_book`，可**新增 / 编辑 / 删除 / 设为默认**；与下单弹窗共用同一套地址接口与校验规则（`售后/address.py`） |
+| 修改密码 | 两种验证方式，见下 |
+
+**修改密码的两种验证方式**（`售后/user.py · change_password` → `POST /api/change-password`）：
+
+| 方式 | 传参 | 说明 |
+| --- | --- | --- |
+| 用原密码 | `old_password` | 校验原密码通过即可改 |
+| 忘记原密码，用资料核对 | `sex` / `address` | **账号有哪项资料就校验哪项，没有的跳过**：性别不是「未知」时必须一致；地址簿里有地址时必须命中其中一条；两项资料都没有则拒绝，只能用原密码 |
+
+密码格式沿用注册规则（≥6 位，仅字母和数字，两次输入一致），新密码不能与原密码相同
+（`公共/accounts.py · validate_password`）。
+
+### 一键清空数据（`工具/清空数据.py`）
+
+演示前想回到「空商城」时用：
+
+```bash
+.venv/bin/python 工具/清空数据.py          # 只预览将清空的内容，不动数据
+.venv/bin/python 工具/清空数据.py --yes    # 真正执行（不可恢复）
+```
+
+清空 MySQL 业务表（user / merchant / order / return_order / logistics / review /
+address_book / chat_log / operate_log）、MongoDB 聊天与行为集合、商品（products.json）、
+平台管控状态、知识库映射、商品资料（`商品咨询/*.md`）与商家上传图片；
+**保留** `cs.region`（省市区参考数据，选地址靠它）与 `售后/admin.json`（平台管理员账号）。
+Dify 知识库里的文档不在清理范围内，需要时在 Dify 里手动删。
+
+### 仿真压测（`工具/仿真压测.py`）
+
+模拟上千个顾客 + 多个商家的**完整业务链路**，用来给画像 / 购买预测 / 客服灌数据：
+
+```
+商家注册 → 商家上架商品 → 顾客注册 → 存收货地址 → 客服咨询 → 下单 →
+申请退款 / 退货（4 条路径）→ 商家处理 → 物流流转 → 结束
+```
+
+全部走**真实 HTTP 接口**，所以产出的订单 / 售后 / 聊天记录与真人操作完全一致。
+
+```bash
+.venv/bin/python 工具/仿真压测.py                       # 2000 用户 / 并发 24
+.venv/bin/python 工具/仿真压测.py --users 50            # 小规模先跑通
+.venv/bin/python 工具/仿真压测.py --yes                 # 跳过确认提示
+.venv/bin/python 工具/仿真压测.py --dify-rate 0.1       # 10% 客服真调 Dify
+.venv/bin/python 工具/仿真压测.py --no-short-delay      # 不改物流等待时间
+```
+
+| 参数 | 默认 | 说明 |
+| --- | --- | --- |
+| `--users` | 2000 | 顾客数量 |
+| `--concurrency` | 24 | 并发线程数（**别超过 60**，MySQL `max_connections` 只有 151） |
+| `--merchants` / `--products` | 2 / 6 | 商家数、每个商家的商品数 |
+| `--dify-rate` | 0.03 | 客服**真调 Dify** 的比例，其余直接写 MongoDB 模拟回复 |
+| `--short-delay` | 1 | 仿真期间把 `config.json` 的 `default_delay` 改成这个秒数（**结束自动还原**） |
+
+**售后四条路径**（按比例随机，保证都覆盖到）：
+
+| 路径 | 流程 |
+| --- | --- |
+| 未发货退款 | 提交即完成（无需商家同意） |
+| 未发货退货 | 同上 |
+| 已发货退款 | 商家发货 → 申请退款 → 商家多次「推进」直到「已退款」 |
+| 已发货退货全链路 | 商家发货 → 物流自动签收 → 申请退货 → 商家同意 → 顾客寄回 → 「退换完成」 |
+
+**产出**（默认 `结果/仿真_时间戳/`）：
+
+| 文件 | 内容 |
+| --- | --- |
+| `users/<顾客ID>.json` | 该顾客的**完整操作流水**（每步成功 / 失败 + 耗时）+ **完整对话** + 最终订单 / 售后状态 |
+| `users.csv` | 一行一个顾客的汇总（性别、成功与否、耗时、步骤、失败原因） |
+| `对话.jsonl` | 全部对话，一行一条（含真调 Dify 的标记 `source`） |
+| `summary.json` | 总汇总：成功率、各步骤通过数、售后结果分布、数据库最终行数 |
+| `失败清单.txt` | 失败用户与原因（没有失败则不生成） |
+
+> 跑之前请确保：后端在跑、MongoDB 已启动（`一键启动全部.command` 或
+> `docker start kaomianbao-mongo`）。库里已有数据也能再跑（顾客姓名带本次运行的短标识，
+> 不会与上一批账号重名）；想从空库开始先执行 `工具/清空数据.py --yes`。
+
+## 四、智能分析（用户画像 / 商品购买可能性）
+
+用「算法」把顾客与商品数据变成看得懂的结论：**管理员**看全体用户画像与商品购买可能性，
+**商家**看本店相关顾客画像与本店商品购买可能性。参考了
+`/Users/kaomianbao/Downloads/GitHub LSTM算法`（天池「用户购买行为预测」）的思路，
+并按本项目数据量做了取舍（见本节末尾）。
+
+| 界面 | 位置 | 看到什么 |
+| --- | --- | --- |
+| 平台后台（`前端/平台界面.html`） | 顶部「智能分析」标签 | 用户画像表 + 「最可能成交的顾客 × 商品」+ 每个商品的潜在买家 |
+| 商户后台（`前端/商户界面.html`） | 顶部「顾客洞察」标签 | 本店相关顾客画像 + 本店每个商品的潜在买家（按购买概率排序） |
+
+### 用户画像（`智能分析/用户画像.py`）
+
+| 维度 | 说明 |
+| --- | --- |
+| RFM | R 最近购买距今天数 / F 订单数 / M 消费金额，各打 **1~5 分** |
+| 客户分层 | 按 RFM 归到「重要价值 / 重要保持 / 重要发展 / 重要挽留 / 一般保持 / 流失预警 / 新客」 |
+| 行为统计 | 浏览 / 加购 / 购买次数（来自行为埋点） |
+| 品类偏好 | 买得最多的商品与类目（tag） |
+| 标签 | 活跃 / 高价值 / 复购达人 / 犹豫未购 / 兴趣浓厚 / 流失风险 / 偏好：xx 类目 |
+
+### 商品购买可能性（`智能分析/购买预测.py`）
+
+给每个「顾客 × 商品」算一个 **0~100% 的购买概率**，并给出中文依据（不是黑盒）：
+
+```
+概率 = sigmoid(偏置 + Σ 权重·特征)
+特征（均归一化到 0~1）：复购 / 加购 / 浏览 / 类目偏好匹配 / 商品热度 / 商品口碑 / 顾客活跃度
+```
+
+权重在 `购买预测.py` 顶部 `WEIGHTS`，可按业务调整；展示时会列成
+「买过这件商品（复购）、加购 2 次、偏好「办公好物」类目、全站热销 …」这样的依据。
+
+### 行为埋点（`公共/behavior.py`）
+
+要算购买概率，除了订单还需要**按顾客记录的行为**。埋点存 MongoDB 集合 `user_behaviors`
+（与聊天记录同一个库，Mongo 连不上时只告警、不影响下单与浏览）：
+
+| 行为 | 触发点 | 写入方式 |
+| --- | --- | --- |
+| `view` 浏览 | 顾客打开商品详情 | `前端/客户前端.html · trackProductView` → `POST /api/products/<id>/view`（带登录身份） |
+| `cart` 加购 | 顾客点「加入购物袋」 | `前端/客户前端.html · reportBehavior('cart', …)` → `POST /api/behavior` |
+| `purchase` 下单 | 顾客下单成功 | 后端 `后端/routes/orders.py` 下单成功后逐个商品写入 |
+
+> 未登录的顾客没有 `user_id`，不记录（无法归属到某位顾客）。
+
+### 为什么不用参考项目里的 LSTM
+
+参考项目用「用户历史购买序列」训练 LSTM 预测下一件商品，是**竞赛级数据量（百万行订单）**下的方案。
+本商城订单量极小（当前个位数），真跑 LSTM 只会严重过拟合、结论不可信。所以：
+
+- **线上页面**用上面这套**轻量可解释算法**（纯标准库，无需额外依赖），小数据下也稳定、每个分数都能解释；
+- **序列模型脚本** `智能分析/LSTM购买序列.py` 按参考项目改写，数据够了再跑：
+
+```bash
+# 先把订单积累到每用户 >= 6 次购买（脚本会自动判断样本是否足够）
+.venv/bin/pip install torch pandas numpy scikit-learn matplotlib tqdm   # 仅该脚本需要
+.venv/bin/python 智能分析/LSTM购买序列.py
+```
+
+样本不足时脚本会直接提示并退出，不会给出误导性结果（当前会提示「样本太少，不进行训练」）。
+
+## 五、接口
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/` | 客户前端页面 |
+| GET | `/merchant` | 商户后台页面（多商户登录 / 商品 / 顾客消息） |
+| GET | `/images/<文件名>` | 商品图片（商家上传目录优先，旧目录兜底） |
+| GET | `/api/products` | 全部商家上架的商品（客户前端动态读取） |
+| POST | `/api/register` | 客户注册（姓名 + 密码，写入 `cs.user`） |
+| POST | `/api/login` | 客户登录（姓名 + 密码） |
+| POST | `/api/change-password` | 顾客改密码（`old_password` 原密码验证，或 `sex` / `address` 资料验证） |
+| POST | `/api/chat` | 顾客给某商家留言（`merchant_id`） |
+| GET | `/api/chat?user_id=&merchant_id=` | 顾客拉取商家回复 |
+| POST | `/api/merchant/register` | 商户注册（用户名 + 密码，写入 `cs.merchant`） |
+| POST | `/api/merchant/login` | 商户登录，返回 token |
+| GET/POST/PUT/DELETE | `/api/merchant/products...` | 商户商品增删改查（仅限本人商品） |
+| GET | `/api/merchant/orders?user_id=&status=` | 商户全部订单（可按顾客 / `pending`\|`shipped` 过滤） |
+| POST | `/api/merchant/orders/<订单号>/ship` | 商户发货：填 7 位快递单号 `{"waybill":"1234567"}` |
+| POST | `/api/merchant/refunds/<售后单号>/reship` | 换货：商家签收后填新 7 位单号重新发货 |
+| GET | `/api/merchant/chats` `/chats/thread` | 商户顾客会话 / 回复 |
+| GET | `/api/merchant/chats/search?q=&since=&until=` | 商户查聊天记录（关键词 + 时间范围，**仅本店**） |
+| GET | `/api/platform/conversations/search?q=&since=&until=` | 平台查聊天记录（关键词 + 时间范围，全部会话） |
+| POST | `/api/behavior` | 顾客行为埋点（浏览 / 加购，带登录身份；`event=view\|cart`） |
+| GET | `/api/platform/analytics/profiles` | 平台：全部顾客画像（RFM / 分层 / 行为 / 标签） |
+| GET | `/api/platform/analytics/profile/<uid>` | 平台：单个顾客画像（含订单明细） |
+| GET | `/api/platform/analytics/purchase` | 平台：全部商品购买可能性 + 潜在买家 |
+| GET | `/api/merchant/analytics/customers` | 商户：本店相关顾客画像（**仅本店**） |
+| GET | `/api/merchant/analytics/purchase` | 商户：本店商品购买可能性（**仅本店**） |
+| POST | `/api/consult` | 在线客服（商品咨询工作流，可带 `product`） |
+| POST | `/api/after-sales` | 售后客服（售后工作流 + 订单增删改查，需登录） |
+| POST | `/api/orders` | 下单：写 `cs.order`（含地址），订单先进入「待发货」 |
+| GET | `/api/orders?user_id=&user_name=` | 我的订单（含物流状态）+ 退换货记录 |
+| GET | `/api/addresses?user_id=&user_name=` | 我的地址簿（默认地址在最前） |
+| POST | `/api/addresses` | 新增地址（可 `is_default`；第一条自动成为默认） |
+| PUT/DELETE | `/api/addresses/<id>` | 修改 / 删除地址 |
+| POST | `/api/addresses/<id>/default` | 设为默认地址 |
+| POST | `/api/returns` | 申请退货 / 换货 / 退款（`return_type=return|exchange|refund`，未发货提交即完成） |
+| POST | `/api/returns/<退货单号>/waybill` | 把客服给出的快递单号填入订单信息 |
+| POST | `/api/returns/<退货单号>/shipped` | 用户点「我已发出」，开始计算退换完成时间 |
+| GET | `/api/returns?user_id=&user_name=` | 我的退换货列表 |
+| GET | `/api/logistics/<运单号>` | 按运单号查物流 |
+| GET | `/api/logistics?user_id=` | 某用户物流列表 |
+| GET | `/api/health` | 建表 / 连接自检 |
+
+## 六、物流规则
+
+**运单号不再自动生成，由商家在商户后台「订单管理」中填写**（客户下单时不生成运单号，
+订单先进入「待发货」）。
+
+发货时：商家填写 **7 位数字**快递单号并发货，`cs.order.waybill` 记录该单号，
+`cs.logistics` 记录单号、地址、发货时间、预计送达时间。同一次结算的多件商品共用同一个运单号。
+
+预计送达 = 发货时间 + `default_delay`（秒，见 `config.json` / `工具/set_time_config.py`，默认 300 = 5 分钟）。
+
+**待发货红点只数「还需要发货」的订单**：退货 / 退款已完成等无需再发货的订单
+（`售后/order.py · list_orders_for_owner` 里的 `can_ship=False`）不计入
+（`后端/routes/merchant.py · /api/merchant/orders` 的 `stats.pending`），
+点「待发货」筛选时这些订单也不再列出，红点与列表口径一致，不会出现「红点永远消不掉」。
+
+状态（`物流/status.py` 与前端使用同一套规则，前端每秒实时重算）：
+
+```
+尚未发货（无运单 / 无物流）          → 0 待发货
+now >= 预计送达                    → 4 已签收
+剩余 <= min(1 小时, 总时长 × 25%)   → 3 派送中
+已用 < 总时长 × 15%                 → 1 已发货
+其余                               → 2 运输中
+```
+
+例如总时长 1 天时，最后 1 小时进入「派送中」；短时长演示时按 25% 比例缩放。
+
+## 七、退换货流程（退货 / 换货分开）
+
+用户登录后进入「我的订单」（顶部导航）即可查看该 ID 下的**全部订单**（含运单号与物流状态）。
+
+```
+点「申请退款 / 申请退货 / 申请换货」（也可以直接在售后对话中说“我要退款 / 换货”）
+  └─ 后端确定性识别意图（售后/service.py · detect_return_intent），不依赖 Dify
+       └─ 从该用户全部订单中定位订单（序号 / 订单号 / 商品名）
+            └─ 校验物流状态（售后/returns.py · check_return_eligibility）
+                 ├─ 未发货 → 退款 / 退货：无需理由、无需商家同意、不走仲裁，提交即完成
+                 │           换货：拒绝（货还没发出，没有换货可言）
+                 ├─ 已发货未签收 → 可退/换/退款（需理由），只能「全部退回」，原运单号不变
+                 └─ 已签收 → 退货 5 分钟内 / 换货 10 分钟内；可部分数量退换
+```
+
+已签收的退货 / 换货走商家确认：
+
+```
+商家同意（平台生成 7 位寄回单号，换货由顾客自己填寄回单号）
+点「我已发出」
+  └─ 记录寄出时间，预计到仓 = 寄出时间 + default_delay（状态【退货运输中】）
+倒计时结束
+  ├─ 退货 → 状态自动变为【退换完成】
+  └─ 换货 → 状态变为【商家已签收，等待重新发货】
+        └─ 商家在「售后处理」里填新的 7 位运单号「签收并重新发货」
+             └─ 状态【退换完成】，新运单号登记进 cs.logistics，顾客可继续查新包裹物流
+```
+
+- 退货与换货分开：`cs.return_order.type = return / exchange / refund`，页面分别显示「退货」「换货」「退款」。
+- **未发货**：`cs.return_order.status` 直接落 `done`（退货）/ `refunded`（退款），不进商家待办、
+  不走仲裁；该订单同时被标记为「无需再发货」，商家无法再误发货。
+- **多商品订单 / 部分退换**：一次结算的多件商品共用同一个运单号，在「我的订单」里合并成一张订单卡片，
+  每件商品单独显示数量与「申请退货 / 申请换货」；退/换数量可自选（如 5 件里退 2 件），
+  系统自动校验“可退数量 = 订单数量 - 已申请退换数量”。
+- 商品匹配支持**模糊识别**：说「商务笔记本电脑」也能定位到「商务办公笔记本电脑」。
+- 退换货记录存放在 `cs.return_order`（换货重新发货的单号存在 `reship_waybill`）。
+- **地址簿**：下单弹窗里填的地址会自动存进 `cs.address_book`，也可手动「保存到地址簿」；
+  支持选择 / 编辑 / 删除 / 设为默认地址，默认地址在下单时自动带出。
+
+### 转人工客服
+
+右下角「售后客服」面板输入框旁有「人工」按钮；顾客**连续说出 3 次「人工」**
+（连续判定见 `售后/chat.py · count_recent_consecutive`）即自动转接人工客服：
+会话登记到平台「全部对话」（标记为人工），人工客服在平台侧回复，
+顾客在售后面板里通过轮询即时收到。
+
+#### 转人工强提醒（商家 / 平台两边都有）
+
+顾客连说 3 次「人工」后，**商家后台与平台后台都会出现顶部红色横幅 + 会话行闪动 + 提示音**，
+不会漏掉：
+
+| 界面 | 横幅内容 | 数据来源 |
+| --- | --- | --- |
+| 商家后台（`前端/商户界面.html`） | 「⚠️ 有 N 位顾客在等你人工回复」（点一下跳到第一条待人工会话）；若有售后转人工会附一行「另有 M 条售后转人工，由平台客服处理」 | `GET /api/merchant/chats` 的 `conversations[].needs_human` + `platform_human` |
+| 平台后台（`前端/平台界面.html`） | 「⚠️ 有 N 条转人工会话待处理」（点一下打开「全部对话」），并区分「商家会话 x 条 ｜ 售后转人工 y 条」 | `GET /api/platform/conversations` 的 `needs_human` |
+
+- 提示音用 WebAudio 现场合成（不依赖音频文件），**新出现转人工**时才响；
+  浏览器要求先与页面交互过才允许发声，所以首次可能无声，之后正常。
+- 商家侧每 6 秒（不在会话页）/ 4 秒（在会话页）刷新，平台侧每 5 秒刷新，
+  商家真人回复后 `needs_human` 置回 False，横幅自动消失。
+
+> **关于 Dify**：售后工作流只有 insert/delete/update/select/闲聊 分支，没有「退款/退货/换货」分支，
+> 所以“退款”会被 LLM 误判成 insert。这里把退/换意图改为**后端确定性处理**（可靠且能定位订单），
+> 无需改动 Dify 图。其它问句仍走 Dify。
+
+无论哪条路径，售后都会把该用户的 **全部订单 + 退换货记录 + 最近对话历史**
+（`售后/service.py · build_dify_context`）作为 `user_orders` 上传给 Dify，以理解用户意图。
+
+### 售后对话的分支顺序（`售后/service.py · handle_after_sales`）
+
+```
+0. 顾客回「4」这类序号 → 接上一轮列出的候选订单继续办理（待选状态见 售后/session_state.py）
+1. 转人工客服（连续 3 次「人工」）→ 登记到平台「全部对话」并转人工
+2. 物流问题（没收到 / 丢件 / 破损 …）
+     └─ 未指明订单 → 反问“请问是哪一笔订单？”，只列简短候选，不一次展开全部详情
+     └─ 已指明订单号/商品名 → 直接给出该笔订单的物流详情
+3. 售后单进度 / 仲裁查询（“我的退货怎么还没处理好”）
+     └─ 有售后单 → 答单笔详情或整体概览；没有 → 说明还没提交过申请
+4. 退货 / 换货 / 退款 → 校验物流 → 未发货直接完成 / 已签收生成新物流单号（详见上）
+5. 查询订单 → 直接返回【人能看懂的订单文字】，不返回 SQL / JSON
+6. 其它（增/删/改 / 闲聊）→ 调用 Dify；Dify 的 select 结果也统一转成文字
+```
+
+退货/换货/退款的意图由后端确定性识别（`detect_return_intent`），不依赖 Dify 的 LLM 分类，
+避免“退款”被误判成 insert。
+
+## 八、演示账号
+
+> 业务数据已用 `工具/清空数据.py` 清空（商家 / 顾客账号、订单、聊天、评价、地址、商品全部为空），
+> 下面是**需要自己新建**账号的方式。
+
+- 客户：在客户前端点右上角 👤 →「注册」新建（姓名 + 密码，写入 `cs.user`）；
+  登录后点 👤 进入「个人中心」可管理地址簿、修改密码
+- 管理员：`admin / 12345`（账号在 `售后/admin.json` 里，不随清库删除，可直接登录 `/platform`）
+- 商户（`/merchant`）：在商户后台点「注册」新建商户（用户名 + 密码），登录后自行上架商品；
+  商品图片与参数由商户后台上传，客户前端会实时展示

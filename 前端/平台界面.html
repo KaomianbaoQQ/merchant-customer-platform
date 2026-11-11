@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>平台管理 · Kaomianbao</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230071e3'/%3E%3Ctext x='32' y='42' font-size='30' font-family='-apple-system,sans-serif' font-weight='700' fill='%23fff' text-anchor='middle'%3EK%3C/text%3E%3C/svg%3E">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f2f4f8; color: #1f2330;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  .muted { color: #7b8494; font-size: 12px; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; background: #eef1f7; color: #55607a; }
+  .tag.warn { background: #fff3e0; color: #b4701a; }
+  .tag.danger { background: #fdeaea; color: #c0392b; }
+  .tag.ok { background: #e8f7ee; color: #1f8a4c; }
+
+  /* 登录 */
+  .login-wrap {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #2b3245, #4b5675);
+  }
+  .login-card {
+    width: 340px; background: #fff; border-radius: 14px; padding: 28px 24px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.25);
+  }
+  .login-card h1 { margin: 0 0 6px; font-size: 20px; }
+  .login-card p { margin: 0 0 18px; color: #7b8494; font-size: 13px; }
+  .login-card input {
+    width: 100%; padding: 11px 12px; margin-bottom: 12px; border: 1px solid #d9dee8;
+    border-radius: 8px; font-size: 14px; outline: none;
+  }
+  .login-card input:focus { border-color: #4b6cf5; }
+  .btn {
+    border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px;
+    background: #eef1f7; color: #2b3245;
+  }
+  .btn:hover { background: #e2e7f2; }
+  .btn-primary { background: #4b6cf5; color: #fff; }
+  .btn-primary:hover { background: #3b5ae0; }
+  .btn-danger { background: #fdeaea; color: #c0392b; }
+  .btn-ok { background: #e8f7ee; color: #1f8a4c; }
+  .btn-block { width: 100%; padding: 11px; font-size: 15px; }
+
+  /* 主体 */
+  header.top {
+    background: #2b3245; color: #fff; padding: 0 20px; display: flex;
+    align-items: center; gap: 18px; height: 56px; position: sticky; top: 0; z-index: 20;
+  }
+  header.top .brand { font-weight: 600; font-size: 15px; }
+  nav.tabs { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
+  nav.tabs button {
+    background: transparent; color: #c7cde0; border: none; padding: 8px 12px;
+    border-radius: 8px; font-size: 13px; white-space: nowrap;
+  }
+  nav.tabs button:hover { background: rgba(255,255,255,.08); color: #fff; }
+  nav.tabs button.active { background: #4b6cf5; color: #fff; }
+  main { padding: 18px 20px 60px; max-width: 1280px; margin: 0 auto; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .card {
+    background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(20,30,60,.06);
+  }
+  .card .num { font-size: 24px; font-weight: 600; margin-top: 4px; }
+  .panel { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(20,30,60,.06); }
+  .panel h2 { margin: 0 0 12px; font-size: 15px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #eef1f7; vertical-align: middle; }
+  th { color: #7b8494; font-weight: 500; font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .row-actions .btn { padding: 5px 10px; font-size: 12px; }
+  .empty { color: #96a0b2; font-size: 13px; padding: 14px 0; }
+  input.q, select.q, textarea.q {
+    width: 100%; padding: 9px 11px; border: 1px solid #d9dee8; border-radius: 8px;
+    font-size: 13px; font-family: inherit; outline: none;
+  }
+  textarea.q { resize: vertical; min-height: 64px; }
+  .toolbar { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .toolbar input.q { max-width: 260px; }
+  .stars { color: #f5a623; }
+
+  /* 物流进度条 */
+  .steps { display: flex; gap: 6px; margin: 4px 0 16px; }
+  .tl-node { flex: 1; text-align: center; font-size: 12px; color: #96a0b2; }
+  .tl-node .tl-dot {
+    height: 5px; border-radius: 3px; background: #e6eaf3; margin-bottom: 7px;
+  }
+  .tl-node.done .tl-dot { background: #8fd3a8; }
+  .tl-node.now .tl-dot { background: #4b6cf5; }
+  .tl-node.done, .tl-node.now { color: #2b3245; font-weight: 500; }
+
+  /* 物流轨迹时间线 */
+  .tl { border-left: 2px solid #eef1f7; margin-left: 6px; padding-left: 14px; }
+  .tl-item { padding: 0 0 14px; position: relative; }
+  .tl-item:last-child { padding-bottom: 0; }
+  .tl-item::before {
+    content: ''; position: absolute; left: -20px; top: 5px; width: 8px; height: 8px;
+    border-radius: 50%; background: #c8d0e0;
+  }
+  .tl-item:first-child::before { background: #4b6cf5; }
+  .tl-time { font-size: 12px; color: #7b8494; }
+  .tl-text { font-size: 13px; line-height: 1.6; margin-top: 2px; }
+
+  /* 抽屉 */
+  .drawer-mask {
+    position: fixed; inset: 0; background: rgba(20,25,40,.45); display: none; z-index: 40;
+  }
+  .drawer-mask.open { display: block; }
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 94vw);
+    background: #fff; z-index: 41; display: none; flex-direction: column;
+  }
+  .drawer.open { display: flex; }
+  .drawer .head {
+    padding: 14px 18px; border-bottom: 1px solid #eef1f7; display: flex;
+    align-items: center; justify-content: space-between;
+  }
+  .drawer .head h3 { margin: 0; font-size: 15px; }
+  .drawer .body { flex: 1; overflow-y: auto; padding: 16px 18px; overscroll-behavior: contain; }
+  .drawer .foot { padding: 12px 18px; border-top: 1px solid #eef1f7; display: flex; gap: 10px; }
+  .kv { font-size: 13px; line-height: 1.9; }
+  .kv b { color: #7b8494; font-weight: 500; }
+  .msg { padding: 8px 11px; border-radius: 10px; margin-bottom: 8px; font-size: 13px; max-width: 86%; white-space: pre-wrap; word-break: break-word; }
+  .msg.user { background: #eef1f7; }
+  /* 转人工强提醒：顶部红色横幅 + 会话行闪动 */
+  .alert-banner{
+    display:none;margin:0 0 14px;padding:12px 16px;border-radius:12px;cursor:pointer;
+    background:linear-gradient(90deg,#fff1f0,#ffe6e3);border:1px solid #ffc4bd;
+    color:#b3261e;font-size:14px;font-weight:600;
+    animation:alertPulse 1.3s ease-in-out infinite;
+  }
+  .alert-banner.show{display:block;}
+  .alert-banner .sub{display:block;margin-top:3px;font-size:12.5px;font-weight:400;color:#8a4b46;}
+  @keyframes alertPulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(255,77,79,.38);}
+    50%{box-shadow:0 0 0 8px rgba(255,77,79,0);}
+  }
+  @keyframes needBlink{
+    0%,100%{background:#fff8ec;}
+    50%{background:#ffe7c4;}
+  }
+  tr.row-need td{background:#fff8ec;animation:needBlink 1.2s ease-in-out infinite;}
+  /* 聊天记录查询（关键词 + 时间范围） */
+  .conv-search{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+  .conv-search input{
+    flex:1;min-width:220px;padding:9px 12px;border:1px solid #e2e4ea;
+    border-radius:10px;font-size:13.5px;font-family:inherit;outline:none;
+  }
+  .conv-search input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,113,227,.12);}
+  .conv-search select{
+    padding:9px 12px;border:1px solid #e2e4ea;border-radius:10px;
+    font-size:13.5px;font-family:inherit;background:#fff;outline:none;
+  }
+  /* 消息后面的「已读 / 未读」小字 */
+  .msg-read { font-size: 10.5px; margin-left: 6px; opacity: .6; white-space: nowrap; }
+  .msg.merchant { background: #e8f0ff; margin-left: auto; }
+  .msg.bot { background: #f6f7fb; color: #55607a; }
+  .msg .who { font-size: 11px; color: #8b94a8; margin-bottom: 2px; }
+  .toast {
+    position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%);
+    background: #2b3245; color: #fff; padding: 10px 18px; border-radius: 20px;
+    font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 60;
+  }
+  .toast.show { opacity: .95; }
+</style>
+</head>
+<body>
+
+<!-- 登录 -->
+<div class="login-wrap" id="loginView">
+  <div class="login-card">
+    <h1>平台管理后台</h1>
+    <p>仅平台管理员可登录（默认账号 admin）</p>
+    <input id="loginName" placeholder="管理员账号" autocomplete="username" />
+    <input id="loginPwd" type="password" placeholder="密码" autocomplete="current-password" />
+    <button class="btn btn-primary btn-block" onclick="doLogin()">登录</button>
+    <p class="muted" id="loginMsg" style="margin:12px 0 0;"></p>
+  </div>
+</div>
+
+<!-- 主体 -->
+<div id="appView" hidden>
+  <header class="top">
+    <div class="brand">平台管理</div>
+    <nav class="tabs" id="tabs"></nav>
+    <button class="btn" onclick="doLogout()">退出</button>
+  </header>
+  <main>
+    <!-- 转人工强提醒（顾客连说 3 次「人工」，商家会话与售后转人工都算） -->
+    <div class="alert-banner" id="alertBanner" onclick="goPendingHuman()"></div>
+    <section data-tab="overview" class="tab-panel"></section>
+    <section data-tab="arbitration" class="tab-panel" hidden></section>
+    <section data-tab="merchants" class="tab-panel" hidden></section>
+    <section data-tab="products" class="tab-panel" hidden></section>
+    <section data-tab="users" class="tab-panel" hidden></section>
+    <section data-tab="analytics" class="tab-panel" hidden></section>
+    <section data-tab="conversations" class="tab-panel" hidden></section>
+    <section data-tab="chats" class="tab-panel" hidden></section>
+    <section data-tab="reviews" class="tab-panel" hidden></section>
+    <section data-tab="tracking" class="tab-panel" hidden></section>
+  </main>
+</div>
+
+<div class="drawer-mask" id="drawerMask" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="head">
+    <h3 id="drawerTitle">详情</h3>
+    <button class="btn" onclick="closeDrawer()">关闭</button>
+  </div>
+  <div class="body" id="drawerBody"></div>
+  <div class="foot" id="drawerFoot" hidden></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* 后端地址：
+   - 由后端页面（http/https）打开时用同源，最省事；
+   - 直接双击本文件（file://）时浏览器无法请求相对路径接口，
+     自动指向 127.0.0.1:8000，也可用 ?api=http://127.0.0.1:8001 指定其他端口。 */
+const API_ORIGIN = (function(){
+  if (location.protocol !== 'file:') return '';
+  try {
+    const q = new URLSearchParams(location.search).get('api');
+    if (q) return q.replace(/\/+$/, '');
+  } catch (e) {}
+  return 'http://127.0.0.1:8000';
+})();
+const API = API_ORIGIN + '/api/platform';
+const TABS = [
+  ['overview', '总览'],
+  ['arbitration', '仲裁处理'],
+  ['merchants', '商家管理'],
+  ['products', '商品管理'],
+  ['users', '顾客'],
+  ['analytics', '智能分析'],
+  ['conversations', '全部对话'],
+  ['chats', '与商家沟通'],
+  ['reviews', '商家评价'],
+  ['tracking', '快递查询'],
+];
+let TOKEN = localStorage.getItem('platform_token') || '';
+let ADMIN = null;
+let currentTab = 'overview';
+let chatTarget = null;      // 当前正在与哪个商家对话
+let convTarget = null;      // 当前查看的会话
+
+/* ---------------- 基础 ---------------- */
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function money(n) { return '¥' + Number(n || 0).toFixed(2); }
+function stars(n) { return '<span class="stars">' + '★'.repeat(n) + '</span>' + '☆'.repeat(Math.max(0, 5 - n)); }
+
+async function api(path, options = {}) {
+  const res = await fetch(API + path, {
+    method: options.method || 'GET',
+    headers: Object.assign({
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + TOKEN,
+    }, options.headers || {}),
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  let data = {};
+  try { data = await res.json(); } catch (e) { data = { ok: false, error: '响应解析失败' }; }
+  if (res.status === 401) {
+    doLogout(true);
+    throw new Error(data.error || '登录已失效，请重新登录');
+  }
+  if (!data.ok) throw new Error(data.error || data.message || '请求失败');
+  return data;
+}
+
+/* ---------------- 登录 ---------------- */
+async function doLogin() {
+  const name = document.getElementById('loginName').value.trim();
+  const pwd = document.getElementById('loginPwd').value;
+  const msg = document.getElementById('loginMsg');
+  msg.textContent = '';
+  if (!name || !pwd) { msg.textContent = '请输入账号和密码'; return; }
+  try {
+    const res = await fetch(API + '/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, password: pwd }),
+    });
+    const data = await res.json();
+    if (!data.ok) { msg.textContent = data.error || '登录失败'; return; }
+    TOKEN = data.token;
+    ADMIN = data.admin;
+    localStorage.setItem('platform_token', TOKEN);
+    enterApp();
+  } catch (e) {
+    msg.textContent = '无法连接后端服务（' + (API_ORIGIN || location.origin) + '）。请先启动后端，再刷新重试。';
+  }
+}
+function doLogout(silent) {
+  if (TOKEN) { fetch(API + '/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + TOKEN } }).catch(() => {}); }
+  TOKEN = ''; ADMIN = null;
+  localStorage.removeItem('platform_token');
+  renderAlertBanner([]);   // 退出登录时隐藏转人工横幅
+  document.getElementById('appView').hidden = true;
+  document.getElementById('loginView').style.display = 'flex';
+  if (!silent) toast('已退出登录');
+}
+async function enterApp() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('appView').hidden = false;
+  renderTabs();
+  await switchTab('overview');
+  // 转人工强提醒：登录后立即查一次，并每 5 秒刷新（顾客连说 3 次「人工」就会亮）
+  startAlertPolling();
+  refreshHumanAlert();
+}
+function renderTabs() {
+  document.getElementById('tabs').innerHTML = TABS.map(([key, label]) =>
+    `<button data-key="${key}" class="${key === currentTab ? 'active' : ''}" onclick="switchTab('${key}')">${label}</button>`
+  ).join('');
+}
+async function switchTab(key) {
+  currentTab = key;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.key === key));
+  document.querySelectorAll('.tab-panel').forEach(p => { p.hidden = p.dataset.tab !== key; });
+  const loaders = {
+    overview: loadOverview, arbitration: loadArbitration, merchants: loadMerchants,
+    products: loadProducts, users: loadUsers, analytics: loadAnalytics,
+    conversations: loadConversations,
+    chats: loadChats, reviews: loadReviews, tracking: loadTracking,
+  };
+  const box = document.querySelector(`.tab-panel[data-tab="${key}"]`);
+  box.innerHTML = '<div class="empty">加载中…</div>';
+  try { await loaders[key](box); }
+  catch (e) { box.innerHTML = `<div class="empty">加载失败：${esc(e.message)}</div>`; }
+}
+function panel(box, html) { box.innerHTML = html; }
+
+/* ---------- 转人工强提醒（顾客连说 3 次「人工」）----------
+   平台侧：所有待人工会话都算（商家的商品咨询 + 售后转人工） */
+let lastHumanPending = 0;
+let alertTimer = null;
+
+function renderAlertBanner(pending){
+  const banner = document.getElementById('alertBanner');
+  if (!banner) return;
+  if (!TOKEN){
+    banner.classList.remove('show');
+    banner.innerHTML = '';
+    lastHumanPending = 0;
+    return;
+  }
+  const merchantSide = pending.filter(c => !c.is_platform).length;
+  const platformSide = pending.filter(c => c.is_platform).length;
+
+  if (pending.length){
+    const sub = (merchantSide && platformSide)
+      ? '商家会话 ' + merchantSide + ' 条 ｜ 售后转人工 ' + platformSide + ' 条'
+      : (platformSide ? '均为售后转人工（平台客服处理）' : '均为商家的商品咨询会话');
+    banner.innerHTML = '⚠️ 有 ' + pending.length + ' 条转人工会话待处理' +
+      '<span class="sub">' + sub + '（点这里打开全部对话）</span>';
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+    banner.innerHTML = '';
+  }
+
+  // 新出现转人工 → 响一声提醒
+  if (pending.length > lastHumanPending) beepAlert();
+  lastHumanPending = pending.length;
+}
+
+async function refreshHumanAlert(){
+  if (!TOKEN) return;
+  try {
+    const { conversations } = await api('/conversations');
+    const list = conversations || [];
+    renderAlertBanner(list.filter(isWaiting));
+    // 正停在「全部对话」页时，顺手把表格的闪动状态同步过来（搜索结果不覆盖）
+    if (currentTab === 'conversations') {
+      const box = document.getElementById('convTableBox');
+      const tip = document.getElementById('convSearchTip');
+      if (box && !(tip && tip.textContent)) box.innerHTML = convTableHtml(list, '');
+    }
+  } catch (e) { /* 静默：轮询失败不打扰 */ }
+}
+
+function startAlertPolling(){
+  if (alertTimer) return;
+  alertTimer = setInterval(refreshHumanAlert, 5000);
+}
+
+function goPendingHuman(){ switchTab('conversations'); }
+
+/* 提示音：两声短促蜂鸣（WebAudio，不依赖音频文件） */
+function beepAlert(){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    [0, 0.24].forEach(function(offset, i){
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = i === 0 ? 880 : 1180;
+      const t0 = ctx.currentTime + offset;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.2, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.2);
+    });
+    setTimeout(function(){ ctx.close(); }, 900);
+  } catch (e) { /* 静默：有的浏览器不允许自动播放 */ }
+}
+const loadingHTML = '<div class="empty">加载中…</div>';
+
+/* ---------------- 总览 ---------------- */
+async function loadOverview(box) {
+  const { overview: o } = await api('/overview');
+  const cards = [
+    ['商家总数', o.merchant_count, `${o.disabled_count} 已停用 / ${o.muted_count} 已禁言`],
+    ['顾客总数', o.user_count, `${o.conversation_count} 条会话`],
+    ['商品总数', o.product_count, `${o.offline_count} 已下架`],
+    ['订单总数', o.order_count, '成交 ' + money(o.order_amount)],
+    ['仲裁待处理', o.arbitration_count, '平台介入'],
+    ['评价总数', o.review_count, '来自顾客'],
+    ['罚款累计', money(o.fine_total), '针对商家'],
+  ];
+  panel(box, `<div class="cards">${cards.map(([t, n, s]) =>
+    `<div class="card"><div class="muted">${t}</div><div class="num">${n}</div><div class="muted" style="margin-top:4px">${s}</div></div>`
+  ).join('')}</div>`);
+}
+
+/* ---------------- 仲裁 ---------------- */
+async function loadArbitration(box) {
+  const { arbitrations } = await api('/arbitrations');
+  const rows = arbitrations.map(a => `
+    <tr>
+      <td>${esc(a.id)}<div class="muted">原订单 ${esc(a.order_id)}</div></td>
+      <td>${esc(a.user_name)}<div class="muted">ID ${esc(a.user_id)}</div></td>
+      <td>${esc(a.goodsname)} ×${a.quantity}</td>
+      <td><span class="tag warn">${esc(a.type_text || a.type)}</span></td>
+      <td style="max-width:200px">${esc(a.reason)}</td>
+      <td style="max-width:180px">${a.reject_reason ? esc(a.reject_reason) : '<span class="muted">—</span>'}</td>
+      <td>${esc(a.create_time)}</td>
+      <td><div class="row-actions">
+        <button class="btn btn-ok" onclick="resolveArb('${esc(a.id)}', true)">支持顾客</button>
+        <button class="btn btn-danger" onclick="resolveArb('${esc(a.id)}', false)">支持商家</button>
+      </div></td>
+    </tr>`).join('');
+  panel(box, `
+    <div class="panel">
+      <h2>售后 / 仲裁查询</h2>
+      <div class="muted" style="margin-bottom:10px">
+        按 售后单号 / 原订单号 / 顾客姓名 / 商品名 查询售后进度（含「平台仲裁中」）。
+      </div>
+      <div class="toolbar">
+        <input class="q" id="asKeyword" placeholder="输入订单号或售后单号，留空看最近记录"
+               onkeydown="if(event.key==='Enter')searchAftersales()" />
+        <button class="btn btn-primary" onclick="searchAftersales()">查询</button>
+        <button class="btn" onclick="searchAftersales('arbitrating')">只看仲裁中</button>
+      </div>
+      <div id="asResult"><div class="empty">输入关键词后点「查询」。</div></div>
+    </div>
+    <div class="panel"><h2>待处理仲裁（${arbitrations.length}）</h2>
+    ${arbitrations.length ? `<table><thead><tr><th>售后单</th><th>顾客</th><th>商品</th><th>类型</th><th>顾客理由</th><th>商家拒绝理由</th><th>申请时间</th><th>处理</th></tr></thead>
+    <tbody>${rows}</tbody></table>` : '<div class="empty">当前没有待处理的仲裁。</div>'}
+    </div>`);
+}
+
+async function searchAftersales(status) {
+  const box = document.getElementById('asResult');
+  if (!box) return;
+  const kw = status ? '' : (document.getElementById('asKeyword').value || '').trim();
+  box.innerHTML = '<div class="empty">查询中…</div>';
+  try {
+    const q = '/aftersales?keyword=' + encodeURIComponent(kw) +
+              (status ? '&status=' + encodeURIComponent(status) : '');
+    const { aftersales } = await api(q);
+    if (!aftersales.length) { box.innerHTML = '<div class="empty">没有匹配的售后记录。</div>'; return; }
+    box.innerHTML = `<table><thead><tr><th>售后单</th><th>类型</th><th>商品</th><th>顾客</th><th>状态</th><th>退货单号</th><th>更新时间</th></tr></thead><tbody>
+      ${aftersales.map(a => `<tr>
+        <td>${esc(a.id)}<div class="muted">原订单 ${esc(a.order_id)}</div></td>
+        <td>${esc(a.type_text || a.type)}</td>
+        <td>${esc(a.goodsname)} ×${a.quantity}</td>
+        <td>${esc(a.user_name)}</td>
+        <td><span class="tag ${a.status_code === 'arbitrating' ? 'warn' : (a.status_code === 'rejected' ? 'danger' : 'ok')}">${esc(a.status_text)}</span>
+          ${a.reject_reason ? `<div class="muted">拒绝理由：${esc(a.reject_reason)}</div>` : ''}</td>
+        <td>${esc(a.return_waybill || '—')}</td>
+        <td>${esc(a.update_time || '')}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  } catch (e) {
+    box.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+
+async function resolveArb(rid, favorUser) {
+  // 判定支持商家等于维持拒绝，必须写明理由：顾客会看到，也是这次仲裁的结论依据
+  const tip = favorUser
+    ? '判定支持顾客，请填写仲裁说明（可选）：'
+    : '判定支持商家（维持拒绝），请填写理由（必填，顾客会看到）：';
+  const note = prompt(tip, '');
+  if (note === null) return;
+  if (!favorUser && !note.trim()) { toast('判定支持商家必须填写理由'); return; }
+  try {
+    const res = await api('/arbitrations/' + encodeURIComponent(rid), { method: 'POST', body: { favor_user: favorUser, note: note.trim() } });
+    toast(res.message);
+    await switchTab('arbitration');
+  } catch (e) { toast(e.message); }
+}
+
+/* ---------------- 商家 ---------------- */
+async function loadMerchants(box) {
+  const { merchants } = await api('/merchants');
+  if (!merchants.length) { panel(box, '<div class="panel"><div class="empty">暂无商家。</div></div>'); return; }
+  const rows = merchants.map(m => `
+    <tr>
+      <td>${esc(m.shop_name)}<div class="muted">${esc(m.username)}</div></td>
+      <td>${m.product_count}<div class="muted">${m.offline_count} 下架</div></td>
+      <td>${m.sales}<div class="muted">${money(m.sales_amount)}</div></td>
+      <td>${m.buyer_count}</td>
+      <td>${m.review_count}<div class="muted">${m.review_count ? m.review_avg + ' 分' : '—'}</div></td>
+      <td>${money(m.fine_total)}</td>
+      <td>
+        ${m.disabled ? '<span class="tag danger">已停用</span>' : '<span class="tag ok">正常</span>'}
+        ${m.muted ? '<span class="tag warn">已禁言</span>' : ''}
+        ${m.needs_human ? '<span class="tag warn">待人工</span>' : ''}
+      </td>
+      <td><div class="row-actions">
+        <button class="btn" onclick="openMerchant('${esc(m.id)}')">详情</button>
+        <button class="btn ${m.disabled ? 'btn-ok' : 'btn-danger'}" onclick="setMerchant('${esc(m.id)}','disabled',${!m.disabled})">${m.disabled ? '恢复账号' : '停用账号'}</button>
+        <button class="btn ${m.muted ? 'btn-ok' : ''}" onclick="setMerchant('${esc(m.id)}','muted',${!m.muted})">${m.muted ? '解除禁言' : '禁言'}</button>
+        <button class="btn" onclick="openFine('${esc(m.id)}','${esc(m.shop_name)}')">罚款</button>
+        <button class="btn btn-primary" onclick="openChat('${esc(m.id)}','${esc(m.shop_name)}')">对话</button>
+      </div></td>
+    </tr>`).join('');
+  panel(box, `<div class="panel"><h2>商家（${merchants.length}）</h2>
+    <table><thead><tr><th>店铺</th><th>商品</th><th>销量</th><th>买家</th><th>评价</th><th>罚款</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`);
+}
+async function setMerchant(mid, key, value) {
+  const label = key === 'disabled' ? (value ? '停用' : '恢复') : (value ? '禁言' : '解除禁言');
+  if (!confirm(`确定要${label}该商家吗？`)) return;
+  try {
+    const res = await api(`/merchants/${encodeURIComponent(mid)}/state`, { method: 'POST', body: { key, value } });
+    toast(res.message);
+    await switchTab('merchants');
+  } catch (e) { toast(e.message); }
+}
+async function openFine(mid, shop) {
+  const amount = prompt(`对「${shop}」罚款金额（元）：`, '100');
+  if (amount === null) return;
+  const reason = prompt('罚款原因：', '违规操作');
+  if (reason === null) return;
+  try {
+    const res = await api(`/merchants/${encodeURIComponent(mid)}/fines`, { method: 'POST', body: { amount, reason, merchant_name: shop } });
+    toast(res.message);
+    await switchTab('merchants');
+  } catch (e) { toast(e.message); }
+}
+async function openMerchant(mid) {
+  openDrawer('商家详情', loadingHTML);
+  try {
+    const { detail } = await api('/merchants/' + encodeURIComponent(mid));
+    const m = detail.merchant;
+    const html = `
+      <div class="panel"><h2>${esc(m.shop_name)}</h2>
+        <div class="kv">
+          <div><b>登录账号：</b>${esc(m.username)}</div>
+          <div><b>联系人：</b>${esc(m.name)}</div>
+          <div><b>注册时间：</b>${esc(m.create_time)}</div>
+          <div><b>状态：</b>${m.disabled ? '已停用' : '正常'}${m.muted ? ' / 已禁言' : ''}</div>
+          <div><b>商品 / 销量 / 销售额：</b>${m.product_count} / ${m.sales} / ${money(m.sales_amount)}</div>
+          <div><b>罚款累计：</b>${money(m.fine_total)}</div>
+          <div><b>评价：</b>${m.review_count} 条${m.review_count ? '，均分 ' + m.review_avg : ''}</div>
+        </div>
+      </div>
+      <div class="panel"><h2>商品（${detail.products.length}）</h2>
+        ${detail.products.length ? `<table><thead><tr><th>商品</th><th>价格</th><th>销量</th><th>状态</th><th></th></tr></thead><tbody>
+          ${detail.products.map(p => `<tr>
+            <td>${esc(p.name)}<div class="muted">${esc(p.tag)}</div></td>
+            <td>${money(p.price)}</td>
+            <td>${p.sales}<div class="muted">${money(p.sales_amount)}</div></td>
+            <td>${p.offline ? '<span class="tag danger">已下架</span>' : '<span class="tag ok">在售</span>'}</td>
+            <td><button class="btn ${p.offline ? 'btn-ok' : 'btn-danger'}" onclick="setOffline('${esc(p.id)}',${!p.offline})">${p.offline ? '恢复' : '下架'}</button></td>
+          </tr>`).join('')}
+        </tbody></table>` : '<div class="empty">该商家暂无商品。</div>'}
+      </div>
+      <div class="panel"><h2>订单（${detail.orders.length}）</h2>
+        ${detail.orders.length ? `<table><thead><tr><th>订单号</th><th>商品</th><th>数量</th><th>顾客</th><th>金额</th><th>时间</th></tr></thead><tbody>
+          ${detail.orders.slice(0, 40).map(o => `<tr>
+            <td>${esc(o.order_id)}</td><td>${esc(o.goodsname)}</td><td>${o.quantity}</td>
+            <td>${esc(o.user_name)}<div class="muted">ID ${esc(o.user_id)}</div></td>
+            <td>${money(o.amount)}</td><td>${esc(o.create_time)}</td>
+          </tr>`).join('')}
+        </tbody></table>` : '<div class="empty">暂无订单。</div>'}
+      </div>
+      <div class="panel"><h2>评价（${detail.reviews.length}）</h2>
+        ${detail.reviews.length ? detail.reviews.map(r => `<div class="kv" style="border-bottom:1px solid #eef1f7;padding:6px 0">
+          ${stars(r.rating)} <b>${esc(r.user_name)}</b> <span class="muted">${esc(r.create_time)}</span>
+          <div>${esc(r.content)}</div><div class="muted">${esc(r.product_name)}</div>
+        </div>`).join('') : '<div class="empty">暂无评价。</div>'}
+      </div>
+      <div class="panel"><h2>罚款记录（${detail.fines.length}）</h2>
+        ${detail.fines.length ? detail.fines.map(f => `<div class="kv">${esc(f.time)} · ${money(f.amount)} · ${esc(f.reason)}</div>`).join('') : '<div class="empty">暂无罚款。</div>'}
+      </div>`;
+    setDrawer(html);
+  } catch (e) { setDrawer(`<div class="empty">${esc(e.message)}</div>`); }
+}
+
+/* ---------------- 商品 ---------------- */
+async function loadProducts(box) {
+  const { products } = await api('/products');
+  const rows = products.map(p => `
+    <tr>
+      <td>${esc(p.name)}<div class="muted">${esc(p.tag)} · ${esc(p.id)}</div></td>
+      <td>${esc(p.owner_name || p.owner_id || '—')}</td>
+      <td>${money(p.price)}</td>
+      <td>${p.views}</td>
+      <td>${p.sales}<div class="muted">${money(p.sales_amount)}</div></td>
+      <td>${p.offline ? `<span class="tag danger">已下架</span><div class="muted">${esc(p.offline_reason)}</div>` : '<span class="tag ok">在售</span>'}</td>
+      <td><button class="btn ${p.offline ? 'btn-ok' : 'btn-danger'}" onclick="setOffline('${esc(p.id)}',${!p.offline})">${p.offline ? '恢复上架' : '下架'}</button></td>
+    </tr>`).join('');
+  panel(box, `<div class="panel"><h2>全部商品（${products.length}）</h2>
+    <table><thead><tr><th>商品</th><th>所属商家</th><th>价格</th><th>浏览</th><th>销量</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="7" class="empty">暂无商品。</td></tr>'}</tbody></table></div>`);
+}
+async function setOffline(pid, offline) {
+  let reason = '';
+  if (offline) {
+    reason = prompt('下架原因（可选）：', '') || '';
+  }
+  try {
+    const res = await api(`/products/${encodeURIComponent(pid)}/offline`, { method: 'POST', body: { offline, reason } });
+    toast(res.message);
+    await switchTab(currentTab);
+  } catch (e) { toast(e.message); }
+}
+
+/* ---------------- 顾客 ---------------- */
+async function loadUsers(box) {
+  const { users } = await api('/users');
+  const rows = users.map(u => `
+    <tr>
+      <td>${esc(u.name)}<div class="muted">ID ${esc(u.id)}</div></td>
+      <td>${esc(u.sex)}${u.age ? ' / ' + u.age + ' 岁' : ''}</td>
+      <td>${u.order_count}</td>
+      <td>${u.quantity}</td>
+      <td>${money(u.amount)}</td>
+      <td>${u.conversation_count}${u.needs_human ? ' <span class="tag warn">待人工</span>' : ''}</td>
+      <td><button class="btn" onclick="openUser('${esc(u.id)}')">详情</button></td>
+    </tr>`).join('');
+  panel(box, `<div class="panel"><h2>顾客（${users.length}）</h2>
+    <table><thead><tr><th>顾客</th><th>性别 / 年龄</th><th>订单</th><th>件数</th><th>消费</th><th>会话</th><th>操作</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="7" class="empty">暂无顾客。</td></tr>'}</tbody></table></div>`);
+}
+async function openUser(uid) {
+  openDrawer('顾客详情', loadingHTML);
+  try {
+    const { detail } = await api('/users/' + encodeURIComponent(uid));
+    const u = detail.user;
+    setDrawer(`
+      <div class="panel"><h2>${esc(u.name)}</h2>
+        <div class="kv">
+          <div><b>顾客ID：</b>${esc(u.id)}</div>
+          <div><b>性别 / 年龄：</b>${esc(u.sex)}${u.age ? ' / ' + u.age + ' 岁' : ''}</div>
+          <div><b>订单 / 消费：</b>${u.order_count} 单 · ${money(u.amount)}</div>
+        </div>
+      </div>
+      <div class="panel"><h2>订单（${detail.orders.length}）</h2>
+        ${detail.orders.length ? `<table><thead><tr><th>订单号</th><th>商品</th><th>数量</th><th>店铺</th><th>状态</th><th>时间</th></tr></thead><tbody>
+          ${detail.orders.map(o => `<tr>
+            <td>${esc(o.order_id)}</td><td>${esc(o.goodsname)}</td><td>${o.quantity}</td>
+            <td>${esc(o.merchant_name || '—')}</td><td>${esc(o.status_text)}</td><td>${esc(o.create_time)}</td>
+          </tr>`).join('')}
+        </tbody></table>` : '<div class="empty">暂无订单。</div>'}
+      </div>
+      <div class="panel"><h2>售后记录（${detail.returns.length}）</h2>
+        ${detail.returns.length ? detail.returns.map(r => `<div class="kv" style="border-bottom:1px solid #eef1f7;padding:6px 0">
+          ${esc(r.id)} · ${esc(r.goodsname)} ×${r.quantity} · ${esc(r.status_text)}
+          <div class="muted">${esc(r.reason)}</div>
+        </div>`).join('') : '<div class="empty">暂无售后记录。</div>'}
+      </div>`);
+  } catch (e) { setDrawer(`<div class="empty">${esc(e.message)}</div>`); }
+}
+
+/* ---------------- 智能分析（用户画像 + 购买可能性） ---------------- */
+function probBar(p){
+  const w = Math.max(0, Math.min(100, Math.round((p || 0) * 100)));
+  return '<span style="display:inline-block;width:110px;height:8px;border-radius:6px;' +
+    'background:#eef1f7;vertical-align:middle;margin-right:6px;overflow:hidden">' +
+    '<span style="display:block;height:8px;border-radius:6px;background:#4b6cf5;width:' + w + '%"></span></span>';
+}
+async function loadAnalytics(box){
+  const [pf, pu] = await Promise.all([api('/analytics/profiles'), api('/analytics/purchase')]);
+  const profiles = pf.profiles || [];
+  const rows = profiles.map(u => `
+    <tr>
+      <td>${esc(u.name)}<div class="muted">ID ${esc(u.id)} · ${esc(u.sex)}</div></td>
+      <td><span class="tag">${esc(u.level)}</span></td>
+      <td>R${u.rfm.r} F${u.rfm.f} M${u.rfm.m}</td>
+      <td>${u.order_count} 单 · ${money(u.amount)}</td>
+      <td>浏览 ${u.behavior.views} · 加购 ${u.behavior.carts} · 购买 ${u.behavior.purchases}</td>
+      <td>${(u.tags || []).map(t => '<span class="tag ok" style="margin:1px 2px 0 0">' + esc(t) + '</span>').join('')}</td>
+    </tr>`).join('');
+
+  const top = (pu.top || []).slice(0, 12);
+  const topRows = top.map(t => `
+    <tr>
+      <td>${esc(t.user_name)}<div class="muted">${esc(t.level || '')}</div></td>
+      <td>${esc(t.product_name)}<div class="muted">${esc(t.owner_name || t.owner_id)}</div></td>
+      <td>${probBar(t.prob)} ${t.prob_text}</td>
+      <td class="muted">${esc((t.reasons || []).join('、') || '—')}</td>
+    </tr>`).join('');
+
+  const cards = (pu.products || []).map(p => `
+    <div class="panel" style="margin-bottom:12px">
+      <h2>${esc(p.product_name)}
+        <span class="muted">${esc(p.owner_name || p.owner_id)} · ${money(p.price)} · 浏览 ${p.views} · 销量 ${p.sales}</span>
+      </h2>
+      <div class="muted" style="margin-bottom:8px">预计潜在买家 ${p.prospect_count} 人 · 平均购买概率 ${Math.round((p.avg_prob || 0) * 100)}%</div>
+      ${p.top_buyers && p.top_buyers.length
+        ? `<table><thead><tr><th>顾客</th><th>分层</th><th>购买概率</th><th>依据</th></tr></thead><tbody>
+            ${p.top_buyers.map(b => `<tr>
+              <td>${esc(b.user_name)}</td><td>${esc(b.level)}</td>
+              <td>${probBar(b.prob)} ${b.prob_text}</td>
+              <td class="muted">${esc((b.reasons || []).join('、') || '—')}</td>
+            </tr>`).join('')}
+          </tbody></table>`
+        : '<div class="empty">暂无潜在买家。</div>'}
+    </div>`).join('');
+
+  panel(box, `
+    <div class="panel"><h2>用户画像（${profiles.length}）</h2>
+      <table><thead><tr><th>顾客</th><th>客户分层</th><th>RFM</th><th>消费</th><th>行为</th><th>标签</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="6" class="empty">暂无顾客。</td></tr>'}</tbody></table>
+      <div class="muted" style="margin-top:8px">RFM：R 最近购买 / F 购买频次 / M 消费金额（各 1~5 分）；「行为」来自顾客浏览与加购埋点。</div>
+    </div>
+    <div class="panel"><h2>最可能成交的顾客 × 商品</h2>
+      <table><thead><tr><th>顾客</th><th>商品</th><th>购买概率</th><th>依据</th></tr></thead>
+      <tbody>${topRows || '<tr><td colspan="4" class="empty">暂无可预测数据。</td></tr>'}</tbody></table>
+    </div>
+    <div class="panel"><h2>商品购买可能性（按商品）</h2>
+      <div class="muted" style="margin-bottom:10px">可解释轻量算法：复购 / 浏览 / 加购 / 类目偏好 / 商品热度 / 商品口碑，输出 0~100% 购买概率并给出依据。</div>
+      ${cards || '<div class="empty">暂无商品。</div>'}
+    </div>`);
+}
+
+/* ---------------- 全部对话 ---------------- */
+function convTableHtml(list, keyword){
+  const rows = list.map(c => {
+    // 搜索模式：把「最新内容」那一列换成命中的消息原文
+    const hitCell = keyword
+      ? (c.matched && c.matched.length
+          ? esc(c.matched[0].slice(0, 60)) + (c.matched_count > 1 ? ` <span class="tag">等 ${c.matched_count} 条</span>` : '')
+          : '<span class="muted">命中顾客姓名 / ID</span>')
+      : esc(c.last_message).slice(0, 60);
+    // 只有「还没人接手」的待人工会话才闪动；平台点开过 / 已回复的立刻恢复常态
+    const waiting = (c.waiting_human !== undefined) ? !!c.waiting_human
+      : (!!c.needs_human && !c.human_ack);
+    return `
+    <tr class="${waiting ? 'row-need' : ''}">
+      <td>${esc(c.merchant_name)}${c.is_platform ? ' <span class="tag">平台</span>' : ''}</td>
+      <td>${esc(c.user_name)}<div class="muted">ID ${esc(c.user_id)}</div></td>
+      <td>${c.mode === '人工' || c.needs_human ? '<span class="tag warn">人工</span>' : '<span class="tag">人机</span>'}${waiting ? ' <span class="tag danger">待人工</span>' : (c.needs_human ? ' <span class="tag">已接手</span>' : '')}</td>
+      <td>${c.message_count}</td>
+      <td style="max-width:280px">${hitCell}</td>
+      <td>${esc(c.last_time)}</td>
+      <td><button class="btn" onclick="openConversation('${esc(c.merchant_id)}','${esc(c.user_id)}','${esc(c.user_name)}')">查看</button></td>
+    </tr>`;
+  }).join('');
+  return `<table><thead><tr><th>商家 / 店铺</th><th>顾客</th><th>类型</th><th>消息</th><th>${keyword ? '命中内容' : '最新内容'}</th><th>时间</th><th>操作</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="7" class="empty">暂无会话。</td></tr>'}</tbody></table>`;
+}
+
+function isWaiting(c) {
+  // 待处理 = 转人工中 且 没人接手（平台点开会话即算接手，标记不再闪动）
+  return (c && c.waiting_human !== undefined) ? !!c.waiting_human : !!(c && c.needs_human && !c.human_ack);
+}
+
+async function loadConversations(box) {
+  const { conversations } = await api('/conversations');
+  renderAlertBanner(conversations.filter(isWaiting));
+  panel(box, `<div class="panel"><h2>全部对话（${conversations.length}）</h2>
+    <div class="conv-search">
+      <input id="convSearchInput" placeholder="搜索顾客姓名 / 消息内容…"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();searchConversations();}">
+      <select id="convSearchRange" onchange="searchConversations()">
+        <option value="">全部时间</option>
+        <option value="today">今天</option>
+        <option value="7d">近 7 天</option>
+        <option value="30d">近 30 天</option>
+      </select>
+      <button class="btn btn-primary" onclick="searchConversations()">搜索记录</button>
+      <button class="btn" onclick="clearConvSearch()">清除</button>
+    </div>
+    <div class="muted" id="convSearchTip" style="margin-bottom:10px"></div>
+    <div id="convTableBox">${convTableHtml(conversations, '')}</div>
+  </div>`);
+}
+
+/* 聊天记录查询（关键词 + 时间范围），查的是全部会话（含售后转人工） */
+function convRangeToSinceUntil(range){
+  if (!range) return { since: '', until: '' };
+  const now = new Date();
+  const day = function(offset){
+    const d = new Date(now.getTime() - offset * 86400000);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
+           '-' + String(d.getDate()).padStart(2, '0');
+  };
+  const today = day(0);
+  if (range === 'today') return { since: today + ' 00:00:00', until: today + ' 23:59:59' };
+  if (range === '7d')    return { since: day(6) + ' 00:00:00',  until: today + ' 23:59:59' };
+  if (range === '30d')   return { since: day(29) + ' 00:00:00', until: today + ' 23:59:59' };
+  return { since: '', until: '' };
+}
+
+async function searchConversations(){
+  const input = document.getElementById('convSearchInput');
+  const rangeEl = document.getElementById('convSearchRange');
+  const tip = document.getElementById('convSearchTip');
+  if (!input || !tip) return;
+  const q = (input.value || '').trim();
+  const rng = convRangeToSinceUntil(rangeEl ? rangeEl.value : '');
+  tip.textContent = '正在查询…';
+  try {
+    const { results } = await api('/conversations/search?q=' + encodeURIComponent(q) +
+      '&since=' + encodeURIComponent(rng.since) + '&until=' + encodeURIComponent(rng.until));
+    const box = document.getElementById('convTableBox');
+    if (box) box.innerHTML = convTableHtml(results || [], q);
+    const rangeText = (rangeEl && rangeEl.value) ? rangeEl.options[rangeEl.selectedIndex].text : '';
+    tip.textContent = '查到 ' + (results || []).length + ' 条会话' +
+      (q ? '（关键词：' + q + '）' : '') + (rangeText ? '（' + rangeText + '）' : '') +
+      '，点「查看」可读完整对话记录';
+  } catch (e) {
+    tip.textContent = '查询失败：' + e.message;
+  }
+}
+
+function clearConvSearch(){ switchTab('conversations'); }
+
+/* 平台客服点开某条会话 = 已接手：立刻把列表这一行的闪动去掉（不打断搜索结果） */
+async function refreshConvTableIfOpen(){
+  if (currentTab !== 'conversations') return;
+  const box = document.getElementById('convTableBox');
+  if (!box) return;
+  const searching = document.getElementById('convSearchTip');
+  if (searching && searching.textContent) return;   // 正在看搜索结果，不覆盖
+  try {
+    const { conversations } = await api('/conversations');
+    renderAlertBanner((conversations || []).filter(isWaiting));
+    box.innerHTML = convTableHtml(conversations || [], '');
+  } catch (e) { /* 静默 */ }
+}
+
+async function openConversation(merchantId, userId, userName) {
+  convTarget = { merchantId, userId };
+  openDrawer(`与 ${userName || userId} 的对话`, loadingHTML);
+  document.getElementById('drawerFoot').hidden = false;
+  document.getElementById('drawerFoot').innerHTML = `
+    <input class="q" id="convInput" placeholder="以平台客服身份插入一条消息…" onkeydown="if(event.key==='Enter')sendConv()" />
+    <button class="btn btn-primary" onclick="sendConv()">发送</button>`;
+  await refreshConversation();
+  refreshConvTableIfOpen();   // 进入即接手：这一行不再闪动
+}
+async function refreshConversation() {
+  if (!convTarget) return;
+  try {
+    const { thread } = await api(`/conversations/thread?merchant_id=${encodeURIComponent(convTarget.merchantId)}&user_id=${encodeURIComponent(convTarget.userId)}`);
+    const msgs = (thread.messages || []).map(m => {
+      // 已读小字：平台 / 商家这侧发的看顾客是否已读，顾客 / 机器人发来的看这侧是否已读
+      const own = m.role === 'merchant';
+      const read = own ? m.read_user : m.read_merchant;
+      return `
+      <div class="msg ${esc(m.role)}">
+        <div class="who">${m.role === 'user' ? esc(thread.user_name || '顾客') : (m.role === 'merchant' ? '商家 / 平台客服' : '机器人')} · ${esc(m.time)}</div>
+        ${esc(m.text)}<span class="msg-read">${read ? '已读' : '未读'}</span>
+      </div>`;
+    }).join('');
+    setDrawer(msgs || '<div class="empty">暂无消息。</div>');
+  } catch (e) { setDrawer(`<div class="empty">${esc(e.message)}</div>`); }
+}
+async function sendConv() {
+  const input = document.getElementById('convInput');
+  const text = input.value.trim();
+  if (!text || !convTarget) return;
+  try {
+    await api('/conversations/reply', { method: 'POST', body: { merchant_id: convTarget.merchantId, user_id: convTarget.userId, text } });
+    input.value = '';
+    await refreshConversation();
+  } catch (e) { toast(e.message); }
+}
+
+/* ---------------- 与商家沟通 ---------------- */
+async function loadChats(box) {
+  const { chats } = await api('/chats');
+  const rows = chats.map(c => `
+    <tr>
+      <td>${esc(c.merchant_name)}<div class="muted">ID ${esc(c.merchant_id)}</div></td>
+      <td>${c.disabled ? '<span class="tag danger">已停用</span>' : '<span class="tag ok">正常</span>'}${c.muted ? ' <span class="tag warn">已禁言</span>' : ''}</td>
+      <td>${c.message_count}${c.unread ? ` <span class="tag warn">未读 ${c.unread}</span>` : ''}</td>
+      <td style="max-width:280px">${esc(c.last_message).slice(0, 60)}</td>
+      <td>${esc(c.last_time)}</td>
+      <td><button class="btn btn-primary" onclick="openChat('${esc(c.merchant_id)}','${esc(c.merchant_name)}')">打开对话</button></td>
+    </tr>`).join('');
+  panel(box, `<div class="panel"><h2>与商家的沟通（${chats.length}）</h2>
+    <div class="muted" style="margin-bottom:10px">平台发出的消息会出现在商家的「顾客消息」里，商家可直接回复。</div>
+    <table><thead><tr><th>商家</th><th>状态</th><th>消息</th><th>最新内容</th><th>时间</th><th>操作</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6" class="empty">暂无商家。</td></tr>'}</tbody></table></div>`);
+}
+async function openChat(mid, shopName) {
+  chatTarget = { mid, shopName };
+  openDrawer(`与「${shopName}」对话`, loadingHTML);
+  document.getElementById('drawerFoot').hidden = false;
+  document.getElementById('drawerFoot').innerHTML = `
+    <input class="q" id="chatInput" placeholder="输入要发给商家的消息…" onkeydown="if(event.key==='Enter')sendChat()" />
+    <button class="btn btn-primary" onclick="sendChat()">发送</button>`;
+  await refreshChat();
+}
+async function refreshChat() {
+  if (!chatTarget) return;
+  try {
+    const { thread } = await api('/chats/thread?merchant_id=' + encodeURIComponent(chatTarget.mid));
+    const msgs = (thread.messages || []).map(m => `
+      <div class="msg ${esc(m.role)}">
+        <div class="who">${m.role === 'merchant' ? esc(chatTarget.shopName) : '平台管理员'} · ${esc(m.time)}</div>
+        ${esc(m.text)}
+      </div>`).join('');
+    setDrawer(msgs || '<div class="empty">还没有消息，发送第一条吧。</div>');
+  } catch (e) { setDrawer(`<div class="empty">${esc(e.message)}</div>`); }
+}
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || !chatTarget) return;
+  try {
+    await api('/chats/reply', { method: 'POST', body: { merchant_id: chatTarget.mid, text } });
+    input.value = '';
+    await refreshChat();
+  } catch (e) { toast(e.message); }
+}
+
+/* ---------------- 评价 ---------------- */
+async function loadReviews(box) {
+  const { reviews } = await api('/reviews');
+  const rows = reviews.map(r => `
+    <tr>
+      <td>${esc(r.product_name)}<div class="muted">${esc(r.product_id)}</div></td>
+      <td>${esc(r.merchant_name || '—')}</td>
+      <td>${esc(r.user_name)}</td>
+      <td>${stars(r.rating)}</td>
+      <td style="max-width:340px">${esc(r.content)}</td>
+      <td>${esc(r.create_time)}</td>
+    </tr>`).join('');
+  panel(box, `<div class="panel"><h2>商家评价（${reviews.length}）</h2>
+    <table><thead><tr><th>商品</th><th>商家</th><th>顾客</th><th>评分</th><th>内容</th><th>时间</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6" class="empty">暂无评价。</td></tr>'}</tbody></table></div>`);
+}
+
+/* ---------------- 真实快递查询（外部单号） ---------------- */
+const TRACK_STEPS = ['待揽收', '已发货', '运输中', '派送中', '已签收'];
+function loadTracking(box) {
+  panel(box, `
+    <div class="panel">
+      <h2>快递查询</h2>
+      <div class="muted" style="margin-bottom:10px">
+        7 位数字为本系统运单（查本地物流，即时返回）；其他单号走 uapis.cn 真实快递接口，
+        顺丰等快递需要填写收件人手机尾号 4 位。<b>真实接口较慢，一次查询约需 20 秒，请耐心等待。</b>
+      </div>
+      <div class="toolbar">
+        <input class="q" id="tkInput" placeholder="快递单号，例如 YT1234567890123"
+               onkeydown="if(event.key==='Enter')doTrack()" />
+        <input class="q" id="tkPhone" style="max-width:150px" maxlength="4" placeholder="手机尾号（选填）"
+               onkeydown="if(event.key==='Enter')doTrack()" />
+        <button class="btn btn-primary" onclick="doTrack()">查询</button>
+      </div>
+      <div id="tkResult"><div class="empty">输入快递单号后点击查询。</div></div>
+    </div>`);
+}
+async function doTrack() {
+  const waybill = (document.getElementById('tkInput').value || '').trim();
+  const phone = (document.getElementById('tkPhone').value || '').trim();
+  const box = document.getElementById('tkResult');
+  if (!waybill) { toast('请输入快递单号'); return; }
+  box.innerHTML = '<div class="empty">正在查询…外部快递接口较慢，约需 20 秒，请稍候。</div>';
+  try {
+    const q = '/tracking?waybill=' + encodeURIComponent(waybill) +
+              (phone ? '&phone=' + encodeURIComponent(phone) : '');
+    const res = await api(q);
+    renderTracking(box, res.tracking, res.source);
+  } catch (e) {
+    box.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+function renderTracking(box, t, source) {
+  const step = Number(t.status_step) || 0;
+  const steps = TRACK_STEPS.map((txt, i) =>
+    `<div class="tl-node ${i < step ? 'done' : (i === step ? 'now' : '')}">
+       <div class="tl-dot"></div><div class="tl-lbl">${esc(txt)}</div></div>`).join('');
+
+  const info = source === 'uapi'
+    ? `<div class="kv">
+         <div><b>快递公司：</b>${esc(t.carrier || '—')}${t.carrier_code ? ` <span class="muted">(${esc(t.carrier_code)})</span>` : ''}</div>
+         <div><b>当前状态：</b>${esc(t.status_text || '—')}${t.is_completed ? ' <span class="tag ok">已签收</span>' : ''}</div>
+         <div><b>签收时间：</b>${esc(t.completed_at || '—')}</div>
+         <div><b>轨迹条数：</b>${t.track_count || 0}　<span class="muted">数据来源：uapis.cn 实时查询</span></div>
+       </div>`
+    : `<div class="kv">
+         <div><b>物流公司：</b>${esc(t.carrier || '—')}</div>
+         <div><b>收件人：</b>${esc(t.user_name || '—')} <span class="muted">ID ${esc(t.user_id || '—')}</span></div>
+         <div><b>收货地址：</b>${esc(t.address || '—')}</div>
+         <div><b>发货时间：</b>${esc(t.shipped_at || '—')}</div>
+         <div><b>预计送达：</b>${esc(t.estimated_arrival || '—')}</div>
+         <div><b>当前状态：</b>${esc(t.status_text || '—')}　<span class="muted">数据来源：本系统物流表</span></div>
+       </div>`;
+
+  const tracks = (t.tracks || []).length
+    ? `<div class="panel" style="margin:14px 0 0;box-shadow:none;border:1px solid #eef1f7">
+         <h2>物流轨迹（${t.tracks.length}）</h2>
+         <div class="tl">
+           ${t.tracks.map(p => `<div class="tl-item">
+             <div class="tl-time">${esc(p.time || '—')}</div>
+             <div class="tl-text">${esc(p.context || '')}</div>
+           </div>`).join('')}
+         </div>
+       </div>`
+    : '';
+
+  box.innerHTML = `<div class="steps">${steps}</div>${info}${tracks}`;
+}
+
+/* ---------------- 抽屉 ---------------- */
+function openDrawer(title, html) {
+  document.getElementById('drawerTitle').textContent = title;
+  document.getElementById('drawerBody').innerHTML = html;
+  document.getElementById('drawerFoot').hidden = true;
+  document.getElementById('drawerFoot').innerHTML = '';
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawerMask').classList.add('open');
+}
+function setDrawer(html) {
+  const body = document.getElementById('drawerBody');
+  body.innerHTML = html;
+  body.scrollTop = body.scrollHeight;
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawerMask').classList.remove('open');
+  chatTarget = null;
+  convTarget = null;
+}
+
+/* ---------------- 启动 ---------------- */
+(async function init() {
+  document.getElementById('loginPwd').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('loginName').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  if (TOKEN) {
+    try { await api('/me'); await enterApp(); return; } catch (e) { /* 需要重新登录 */ }
+  }
+  document.getElementById('loginView').style.display = 'flex';
+})();
+</script>
+</body>
+</html>

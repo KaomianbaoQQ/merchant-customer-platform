@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 虚拟环境
+.venv/
+venv/
+
+# macOS
+.DS_Store
+
+# 备份文件
+*.bak
+
+# ===== 敏感配置：禁止提交 =====
+# config.json 含 SMTP 发件邮箱与授权码、快递查询 API Key、Dify 知识库 Key，
+# 仅保留在本机；新环境请复制 config.example.json 后自行填写。
+config.json
+config.local.json
+
+# 环境变量文件（可能含各类密钥）
+.env
+.env.*
+!.env.example
+
+# 本地密钥 / 证书
+*.pem
+*.key
+*.p12
+
+# ===== 运行期产出与数据备份：禁止提交 =====
+# 备份/ 是数据库导出（含顾客手机号、收货地址、密码哈希）
+备份/
+# 结果/ 是仿真压测输出，体积大且每次运行都会重新生成
+结果/
+
+# 商户后台运行期数据（商品数据 products.json 请保留）
+商户界面/chat.json
+商户界面/.store.lock
+商户界面/images/

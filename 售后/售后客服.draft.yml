@@ -1,0 +1,2177 @@
+app:
+  name: 售后客服
+  mode: workflow
+  icon: 🤖
+  icon_type: emoji
+  icon_background: '#FFEAD5'
+  description: ''
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/deepseek:0.0.21@5873fe73395aeb49ba26035059eb4e0ec5af01bb66d0545b031f8917b12e8c29
+    version: null
+kind: app
+version: 0.7.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload: {}
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    nodes:
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788848146296'
+      positionAbsolute:
+        x: -875.7910652956042
+        y: 179.40840662861598
+      data:
+        type: start
+        title: 用户输入
+        variables:
+        - variable: user_input
+          required: true
+          hint: ''
+          label: user_input
+          placeholder: ''
+          options: []
+          type: text-input
+          default: ''
+        - variable: user_id
+          required: true
+          hint: ''
+          label: user_id
+          placeholder: ''
+          options: []
+          type: text-input
+          default: ''
+        - variable: user_role
+          required: true
+          hint: ''
+          label: user_role
+          placeholder: ''
+          options: []
+          type: text-input
+          default: ''
+        - variable: user_name
+          required: true
+          hint: ''
+          label: user_name
+          placeholder: ''
+          options: []
+          type: text-input
+          default: ''
+        - variable: user_orders
+          required: false
+          hint: 当前用户已有的订单（JSON文本），用于解析「我的订单」等模糊说法
+          label: user_orders
+          placeholder: ''
+          options: []
+          type: text-input
+          default: ''
+        selected: false
+      position:
+        y: 179.40840662861598
+        x: -875.7910652956042
+      type: custom
+      height: 213
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788848189096'
+      positionAbsolute:
+        x: 145.3043531839944
+        y: 130.38555867168756
+      data:
+        classes:
+        - name: 用户的操作需要新增数据，如添加、创建、录入
+          id: '1788848870986'
+          label: 新增写入类
+        - name: 用户的操作需要删除数据
+          id: '1788848987629'
+          label: 删除类
+        - name: 用户需要修改已有数据的信息，如改地址、改名、改数量
+          id: '1788848968900'
+          label: 修改更新类
+        - name: 用户仅查找数据，如查订单、查用户、查记录，无修改意图
+          id: '1'
+          label: 查询类
+        - name: 用户一句话包含两种及以上数据库操作，如"删掉1001再下新单"
+          id: '1788852079509'
+          label: 增删改等多种操作
+        - name: 问候、闲聊、无意义输入，与任何数据库操作无关，请仔细确认
+          id: '1788849033975'
+          label: 闲聊 / 无关问题
+        - name: 用户咨询退货 / 换货 / 退款的政策、流程、条件、时间窗口、规则，是想了解规则，不是要立即办理
+          id: '1788940000001'
+          label: 退货退款政策咨询
+        - name: 用户询问自己已提交的退换货 / 退款申请的进度、状态、是否通过、平台仲裁结果（如「我的退货仲裁怎么样了」「我的退货为什么被拒绝」「退款到哪了」「售后处理得怎样了」）：这是在问已有申请的进度，不是要立即办理新申请，也不是只问政策规则
+          id: '1788960000001'
+          label: null
+        - name: '用户提出退货 / 换货 / 退款申请（如「我要退货」「键盘也要退货」「鼠标申请退款」「帮我换一个键盘」），需要定位到具体是哪一笔订单。注意：单纯点名商品名、查订单、问物流进度、问政策流程规则，都不算这一类
+
+            注意：问已有申请的进度 / 状态 / 仲裁情况、只问政策流程规则、只点名商品名、查订单物流，都不算这一类'
+          id: '1788950000001'
+          label: 退换货订单定位
+        title: 问题分类器
+        query_variable_selector:
+        - '1788848146296'
+        - user_input
+        error_strategy: fail-branch
+        type: question-classifier
+        default_value: null
+        vision:
+          enabled: false
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0.1
+          mode: chat
+        selected: true
+      position:
+        y: 130.38555867168756
+        x: 145.3043531839944
+      type: custom
+      height: 472
+      selected: true
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788849340096'
+      positionAbsolute:
+        x: 1378.8910645523226
+        y: -48.80138878025929
+      data:
+        type: end
+        title: 输出
+        outputs:
+        - value_selector:
+          - '1788872619227'
+          - output
+          value_type: object
+          variable: json
+        selected: false
+      position:
+        y: -48.80138878025929
+        x: 1378.8910645523226
+      type: custom
+      height: 88
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788851115331'
+      positionAbsolute:
+        x: -525.65907061741
+        y: 158.1425804209775
+      data:
+        classes:
+        - name: 用户情绪平稳或积极，或输入内容与情绪无关（默认归此类）
+          id: '1'
+          label: 心情好/一般
+        - name: 用户明显生气、愤怒、抱怨、失望或表达强烈不满
+          id: '2'
+          label: 心情差
+        title: 用户情绪判断
+        query_variable_selector:
+        - '1788848146296'
+        - user_input
+        error_strategy: fail-branch
+        type: question-classifier
+        default_value: null
+        vision:
+          enabled: false
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0.1
+          mode: chat
+        selected: false
+      position:
+        y: 158.1425804209775
+        x: -525.65907061741
+      type: custom
+      height: 178
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788851197125'
+      positionAbsolute:
+        x: -202.09869800105457
+        y: 376.67733311811855
+      data:
+        prompt_template:
+        - id: bdac45a8-4339-4aa8-ac54-a5c5b17c6ad8
+          role: system
+          text: '{{#context#}}
+
+            你是一位耐心的客服安抚专员。用户现在情绪很差（生气、不满或失望）。
+
+
+            你的任务：
+
+            1. 先真诚共情，认可用户的感受
+
+            2. 明确告知我们会负责解决好问题
+
+            3. 简短温暖，2-3 句话即可，不要说教，不要反问责任
+
+
+            禁止：与用户争辩、解释技术细节、敷衍套话。'
+        - id: 57fbf807-05c3-4b6f-96c8-cfd9fd620096
+          role: user
+          text: '用户说：{{#1788848146296.user_input#}}
+
+
+            用户姓名：{{#1788848146296.user_name#}}
+
+
+            请生成安抚回复。'
+        desc: ''
+        context:
+          enabled: true
+          variable_selector:
+          - '1788848146296'
+          - user_input
+        title: 安抚节点
+        error_strategy: fail-branch
+        type: llm
+        default_value: null
+        vision:
+          enabled: false
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0.7
+          mode: chat
+        selected: false
+      position:
+        y: 376.67733311811855
+        x: -202.09869800105457
+      type: custom
+      height: 124
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788855614735'
+      positionAbsolute:
+        x: 1066.8480833210488
+        y: 232.34293336635673
+      data:
+        type: end
+        title: 错误信息
+        outputs:
+        - value_selector:
+          - '1788939000001'
+          - output
+          value_type: string
+          variable: error_message
+        selected: false
+      position:
+        y: 232.34293336635673
+        x: 1066.8480833210488
+      type: custom
+      height: 88
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788855633324'
+      positionAbsolute:
+        x: 1066.8480833210488
+        y: 346.0894039678176
+      data:
+        type: end
+        title: 错误类型
+        outputs:
+        - value_selector:
+          - '1788939000002'
+          - output
+          value_type: string
+          variable: error_type
+        selected: false
+      position:
+        y: 346.0894039678176
+        x: 1066.8480833210488
+      type: custom
+      height: 88
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788856347971'
+      positionAbsolute:
+        x: 719.6241785045826
+        y: 631.2318995263975
+      data:
+        prompt_template:
+        - id: 999d7d15-e04d-4bd4-9279-28ccc590f002
+          role: system
+          text: '你是一个友好自然的客服聊天助手。用户想闲聊或发了无关内容。
+
+
+            要求：
+
+            1. 轻松自然地回应用户，1-3 句话
+
+            2. 可以简单介绍你能帮忙查订单、增删改数据，引导用户说出需求
+
+            3. 不要编造订单或数据信息'
+        - id: 33bd360f-2ef3-4d71-9db8-5167302c5f3f
+          role: user
+          text: 用户说：{{#1788848146296.user_input#}}
+        context:
+          enabled: false
+          variable_selector: []
+        title: 闲聊
+        error_strategy: fail-branch
+        type: llm
+        default_value: null
+        vision:
+          enabled: false
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0.7
+          mode: chat
+        selected: false
+      position:
+        y: 631.2318995263975
+        x: 719.6241785045826
+      type: custom
+      height: 124
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788856381563'
+      positionAbsolute:
+        x: 1067.8639484127752
+        y: 631.2318995263975
+      data:
+        type: end
+        title: 闲聊输出
+        outputs:
+        - value_selector:
+          - '1788856347971'
+          - text
+          value_type: string
+          variable: talk_output
+        selected: false
+      position:
+        y: 631.2318995263975
+        x: 1067.8639484127752
+      type: custom
+      height: 88
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788857118007'
+      positionAbsolute:
+        x: 719.6241785045826
+        y: -61.77330996720632
+      data:
+        vision:
+          enabled: false
+        prompt_template:
+        - id: 2a0f0c77-ab9e-4cfb-8668-873091dbb6c5
+          role: system
+          text: '你是数据库操作参数解析器。任务：从用户输入中提取"新增数据"所需参数，按 schema 输出 JSON。
+
+
+            字段提取规则：
+
+            - insert_goodsname：用户要新增的商品名称，只填商品本身（如"电脑"、"手机"），不要包含"订单"等词；未提供则填 ""
+
+            - insert_id：新增记录的 ID；用户未指定则填 ""；用户一次给出多个编号时用英文逗号连接，如 "X1,X2,X3"
+
+            - name、id、role：使用下方提供的当前用户信息，原样填入
+
+
+            规则：
+
+            1. operate 固定为 "insert"
+
+            2. 只输出 JSON，禁止 markdown 代码块、注释或任何额外文字
+
+            3. 字段值一律用字符串'
+        - id: 66c420d9-719c-4d55-be84-ab7790851c1f
+          role: user
+          text: '用户输入：{{#1788848146296.user_input#}}
+
+
+            当前用户信息：
+
+            - name: {{#1788848146296.user_name#}}
+
+            - id: {{#1788848146296.user_id#}}
+
+            - role: {{#1788848146296.user_role#}}
+
+
+            该用户已有订单（仅本人；JSON 数组，"序号"=1 是最新，"序号"最大是最早）：
+
+            {{#1788848146296.user_orders#}}'
+        context:
+          enabled: false
+          variable_selector: []
+        structured_output_enabled: true
+        title: insert
+        error_strategy: fail-branch
+        type: llm
+        default_value: null
+        structured_output:
+          schema:
+            type: object
+            required:
+            - name
+            - id
+            - role
+            - operate
+            - insert_goodsname
+            - insert_id
+            properties:
+              name:
+                type: string
+              insert_id:
+                type: string
+              insert_goodsname:
+                type: string
+              id:
+                type: string
+              role:
+                type: string
+              operate:
+                const: insert
+                type: string
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0.1
+          mode: chat
+        selected: false
+      position:
+        y: -61.77330996720632
+        x: 719.6241785045826
+      type: custom
+      height: 124
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '17888573967370'
+      positionAbsolute:
+        x: 719.6241785045826
+        y: 90.79970282465025
+      data:
+        isInIteration: false
+        isInLoop: false
+        loop_id: null
+        desc: ''
+        context:
+          enabled: false
+          variable_selector: []
+        prompt_template:
+        - id: 2a0f0c77-ab9e-4cfb-8668-873091dbb6c5
+          role: system
+          text: '你是数据库操作参数解析器。任务：从用户输入中提取"删除操作"所需参数，按 schema 输出 JSON。
+
+
+            字段提取规则：
+
+            - delete_id：用户要删除的记录 ID（订单号/编号等）；用户未提供则填 ""；用户一次给出多个编号时用英文逗号连接，如 "X1,X2,X3"
+
+            - 模糊指代（只能从下方"该用户已有订单"里取，禁止编造）："最新/最近/刚才那个/上一个" = "序号"为 1 那条的 id；"最早/最旧" = "序号"最大那条的 id；明确说"全部/所有/都" = 全部 id 用英文逗号连接；只是泛泛说"我的订单"而没指明哪条 = 留空 ""（不要猜）；若句子里只出现"它/这个/那个/这些"等代词、且没有任何线索（订单号、商品名、"最新/最早"、"全部"）= 留空 ""，绝对不要猜测
+
+            - delete_goodsname：用户要删除的商品名称，只填商品本身（如"电脑"、"手机"），不要包含"订单"等词；未提供则填 ""
+
+            - name、id、role：使用下方提供的当前用户信息，原样填入
+
+
+            规则：
+
+            1. operate 固定为 "delete"
+
+            2. 只输出 JSON，禁止 markdown 代码块、注释或任何额外文字
+
+            3. 字段值一律用字符串'
+        - id: 21f147d8-672c-4db6-bb5c-bfebe9d6b2f0
+          role: user
+          text: '用户输入：{{#1788848146296.user_input#}}
+
+
+            当前用户信息：
+
+            - name: {{#1788848146296.user_name#}}
+
+            - id: {{#1788848146296.user_id#}}
+
+            - role: {{#1788848146296.user_role#}}
+
+
+            该用户已有订单（仅本人；JSON 数组，"序号"=1 是最新，"序号"最大是最早）：
+
+            {{#1788848146296.user_orders#}}'
+        structured_output_enabled: true
+        iteration_id: null
+        title: delete
+        error_strategy: fail-branch
+        type: llm
+        vision:
+          enabled: false
+        structured_output:
+          schema:
+            type: object
+            required:
+            - name
+            - id
+            - role
+            - operate
+            - delete_id
+            - delete_goodsname
+            properties:
+              name:
+                type: string
+              delete_goodsname:
+                type: string
+              delete_id:
+                type: string
+              role:
+                type: string
+              id:
+                type: string
+              operate:
+                const: delete
+                type: string
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0.1
+          mode: chat
+        selected: false
+      position:
+        y: 90.79970282465025
+        x: 719.6241785045826
+      type: custom
+      height: 124
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '17888575063800'
+      positionAbsolute:
+        x: 719.6241785045826
+        y: 238.18414223276497
+      data:
+        isInIteration: false
+        isInLoop: false
+        loop_id: null
+        desc: ''
+        context:
+          enabled: false
+          variable_selector: []
+        prompt_template:
+        - id: 2a0f0c77-ab9e-4cfb-8668-873091dbb6c5
+          role: system
+          text: '你是数据库操作参数解析器。任务：从用户输入中提取"修改更新"所需参数，按 schema 输出 JSON。
+
+
+            字段提取规则：
+
+            - update_id：要修改的记录 ID（订单号/编号等）；未提供则填 ""；用户一次给出多个编号时用英文逗号连接，如 "X1,X2,X3"
+
+            - 模糊指代（只能从下方"该用户已有订单"里取，禁止编造）："最新/最近/刚才那个/上一个" = "序号"为 1 那条的 id；"最早/最旧" = "序号"最大那条的 id；明确说"全部/所有/都" = 全部 id 用英文逗号连接；只是泛泛说"我的订单"而没指明哪条 = 留空 ""（不要猜）；若句子里只出现"它/这个/那个/这些"等代词、且没有任何线索（订单号、商品名、"最新/最早"、"全部"）= 留空 ""，绝对不要猜测
+
+            - update_goodsname：修改后的新商品名称，只填商品本身（如"电脑"、"手机"），不要包含"订单"等词；用户未说明则填 ""
+
+            - name、id、role：使用下方提供的当前用户信息，原样填入
+
+
+            规则：
+
+            1. operate 固定为 "update"
+
+            2. 只输出 JSON，禁止 markdown 代码块、注释或任何额外文字
+
+            3. 字段值一律用字符串'
+        - id: d8ee8a02-ae8b-4755-97a7-cd30501c3032
+          role: user
+          text: '用户输入：{{#1788848146296.user_input#}}
+
+
+            当前用户信息：
+
+            - name: {{#1788848146296.user_name#}}
+
+            - id: {{#1788848146296.user_id#}}
+
+            - role: {{#1788848146296.user_role#}}
+
+
+            该用户已有订单（仅本人；JSON 数组，"序号"=1 是最新，"序号"最大是最早）：
+
+            {{#1788848146296.user_orders#}}'
+        structured_output_enabled: true
+        iteration_id: null
+        title: update
+        error_strategy: fail-branch
+        type: llm
+        vision:
+          enabled: false
+        structured_output:
+          schema:
+            type: object
+            required:
+            - name
+            - id
+            - role
+            - operate
+            - update_id
+            - update_goodsname
+            properties:
+              name:
+                type: string
+              update_goodsname:
+                type: string
+              update_id:
+                type: string
+              id:
+                type: string
+              role:
+                type: string
+              operate:
+                const: update
+                type: string
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0.1
+          mode: chat
+        selected: false
+      position:
+        y: 238.18414223276497
+        x: 719.6241785045826
+      type: custom
+      height: 124
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '17888575683080'
+      positionAbsolute:
+        x: 719.6241785045826
+        y: 382.3858026113962
+      data:
+        isInIteration: false
+        isInLoop: false
+        loop_id: null
+        desc: ''
+        context:
+          enabled: false
+          variable_selector: []
+        prompt_template:
+        - id: 2a0f0c77-ab9e-4cfb-8668-873091dbb6c5
+          role: system
+          text: '你是数据库操作参数解析器。任务：从用户输入中提取"查询操作"所需参数，按 schema 输出 JSON。
+
+
+            字段提取规则：
+
+            - query_id：用户要查询的记录 ID（订单号/编号等）；用户未提供则填 ""；用户一次给出多个编号时用英文逗号连接，如 "X1,X2,X3"
+
+            - 模糊指代（只能从下方"该用户已有订单"里取，禁止编造）："最新/最近/刚才那个/上一个" = "序号"为 1 那条的 id；"最早/最旧" = "序号"最大那条的 id；"我的订单"未指明具体哪条 = 留空 ""（留空即查询本人全部订单）
+
+            - query_goodsname：用户要查询的商品名称，只填商品本身（如"电脑"、"手机"），不要包含"订单"等词；未提供则填 ""
+
+            - name、id、role：使用下方提供的当前用户信息，原样填入
+
+
+            规则：
+
+            1. operate 固定为 "select"
+
+            2. 只输出 JSON，禁止 markdown 代码块、注释或任何额外文字
+
+            3. 字段值一律用字符串'
+        - id: a6b4d566-bbb4-42f5-810e-63eda38d7dc0
+          role: user
+          text: '用户输入：{{#1788848146296.user_input#}}
+
+
+            当前用户信息：
+
+            - name: {{#1788848146296.user_name#}}
+
+            - id: {{#1788848146296.user_id#}}
+
+            - role: {{#1788848146296.user_role#}}
+
+
+            该用户已有订单（仅本人；JSON 数组，"序号"=1 是最新，"序号"最大是最早）：
+
+            {{#1788848146296.user_orders#}}'
+        structured_output_enabled: true
+        iteration_id: null
+        title: search
+        error_strategy: fail-branch
+        type: llm
+        vision:
+          enabled: false
+        structured_output:
+          schema:
+            type: object
+            required:
+            - name
+            - id
+            - role
+            - operate
+            - query_id
+            - query_goodsname
+            properties:
+              name:
+                type: string
+              query_id:
+                type: string
+              query_goodsname:
+                type: string
+              id:
+                type: string
+              role:
+                type: string
+              operate:
+                const: select
+                type: string
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0.1
+          mode: chat
+        selected: false
+      position:
+        y: 382.3858026113962
+        x: 719.6241785045826
+      type: custom
+      height: 124
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788857694734'
+      positionAbsolute:
+        x: 719.6241785045826
+        y: 524.7414992070892
+      data:
+        vision:
+          enabled: false
+        prompt_template:
+        - id: 9a14baee-d31e-4278-bc1b-3024053549fc
+          role: system
+          text: "你是数据库操作解析器。用户的指令可能包含多个操作，请逐一识别，并严格按 schema 输出 JSON。\n\n【强制规则】\n1. 顶层 name / id / role 必须直接使用下方「当前用户信息」里的真实值，严禁照抄本提示词里的占位符。\n2. ops 数组每个元素代表一个操作，operate 只能是 insert / delete / update / select 之一。\n3. 每个操作对象必须【同时包含全部 9 个字段】，一个都不能省略：operate、query_id、query_goodsname、delete_id、delete_goodsname、insert_goodsname、insert_id、update_goodsname、update_id。与本操作无关的字段一律填 null，绝对不允许省略键。\n4. 字段含义：\n   - *_id 为记录 ID（订单号/编号等）。用户明确给出编号时，必须把编号原样写入对应操作的 *_id，严禁丢失，这是最重要的一条。\n   - *_goodsname 为商品名称，只填商品本身（如\"电脑\"、\"手机\"），不要包含\"订单\"等词。\n5. 用户一次给出多个编号时（如\"X1、X2、X3\"），合并写进同一个操作的 *_id，用英文逗号连接，例如 \"X1,X2,X3\"。\n6. 模糊指代规则（只能从下方\"该用户已有订单\"里取，禁止编造）：\"最新/最近/刚才那个/上一个\" = \"序号\"为 1 那条的 id；\"最早/最旧\" = \"序号\"最大那条的 id；select 的\"我的订单\"没指明具体 = *_id 填 null（null 表示查询本人全部订单）；delete/update 泛泛说\"我的订单\" = *_id 填 null，明确说\"全部/所有/都\"才填全部 id 用英文逗号连接；若只出现\"它/这个/那个/这些\"等代词且无任何线索 = *_id 填 null，绝不猜测。\n7. 用户未提供的信息一律填 null。\n8. 只输出 JSON，禁止 markdown 代码块、注释或任何额外文字。\n\n【示例】\n用户输入：新增订单B200商品是耳机，然后删除A100，最后查询B200\n输出：\n{\"name\":\"admin\",\"id\":\"110105\",\"role\":\"admin\",\"ops\":[{\"operate\":\"insert\",\"insert_id\":\"B200\",\"insert_goodsname\":\"耳机\",\"query_id\":null,\"query_goodsname\":null,\"delete_id\":null,\"delete_goodsname\":null,\"update_id\":null,\"update_goodsname\":null},{\"operate\":\"delete\",\"delete_id\":\"A100\",\"delete_goodsname\":null,\"insert_id\":null,\"insert_goodsname\":null,\"query_id\":null,\"query_goodsname\":null,\"update_id\":null,\"update_goodsname\":null},{\"operate\":\"select\",\"query_id\":\"B200\",\"query_goodsname\":null,\"insert_id\":null,\"insert_goodsname\":null,\"delete_id\":null,\"delete_goodsname\":null,\"update_id\":null,\"update_goodsname\":null}]}\n"
+        - id: 512af21b-672b-4c3f-935c-ba8f79a61840
+          role: user
+          text: '用户输入：{{#1788848146296.user_input#}}
+
+
+            当前用户信息：
+
+            - name: {{#1788848146296.user_name#}}
+
+            - id: {{#1788848146296.user_id#}}
+
+            - role: {{#1788848146296.user_role#}}
+
+
+            该用户已有订单（仅本人；JSON 数组，"序号"=1 是最新，"序号"最大是最早）：
+
+            {{#1788848146296.user_orders#}}'
+        context:
+          enabled: false
+          variable_selector: []
+        structured_output_enabled: true
+        title: MultipleOperation
+        error_strategy: fail-branch
+        type: llm
+        default_value: null
+        structured_output:
+          schema:
+            type: object
+            required:
+            - name
+            - id
+            - role
+            - ops
+            properties:
+              name:
+                type: string
+              ops:
+                items:
+                  type: object
+                  required:
+                  - operate
+                  - query_id
+                  - query_goodsname
+                  - delete_id
+                  - delete_goodsname
+                  - insert_goodsname
+                  - insert_id
+                  - update_goodsname
+                  - update_id
+                  properties:
+                    update_goodsname:
+                      type:
+                      - string
+                      - 'null'
+                    delete_goodsname:
+                      type:
+                      - string
+                      - 'null'
+                    query_id:
+                      type:
+                      - string
+                      - 'null'
+                    insert_id:
+                      type:
+                      - string
+                      - 'null'
+                    delete_id:
+                      type:
+                      - string
+                      - 'null'
+                    insert_goodsname:
+                      type:
+                      - string
+                      - 'null'
+                    query_goodsname:
+                      type:
+                      - string
+                      - 'null'
+                    update_id:
+                      type:
+                      - string
+                      - 'null'
+                    operate:
+                      enum:
+                      - insert
+                      - delete
+                      - update
+                      - select
+                      type: string
+                type: array
+              id:
+                type: string
+              role:
+                type: string
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0.1
+          mode: chat
+        selected: false
+      position:
+        y: 524.7414992070892
+        x: 719.6241785045826
+      type: custom
+      height: 124
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788870541374'
+      positionAbsolute:
+        x: 1066.8480833210488
+        y: 524.7414992070892
+      data:
+        type: end
+        title: 多操作输出
+        outputs:
+        - value_selector:
+          - '1788857694734'
+          - structured_output
+          value_type: object
+          variable: ops_json
+        selected: false
+      position:
+        y: 524.7414992070892
+        x: 1066.8480833210488
+      type: custom
+      height: 88
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788872619227'
+      positionAbsolute:
+        x: 1072.3472566642556
+        y: -48.80138878025929
+      data:
+        output_type: object
+        type: variable-aggregator
+        title: 变量聚合器
+        variables:
+        - - '1788857118007'
+          - structured_output
+        - - '17888573967370'
+          - structured_output
+        - - '17888575063800'
+          - structured_output
+        - - '17888575683080'
+          - structured_output
+        selected: false
+      position:
+        y: -48.80138878025929
+        x: 1072.3472566642556
+      type: custom
+      height: 187
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788938906927'
+      positionAbsolute:
+        x: 145.3043531839944
+        y: 564.3228697837424
+      data:
+        type: end
+        title: 输出 6
+        outputs:
+        - value_selector:
+          - '1788851197125'
+          - text
+          value_type: string
+          variable: comfort
+        selected: false
+      position:
+        y: 564.3228697837424
+        x: 145.3043531839944
+      type: custom
+      height: 88
+      selected: false
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788939000001'
+      positionAbsolute:
+        x: 1378.8910645523226
+        y: 232.34293336635673
+      data:
+        output_type: string
+        type: variable-aggregator
+        title: 错误信息聚合
+        variables:
+        - - '1788857118007'
+          - error_message
+        - - '17888573967370'
+          - error_message
+        - - '17888575063800'
+          - error_message
+        - - '17888575683080'
+          - error_message
+        - - '1788857694734'
+          - error_message
+        - - '1788856347971'
+          - error_message
+        - - '1788851197125'
+          - error_message
+        - - '1788851115331'
+          - error_message
+        - - '1788848189096'
+          - error_message
+        - - '1788940000002'
+          - error_message
+        - - '1788940000003'
+          - error_message
+        - - '1788950000002'
+          - error_message
+        - - '1788960000002'
+          - error_message
+        selected: false
+      position:
+        y: 232.34293336635673
+        x: 1378.8910645523226
+      type: custom
+      height: 421
+      selected: true
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788939000002'
+      positionAbsolute:
+        x: 1865.3446887897044
+        y: 328.3186718647605
+      data:
+        output_type: string
+        type: variable-aggregator
+        title: 错误类型聚合
+        variables:
+        - - '1788857118007'
+          - error_type
+        - - '17888573967370'
+          - error_type
+        - - '17888575063800'
+          - error_type
+        - - '17888575683080'
+          - error_type
+        - - '1788857694734'
+          - error_type
+        - - '1788856347971'
+          - error_type
+        - - '1788851197125'
+          - error_type
+        - - '1788851115331'
+          - error_type
+        - - '1788848189096'
+          - error_type
+        - - '1788940000002'
+          - error_type
+        - - '1788940000003'
+          - error_type
+        - - '1788950000002'
+          - error_type
+        - - '1788960000002'
+          - error_type
+        selected: false
+      position:
+        y: 328.3186718647605
+        x: 1865.3446887897044
+      type: custom
+      height: 421
+      selected: true
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788940000002'
+      positionAbsolute:
+        x: 905.6456316763765
+        y: 920.1213075079808
+      data:
+        desc: ''
+        query_attachment_selector: []
+        query_variable_selector:
+        - '1788848146296'
+        - user_input
+        error_strategy: fail-branch
+        retrieval_mode: multiple
+        title: 知识检索（退货政策）
+        multiple_retrieval_config:
+          top_k: 4
+          reranking_enable: false
+          reranking_model: null
+          weights:
+            weight_type: customized
+            keyword_setting:
+              keyword_weight: 0
+            vector_setting:
+              vector_weight: 1
+              embedding_provider_name: langgenius/ollama/ollama
+              embedding_model_name: qwen3-embedding
+          score_threshold: null
+          reranking_mode: weighted_score
+        dataset_ids:
+        - dab2daf8-8937-4048-ae08-faf089ae6fb2
+        type: knowledge-retrieval
+        selected: false
+      position:
+        y: 920.1213075079808
+        x: 905.6456316763765
+      type: custom
+      height: 90
+      selected: true
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788940000003'
+      positionAbsolute:
+        x: 1306.456316763767
+        y: 1004.8057826536315
+      data:
+        prompt_template:
+        - id: '1788940000011'
+          role: system
+          text: '你是售后客服助手，负责解答退货 / 换货 / 退款的政策、流程与时间窗口。
+
+            规则：
+
+            1. 严格基于【知识库召回内容】回答，禁止编造规则、时限、单号信息。
+
+            2. 知识库没有的内容统一回复：该信息暂无，建议点击页面下方「售后客服」按钮咨询人工。
+
+            3. 关键政策必须准确：申请退换货 / 退款都需填写理由；未签收可随时申请、只能整单退回、原运单号不变；已签收退货需 5 分钟内、换货需 10 分钟内；退款不限时间窗；商家拒绝时会写明拒绝理由，顾客可申请平台仲裁；平台仲裁判定支持顾客时与「商家同意」完全一致：已签收由平台生成 7 位退货单号、顾客凭单号寄回，未签收则原运单号不变、整单退回。
+
+            4. 回答简洁自然、分点说明，面向用户，不要输出 Markdown 标题或引用标记。
+
+            5. 结尾引导：需要办理可直接说「商品名或订单号 + 退/换/退款」，或点击页面下方「售后客服」按钮。'
+        - id: '1788940000012'
+          role: user
+          text: '{{#1788848146296.user_input#}}
+
+
+            【知识库召回内容】
+
+            {{#1788940000002.result#}}'
+        desc: ''
+        context:
+          enabled: false
+          variable_selector: []
+        title: 退货政策解答
+        error_strategy: fail-branch
+        type: llm
+        default_value: null
+        vision:
+          enabled: false
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0.7
+          mode: chat
+        selected: false
+      position:
+        y: 1004.8057826536315
+        x: 1306.456316763767
+      type: custom
+      height: 124
+      selected: true
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788940000004'
+      positionAbsolute:
+        x: 1859.6990571133283
+        y: 906.007228317039
+      data:
+        desc: ''
+        type: end
+        title: 政策输出
+        outputs:
+        - value_selector:
+          - '1788940000003'
+          - text
+          value_type: string
+          variable: policy_output
+        selected: false
+      position:
+        y: 906.007228317039
+        x: 1859.6990571133283
+      type: custom
+      height: 88
+      selected: true
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788950000002'
+      positionAbsolute:
+        x: 719.6241785045826
+        y: 1504.8057826536315
+      data:
+        prompt_template:
+        - id: '1788950000011'
+          role: system
+          text: '你是订单定位器。根据【用户已有订单】和【用户消息】，判断用户这次说的是哪一笔订单。
+
+
+            只输出一个 JSON 对象，不要输出解释、不要 Markdown、不要代码块标记。字段：
+
+            {"order_id": "订单号或 null", "quantity": 整数或 null, "confidence": 0到1的小数, "reason": "一句话理由"}
+
+
+            判定规则（按优先级）：
+
+            1. 消息里出现订单号：取该订单号对应的订单。
+
+            2. 消息里出现运单号：取运单号对应的订单。
+
+            3. 消息里点名了商品：做语义匹配，中英文、简称、俗称、型号、近似说法都算命中（例如「键盘」命中「87键机械键盘」，「鼠标」命中「无线静音鼠标」，「苹果电脑」命中「MacBook」）；取匹配度最高的那一笔。
+
+            4. 用户没有点名任何商品、也没有给单号（例如只说「我要退货」「帮我退掉」「我不换 要退」）：order_id 置 null，不要猜、不要套用最近一笔订单；reason 写明「需要顾客提供订单号或商品名」。
+
+            5. 消息里的说法指的是同一商品的多笔订单、或各自命中不同订单，无法确定唯一一笔时，order_id 置 null，reason 写明「需要顾客提供订单号或商品名」。
+
+
+            quantity：用户明确说了数量（如「退2个」「两件」）就填该整数，没说就置 null。
+
+            confidence：对 order_id 判断的把握，0~1 的小数。
+
+            '
+        - id: '1788950000012'
+          role: user
+          text: '【用户消息】
+
+            {{#1788848146296.user_input#}}
+
+
+            【用户已有订单】
+
+            {{#1788848146296.user_orders#}}'
+        desc: ''
+        context:
+          enabled: false
+          variable_selector: []
+        title: 订单定位
+        error_strategy: fail-branch
+        type: llm
+        default_value: null
+        vision:
+          enabled: false
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0
+          mode: chat
+        selected: false
+      position:
+        y: 1504.8057826536315
+        x: 719.6241785045826
+      type: custom
+      height: 124
+      selected: true
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788950000003'
+      positionAbsolute:
+        x: 772.9441233461691
+        y: 1225.3470146729846
+      data:
+        desc: ''
+        type: end
+        title: 订单定位输出
+        outputs:
+        - value_selector:
+          - '1788950000002'
+          - text
+          value_type: string
+          variable: return_pick
+        selected: false
+      position:
+        y: 1225.3470146729846
+        x: 772.9441233461691
+      type: custom
+      height: 88
+      selected: true
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788960000002'
+      positionAbsolute:
+        x: 1300.8106850873905
+        y: 1209.9708360646448
+      data:
+        prompt_template:
+        - role: system
+          text: "你是售后客服助手，负责回答顾客「我已经提交的退换货 / 退款申请现在怎么样了」这类进度问题。\n规则：\n1. 只依据下方【该用户退换货记录】回答，禁止编造单号、状态、时间。\n2. 记录里没有对应申请时，回复：没有查到你的退换货 / 退款申请，可直接说「商品名或订单号 + 退/换/退款」申请。\n3. 按状态如实解释：\n   - 待商家确认：还在等商家处理，商家同意或拒绝后会更新；\n   - 平台仲裁中：平台已介入处理这次纠纷，仲裁期间无需重复提交申请，请耐心等待结果；\n   - 商家已拒绝：要说明「商家拒绝理由」，并提示可在「我的订单 - 退换货记录」点「申请平台仲裁」；\n   - 商家已同意，请凭平台退货单号寄出：把平台生成的 7 位退货单号告诉顾客，请其凭该单号寄回，并在「退换货记录」里点「我已发出」；\n   - 退货运输中：告知退货单号与预计完成时间；\n   - 退换完成 / 已退款：告知已处理完成。\n4. 顾客问「为什么被拒绝」时，必须把记录里的「商家拒绝理由」原样说明。\n5. 回答简洁自然、分点说明，不要输出 Markdown 标题或引用标记。"
+        - role: user
+          text: '{{#1788848146296.user_input#}}
+
+
+            【该用户退换货记录】
+
+            {{#1788848146296.user_orders#}}'
+        desc: ''
+        context:
+          enabled: false
+          variable_selector: []
+        title: 售后进度解答
+        error_strategy: fail-branch
+        type: llm
+        default_value: null
+        vision:
+          enabled: false
+        model:
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+          completion_params:
+            thinking: false
+            temperature: 0.7
+          mode: chat
+        selected: false
+      position:
+        y: 1209.9708360646448
+        x: 1300.8106850873905
+      type: custom
+      height: 124
+      selected: true
+      width: 242
+    - sourcePosition: right
+      targetPosition: left
+      zIndex: 0
+      id: '1788960000003'
+      positionAbsolute:
+        x: 1865.3446887897044
+        y: 1170.451414330008
+      data:
+        desc: ''
+        type: end
+        title: 售后进度输出
+        outputs:
+        - value_selector:
+          - '1788960000002'
+          - text
+          value_type: string
+          variable: aftersale_output
+        selected: false
+      position:
+        y: 1170.451414330008
+        x: 1865.3446887897044
+      type: custom
+      height: 88
+      selected: true
+      width: 242
+    edges:
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788848146296-source-1788851115331-target
+      target: '1788851115331'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: question-classifier
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848146296'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: '1'
+      id: 1788848189096-1-17888575683080-target
+      target: '17888575683080'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848189096'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: '1788848870986'
+      id: 1788848189096-1788848870986-1788857118007-target
+      target: '1788857118007'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848189096'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: '1788848968900'
+      id: 1788848189096-1788848968900-17888575063800-target
+      target: '17888575063800'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848189096'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: '1788848987629'
+      id: 1788848189096-1788848987629-17888573967370-target
+      target: '17888573967370'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848189096'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: '1788849033975'
+      id: 1788848189096-1788849033975-1788856347971-target
+      target: '1788856347971'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848189096'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: '1788852079509'
+      id: 1788848189096-1788852079509-1788857694734-target
+      target: '1788857694734'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848189096'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: '1788940000001'
+      id: 1788848189096-1788940000001-1788940000002-target
+      target: '1788940000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: knowledge-retrieval
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848189096'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: '1788950000001'
+      id: 1788848189096-1788950000001-1788950000002-target
+      target: '1788950000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848189096'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788848189096-fail-branch-1788939000001-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848189096'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788848189096-fail-branch-1788939000002-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848189096'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: '1'
+      id: 1788851115331-1-1788848189096-target
+      target: '1788848189096'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: question-classifier
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788851115331'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: '2'
+      id: 1788851115331-2-1788851197125-target
+      target: '1788851197125'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788851115331'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788851115331-fail-branch-1788939000001-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788851115331'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788851115331-fail-branch-1788939000002-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788851115331'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788851197125-fail-branch-1788939000001-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788851197125'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788851197125-fail-branch-1788939000002-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788851197125'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788851197125-source-1788848189096-target
+      target: '1788848189096'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: question-classifier
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788851197125'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788851197125-source-1788938906927-target
+      target: '1788938906927'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788851197125'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788856347971-fail-branch-1788939000001-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788856347971'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788856347971-fail-branch-1788939000002-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788856347971'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788856347971-source-1788856381563-target
+      target: '1788856381563'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788856347971'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788857118007-fail-branch-1788855614735-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788857118007'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788857118007-fail-branch-1788855633324-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788857118007'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788857118007-source-1788872619227-target
+      target: '1788872619227'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788857118007'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 17888573967370-fail-branch-1788855614735-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '17888573967370'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 17888573967370-fail-branch-1788855633324-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '17888573967370'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 17888573967370-source-1788872619227-target
+      target: '1788872619227'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '17888573967370'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 17888575063800-fail-branch-1788855614735-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '17888575063800'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 17888575063800-fail-branch-1788855633324-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '17888575063800'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 17888575063800-source-1788872619227-target
+      target: '1788872619227'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '17888575063800'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 17888575683080-fail-branch-1788855614735-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '17888575683080'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 17888575683080-fail-branch-1788855633324-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '17888575683080'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 17888575683080-source-1788872619227-target
+      target: '1788872619227'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '17888575683080'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788857694734-fail-branch-1788939000001-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788857694734'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788857694734-fail-branch-1788939000002-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788857694734'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788857694734-source-1788870541374-target
+      target: '1788870541374'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788857694734'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788872619227-source-1788849340096-target
+      target: '1788849340096'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: variable-aggregator
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788872619227'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788939000001-source-1788855614735-target
+      target: '1788855614735'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: variable-aggregator
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788939000001'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788939000002-source-1788855633324-target
+      target: '1788855633324'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: variable-aggregator
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788939000002'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788940000002-fail-branch-1788939000001-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: knowledge-retrieval
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788940000002'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788940000002-fail-branch-1788939000002-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: knowledge-retrieval
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788940000002'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788940000002-source-1788940000003-target
+      target: '1788940000003'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: knowledge-retrieval
+        targetType: llm
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788940000002'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788940000003-fail-branch-1788939000001-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788940000003'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788940000003-fail-branch-1788939000002-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788940000003'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788940000003-source-1788940000004-target
+      target: '1788940000004'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788940000003'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788950000002-fail-branch-1788939000001-target
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788950000002'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: 1788950000002-fail-branch-1788939000002-target
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788950000002'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: 1788950000002-source-1788950000003-target
+      target: '1788950000003'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788950000002'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: '1788960000001'
+      id: edge-1788960000001-1788960000002
+      target: '1788960000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788848189096'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: edge-1788960000002-1788939000001
+      target: '1788939000001'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788960000002'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: fail-branch
+      id: edge-1788960000002-1788939000002
+      target: '1788939000002'
+      data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+        iteration_id: null
+        loop_id: null
+      targetHandle: target
+      source: '1788960000002'
+      selected: false
+      type: custom
+    - zIndex: 0
+      sourceHandle: source
+      id: edge-1788960000002-1788960000003
+      target: '1788960000003'
+      targetHandle: target
+      type: custom
+      source: '1788960000002'
+      data:
+        sourceType: llm
+        targetType: end
+        isInIteration: false
+        isInLoop: false
+        iteration_id: null
+        loop_id: null
+    viewport:
+      x: 180.5321108035337
+      y: -211.66363656722103
+      zoom: 1.1936635410496768

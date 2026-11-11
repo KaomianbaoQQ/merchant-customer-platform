@@ -1,0 +1,59 @@
+{
+  "_说明": "配置模板。复制为 config.json 后填写，或直接运行「python 工具/初始化配置.py」交互式生成。config.json 已被 .gitignore 排除，不会进版本库。",
+  "default_delay": 300,
+  "inventory": {
+    "default_stock": 100,
+    "reserve_ttl_seconds": 900,
+    "cleanup_interval_seconds": 30
+  },
+  "database": {
+    "host": "127.0.0.1",
+    "port": 3306,
+    "user": "root",
+    "password": "",
+    "name": "cs",
+    "charset": "utf8mb4"
+  },
+  "mongo": {
+    "uri": "mongodb://127.0.0.1:27017",
+    "database": "kaomianbao_chat"
+  },
+  "express_tracking": {
+    "api_key": "",
+    "base_url": "https://uapis.cn/api/v1",
+    "timeout": 30
+  },
+  "dify": {
+    "base_url": "http://localhost/v1",
+    "workflows": {
+      "order_locate": {
+        "name": "订单定位",
+        "api_key": ""
+      },
+      "after_sales": {
+        "name": "售后客服",
+        "api_key": ""
+      },
+      "consult": {
+        "name": "商品咨询",
+        "api_key": ""
+      }
+    }
+  },
+  "dify_knowledge": {
+    "api_key": "",
+    "dataset_id": "",
+    "base_url": "http://localhost/v1",
+    "map_file": "商户界面/knowledge_map.json",
+    "product_dir": "商品咨询",
+    "indexing_technique": "high_quality"
+  },
+  "smtp": {
+    "user": "",
+    "password": "",
+    "host": "",
+    "port": 465,
+    "ssl": true,
+    "from_name": "考棉宝商城"
+  }
+}

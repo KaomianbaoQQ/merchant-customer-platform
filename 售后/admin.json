@@ -1,0 +1,10 @@
+{
+  "admin_list": [
+    {
+      "user_id": "admin",
+      "user_name": "admin",
+      "password": "f9172d5344946e161d1622ba56faac33069a2743f101caa59166d92ec1cde681",
+      "role": "平台管理员"
+    }
+  ]
+}
