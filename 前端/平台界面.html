@@ -63,7 +63,8 @@
   .card {
     background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(20,30,60,.06);
   }
-  .card .num { font-size: 24px; font-weight: 600; margin-top: 4px; }
+  .card .label { font-size: 14px; font-weight: 600; color: #2c3446; }
+  .card .num { font-size: 24px; font-weight: 600; margin-top: 6px; }
   .panel { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(20,30,60,.06); }
   .panel h2 { margin: 0 0 12px; font-size: 15px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -419,16 +420,16 @@ const loadingHTML = '<div class="empty">加载中…</div>';
 async function loadOverview(box) {
   const { overview: o } = await api('/overview');
   const cards = [
-    ['商家总数', o.merchant_count, `${o.disabled_count} 已停用 / ${o.muted_count} 已禁言`],
-    ['顾客总数', o.user_count, `${o.conversation_count} 条会话`],
-    ['商品总数', o.product_count, `${o.offline_count} 已下架`],
-    ['订单总数', o.order_count, '成交 ' + money(o.order_amount)],
-    ['仲裁待处理', o.arbitration_count, '平台介入'],
-    ['评价总数', o.review_count, '来自顾客'],
-    ['罚款累计', money(o.fine_total), '针对商家'],
+    ['商家总数', o.merchant_count],
+    ['顾客总数', o.user_count],
+    ['商品总数', o.product_count],
+    ['订单总数', o.order_count],
+    ['仲裁待处理', o.arbitration_count],
+    ['评价总数', o.review_count],
+    ['罚款累计', money(o.fine_total)],
   ];
-  panel(box, `<div class="cards">${cards.map(([t, n, s]) =>
-    `<div class="card"><div class="num">${n}</div></div>`
+  panel(box, `<div class="cards">${cards.map(([t, n]) =>
+    `<div class="card"><div class="label">${t}</div><div class="num">${n}</div></div>`
   ).join('')}</div>`);
 }
 
