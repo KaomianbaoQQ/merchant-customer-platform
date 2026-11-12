@@ -1,6 +1,5 @@
 KB_I18N.extend({
  "7 位数字为本系统运单（查本地物流，即时返回）；其他单号走 uapis.cn 真实快递接口， 顺丰等快递需要填写收件人手机尾号 4 位。": "7-digit numbers are internal waybills (instant); other numbers use the uapis.cn live API — for SF Express add the last 4 digits of the recipient's phone.",
- "RFM：R 最近购买 / F 购买频次 / M 消费金额（各 1~5 分）；「行为」来自顾客浏览与加购埋点。": "RFM: recency / frequency / monetary (1-5 each); activity comes from view and cart events.",
  "· · 浏览 · 销量": " · · views · sold",
  "⚠️ 有": "⚠️ ",
  "下架": "Unlist",
@@ -38,7 +37,6 @@ KB_I18N.extend({
  "发货时间：": "Shipped at: ",
  "发送": "Send",
  "只看仲裁中": "In arbitration only",
- "可解释轻量算法：复购 / 浏览 / 加购 / 类目偏好 / 商品热度 / 商品口碑，输出 0~100% 购买概率并给出依据。": "Explainable model: repeat buys / views / cart adds / category taste / popularity / reviews — outputs a 0-100% purchase likelihood with reasons.",
  "命中顾客姓名 / ID": "Match customer name / ID",
  "响应解析失败": "Failed to parse the response",
  "售后 / 仲裁查询": "After-sales / arbitration search",

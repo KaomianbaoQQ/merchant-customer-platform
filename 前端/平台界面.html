@@ -732,14 +732,12 @@ async function loadAnalytics(box){
     <div class="panel"><h2>用户画像（${profiles.length}）</h2>
       <table><thead><tr><th>顾客</th><th>客户分层</th><th>RFM</th><th>消费</th><th>行为</th><th>标签</th></tr></thead>
       <tbody>${rows || '<tr><td colspan="6" class="empty">暂无顾客。</td></tr>'}</tbody></table>
-      <div class="muted" style="margin-top:8px">RFM：R 最近购买 / F 购买频次 / M 消费金额（各 1~5 分）；「行为」来自顾客浏览与加购埋点。</div>
     </div>
     <div class="panel"><h2>最可能成交的顾客 × 商品</h2>
       <table><thead><tr><th>顾客</th><th>商品</th><th>购买概率</th><th>依据</th></tr></thead>
       <tbody>${topRows || '<tr><td colspan="4" class="empty">暂无可预测数据。</td></tr>'}</tbody></table>
     </div>
     <div class="panel"><h2>商品购买可能性（按商品）</h2>
-      <div class="muted" style="margin-bottom:10px">可解释轻量算法：复购 / 浏览 / 加购 / 类目偏好 / 商品热度 / 商品口碑，输出 0~100% 购买概率并给出依据。</div>
       ${cards || '<div class="empty">暂无商品。</div>'}
     </div>`);
 }
