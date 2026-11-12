@@ -168,7 +168,8 @@ def main():
         print(f"⚠️ MongoDB 清空失败（请确认容器 kaomianbao-mongo 已启动）：{e}")
     clear_files()
     print("✅ 商品 / 聊天文件 / 平台状态 / 知识库映射 / 商品资料 / 上传图片已清空")
-    print("完成。")
+    print("完成。顾客与商户账号也一并清掉了，需要登录演示账号请执行：")
+    print("  .venv/bin/python 工具/创建演示账号.py")
 
 if __name__ == "__main__":
     main()
