@@ -1443,7 +1443,7 @@ async function submitReview(){
   try {
     const res = await fetch(API_ORIGIN + '/api/products/' + encodeURIComponent(currentProduct.id) + '/reviews', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ user: currentUser, rating: reviewRating, content: content })
     });
     const data = await res.json();
@@ -1469,7 +1469,7 @@ function trackProductView(id){
     if (currentUser) body.user = { id: currentUser.id, name: currentUser.name };
     fetch(API_ORIGIN + '/api/products/' + encodeURIComponent(id) + '/view', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(body),
     }).catch(function(){});
   } catch (e) {}
@@ -1480,7 +1480,7 @@ function reportBehavior(event, productId){
   try {
     fetch(API_ORIGIN + '/api/behavior', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({
         event: event, product_id: productId,
         user: { id: currentUser.id, name: currentUser.name },
@@ -1796,7 +1796,7 @@ async function loadAddressBook(){
   if (!currentUser){ addressBook = []; renderAddressBook(); return; }
   try {
     const res = await fetch(API_ORIGIN + '/api/addresses?user_id=' +
-      encodeURIComponent(currentUser.id) + '&user_name=' + encodeURIComponent(currentUser.name));
+      encodeURIComponent(currentUser.id) + '&user_name=' + encodeURIComponent(currentUser.name), { headers: authHeaders() });
     const data = await res.json();
     addressBook = (data && data.ok && data.addresses) ? data.addresses : [];
   } catch (e) { addressBook = []; }
@@ -1872,11 +1872,12 @@ async function setDefaultAddress(id){
   try {
     const res = await fetch(API_ORIGIN + '/api/addresses/' + id + '/default', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ user: currentUser })
     });
     const data = await res.json();
-    toast(data.message || (data.ok ? '已设为默认地址' : '操作失败'));
+    if (res.status === 401){ handleAuthExpired(data.error); return; }
+    toast(data.error || data.message || (data.ok ? '已设为默认地址' : '操作失败'));
     if (data.ok) loadAddressBook();
   } catch (e) { toast('网络异常，请稍后重试'); }
 }
@@ -1886,11 +1887,12 @@ async function deleteAddress(id){
   try {
     const res = await fetch(API_ORIGIN + '/api/addresses/' + id, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ user: currentUser })
     });
     const data = await res.json();
-    toast(data.message || (data.ok ? '地址已删除' : '删除失败'));
+    if (res.status === 401){ handleAuthExpired(data.error); return; }
+    toast(data.error || data.message || (data.ok ? '地址已删除' : '删除失败'));
     if (data.ok){
       if (editingAddressId === id) resetAddressBookSave();
       loadAddressBook();
@@ -1909,12 +1911,13 @@ async function saveAddressBook(){
   try {
     const res = await fetch(url, {
       method: editingAddressId ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(Object.assign({ user: currentUser }, form))
     });
     const data = await res.json();
+    if (res.status === 401){ handleAuthExpired(data.error || '登录状态已失效，请重新登录'); return; }
     tip.classList.toggle('ok', !!data.ok);
-    tip.textContent = data.message || (data.ok ? '地址已保存' : '保存失败');
+    tip.textContent = data.error || data.message || (data.ok ? '地址已保存' : '保存失败');
     if (data.ok){
       resetAddressBookSave();
       loadAddressBook();
@@ -1931,7 +1934,7 @@ async function rememberAddress(form){
   try {
     await fetch(API_ORIGIN + '/api/addresses', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(Object.assign({ user: currentUser }, form, {
         is_default: form.is_default || addressBook.length === 0
       }))
@@ -2111,12 +2114,13 @@ async function maSave(){
   try {
     const res = await fetch(url, {
       method: maEditingId ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(Object.assign({ user: currentUser }, form))
     });
     const data = await res.json();
+    if (res.status === 401){ handleAuthExpired(data.error || '登录状态已失效，请重新登录'); return; }
     if (!data.ok){
-      if (tip){ tip.classList.remove('ok'); tip.textContent = data.message || '保存失败'; }
+      if (tip){ tip.classList.remove('ok'); tip.textContent = data.error || data.message || '保存失败'; }
       return;
     }
     await loadAddressBook();
@@ -2132,11 +2136,12 @@ async function maSetDefault(id){
   try {
     const res = await fetch(API_ORIGIN + '/api/addresses/' + id + '/default', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ user: currentUser })
     });
     const data = await res.json();
-    toast(data.message || (data.ok ? '已设为默认地址' : '操作失败'));
+    if (res.status === 401){ handleAuthExpired(data.error); return; }
+    toast(data.error || data.message || (data.ok ? '已设为默认地址' : '操作失败'));
     if (data.ok){ await loadAddressBook(); renderMyAddresses(); }
   } catch (e) { toast('网络异常，请稍后重试'); }
 }
@@ -2146,11 +2151,12 @@ async function maDelete(id){
   try {
     const res = await fetch(API_ORIGIN + '/api/addresses/' + id, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ user: currentUser })
     });
     const data = await res.json();
-    toast(data.message || (data.ok ? '地址已删除' : '删除失败'));
+    if (res.status === 401){ handleAuthExpired(data.error); return; }
+    toast(data.error || data.message || (data.ok ? '地址已删除' : '删除失败'));
     if (data.ok){
       if (maEditingId === id) await maResetForm();
       await loadAddressBook();
@@ -2222,7 +2228,7 @@ async function submitChangePassword(){
   try {
     const res = await fetch(API_ORIGIN + '/api/change-password', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(body)
     });
     const data = await res.json();
@@ -2379,6 +2385,18 @@ function authHeaders(){
   return h;
 }
 
+// 令牌失效（过期 / 账号被删 / 换过后端）：清掉本地登录态，让用户重新登录
+let authExpiredAt = 0;
+function handleAuthExpired(msg){
+  const now = Date.now();
+  logout();
+  if (now - authExpiredAt < 3000) return;   // 并发请求只提示一次
+  authExpiredAt = now;
+  const tip = msg || '登录状态已失效，请重新登录';
+  toast(tip);
+  openLogin(null, tip);
+}
+
 function renderUser(){
   const text = document.getElementById('navUserText');
   if (!text) return;
@@ -2525,7 +2543,7 @@ async function sendEmailCode(email, purpose, btnId){
   try {
     const res = await fetch(API_ORIGIN + '/api/email/send-code', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ email: email, purpose: purpose })
     });
     const data = await res.json();
@@ -2627,7 +2645,7 @@ async function submitForgotPassword(){
     try {
       const res = await fetch(API_ORIGIN + '/api/forgot-account', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ email: email, code: code })
       });
       const data = await res.json();
@@ -2670,7 +2688,7 @@ async function submitForgotPassword(){
   try {
     const res = await fetch(API_ORIGIN + '/api/reset-password', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ email: email, code: code, new_password: np, password2: np2 })
     });
     const data = await res.json();
@@ -2718,7 +2736,7 @@ async function doLogin(){
     try {
       const res = await fetch(API_ORIGIN + '/api/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ email: email, code: code })
       });
       const data = await res.json();
@@ -2751,7 +2769,7 @@ async function doLogin(){
   try {
     const res = await fetch(API_ORIGIN + '/api/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ user_name: name, password: password })
     });
     const data = await res.json();
@@ -2802,7 +2820,7 @@ async function doRegister(){
     };
     const res = await fetch(API_ORIGIN + '/api/register', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(payload)
     });
     const data = await res.json();
@@ -3111,7 +3129,7 @@ async function loadConsultHistory(){
   renderCSMessages();
   try {
     const res = await fetch(API_ORIGIN + '/api/chat?user_id=' + encodeURIComponent(u.id) +
-      '&merchant_id=' + encodeURIComponent(m.id));
+      '&merchant_id=' + encodeURIComponent(m.id), { headers: authHeaders() });
     const data = await res.json();
     if (gen !== chatGeneration || !data.ok) return;
     if (data.needs_human || data.human_handled) humanNoticed = true;
@@ -3136,7 +3154,7 @@ async function loadMerchantMessages(initial){
   const gen = chatGeneration;
   try {
     const res  = await fetch(API_ORIGIN + '/api/chat?user_id=' + encodeURIComponent(u.id) +
-      '&merchant_id=' + encodeURIComponent(m.id));
+      '&merchant_id=' + encodeURIComponent(m.id), { headers: authHeaders() });
     const data = await res.json();
     if (gen !== chatGeneration) return;   // 期间已退出 / 切换账号
     if (!data.ok) return;
@@ -3178,7 +3196,7 @@ async function loadAfterMessages(){
     const res = await fetch(API_ORIGIN + '/api/after-sales?user_id=' +
       encodeURIComponent(currentUser.id) + '&user_name=' +
       encodeURIComponent(currentUser.name) + '&session_id=' +
-      encodeURIComponent(csAfterSession));
+      encodeURIComponent(csAfterSession), { headers: authHeaders() });
     const data = await res.json();
     if (!data.ok) return;
     const hist = csHistory.after;
@@ -3215,7 +3233,7 @@ async function pollAfterHuman(){
   if (!currentUser) return;
   try {
     const res = await fetch(API_ORIGIN + '/api/chat?user_id=' +
-      encodeURIComponent(currentUser.id) + '&merchant_id=platform');
+      encodeURIComponent(currentUser.id) + '&merchant_id=platform', { headers: authHeaders() });
     const data = await res.json();
     if (!data.ok) return;
     let added = false;
@@ -3373,10 +3391,17 @@ async function csSend(){
 
     const res  = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(body)
     });
     const data = await res.json();
+
+    if (res.status === 401){
+      showTyping(false);
+      csPush('bot', '登录状态已失效，请重新登录后再问。');
+      handleAuthExpired(data.error || '登录状态已失效，请重新登录');
+      return;
+    }
 
     if (data.session_id) saveAfterSession(data.session_id);
     showTyping(false);
@@ -3525,8 +3550,7 @@ async function doTrack(){
                '&user_name=' + encodeURIComponent(currentUser.name);
     const res = await fetch(
       API_BASE + '/api/logistics/' + encodeURIComponent(code) + qs,
-      { signal: trackController.signal }
-    );
+      { signal: trackController.signal }, { headers: authHeaders() });
 
     if (res.status === 404) {
       const body = await res.json().catch(function(){ return {}; });
@@ -4037,7 +4061,7 @@ async function submitReturn(){
   try {
     const res = await fetch(API_ORIGIN + '/api/returns', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({
         user: currentUser, order_id: orderId, reason: reason,
         return_type: type, quantity: qty
@@ -4070,7 +4094,7 @@ async function markReturnShipped(returnId){
   try {
     const res = await fetch(API_ORIGIN + '/api/returns/' + encodeURIComponent(returnId) + '/shipped', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ user: currentUser, waybill: waybill })
     });
     const data = await res.json();
@@ -4087,7 +4111,7 @@ async function requestArbitration(returnId){
   try {
     const res = await fetch(API_ORIGIN + '/api/returns/' + encodeURIComponent(returnId) + '/arbitrate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ user: currentUser })
     });
     const data = await res.json();
