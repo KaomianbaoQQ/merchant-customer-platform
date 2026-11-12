@@ -189,27 +189,120 @@ def detect_aftersale_status_query(text):
 HUMAN_RE = re.compile(r"(人工|真人|转人工|人工客服|人工服务|真人客服)")
 HUMAN_TRIGGER_TIMES = 3   # 连续说出满 3 次「人工」自动转接人工客服
 HUMAN_TRANSFER_REPLY = (
-    "已为你转接人工客服，客服会尽快在这里回复你，请稍候。\n"
-    "（转接后由人工客服接管，你可以继续在下面留言补充问题。）"
+    "让你等到现在，真是抱歉。我这就把人工客服接过来，你刚才说的情况这边都有记录，"
+    "不用再重复一遍。\n"
+    "客服会尽快在这里回复你，你先歇一会儿，有进展我第一时间告诉你。"
+)
+
+# 还没了结的售后状态：安抚话术里会拿它说明「我在跟的是哪件事」
+_OPEN_RETURN_STATUSES = (
+    "requested", "pending", "approved", "shipping", "arbitrating",
+    "returning", "delivering", "received",
 )
 
 def detect_human_request(text):
     """顾客是否在要求转人工客服。"""
     return bool(HUMAN_RE.search(str(text or "").strip()))
 
+def _latest_open_return(user):
+    """最近一条还没了结的售后单；没有返回 None。"""
+    try:
+        rows = get_returns_by_user(str((user or {}).get("id") or ""))
+    except Exception as e:
+        print(f"⚠️ 安抚话术读取售后单失败：{e}")
+        return None
+    for r in rows:
+        if str(r.get("status") or "") in _OPEN_RETURN_STATUSES:
+            return r
+    return None
+
+def _in_transit_order(user):
+    """在途订单（已发货、还没签收）；没有返回 None。"""
+    try:
+        orders = get_orders_by_user(str((user or {}).get("id") or ""))
+    except Exception as e:
+        print(f"⚠️ 安抚话术读取订单失败：{e}")
+        return None
+    for o in orders:
+        if int(o.get("status_step") or 0) in (1, 2, 3):
+            return o
+    return None
+
+def _last_real_complaint(session_id):
+    """最近一句真正在说问题的顾客消息（跳过单纯喊「人工」的那几句）。"""
+    if not session_id:
+        return ""
+    try:
+        msgs = get_recent_messages(session_id, limit=12)
+    except Exception:
+        return ""
+    for m in reversed(msgs):
+        if str(m.get("role") or "") != "user":
+            continue
+        text = str(m.get("content") or "").strip()
+        if text and not detect_human_request(text):
+            return text
+    return ""
+
+def comfort_reply(user, session_id, hits=1):
+    """顾客喊「人工」但还没到转接次数：不暴露计数，只顺着上下文安抚。
+
+    上下文来源：最近一句真实抱怨 → 未了结的售后单 → 在途订单 → 待选订单。
+    内容只说顾客此刻在意的那件事，不再出现「第几次」「再点几下」这类机械提示。
+    """
+    issue = _last_real_complaint(session_id)
+    pending = get_pending(session_id) or {}
+    row = _latest_open_return(user)
+    status = str((row or {}).get("status") or "")
+    lines = []
+
+    if int(hits or 0) <= 1:
+        lines.append("我在的，别着急，你说的这件事我一直跟着。")
+    else:
+        lines.append("又让你回来问了一次，实在抱歉，你的情况这边都记着。")
+
+    if status == "arbitrating" or "仲裁" in issue or "平台介入" in issue:
+        lines.append("平台仲裁已经在处理了，结果一出来我马上告诉你，不用你一遍遍来问。")
+    elif status == "rejected" or "拒绝" in issue:
+        reason = str((row or {}).get("reject_reason") or "").strip()
+        lines.append(
+            "商家拒绝的理由我看到了" + (f"（{reason}）" if reason else "")
+            + "，这种情况你可以申请平台介入，需要的话我陪你把步骤一步步走完。"
+        )
+    elif row:
+        lines.append(
+            f"你这一单{row.get('type_text') or '售后'}（订单 {row.get('order_id')}）现在是"
+            f"「{row.get('status_text') or '处理中'}」，我一直帮你盯着，有变化第一时间在这里说。"
+        )
+    elif detect_logistics_issue(issue) or "物流" in issue or "快递" in issue:
+        order = _in_transit_order(user)
+        if order:
+            eta = str(order.get("estimated_arrival") or "").strip()
+            lines.append(
+                f"你这一单（订单 {order.get('id')}）还在路上，运单 {order.get('waybill')}"
+                + (f"，预计 {eta} 前后到" if eta else "")
+                + "。包裹一有动静我就回你，你不用一直守着。"
+            )
+        else:
+            lines.append("包裹的事我记下了，我这就帮你查它现在到哪了，别担心。")
+    elif pending.get("orders"):
+        lines.append("刚才那几笔订单我先帮你留着，你说哪一笔都行，我直接接着往下办。")
+    else:
+        lines.append("你的问题我记下了，我先把情况核对清楚，再给你一个明确的答复。")
+
+    lines.append("你先歇一会儿，有结果我立刻回你。")
+    return "\n".join(lines)
+
 def answer_human_request(user, user_input, session_id):
-    """售后「人工」请求：连续说满 3 次自动转人工，未满则提示还差几次。"""
+    """售后「人工」请求：连续说满 3 次自动转接，未满只按上下文安抚。"""
     if is_human(session_id):
-        result = _result("你已经在人工客服通道了，客服会尽快在这里回复你，请稍候。", "human")
+        result = _result("人工客服已经在处理你的问题了，客服会尽快在这里回复你，请稍候。", "human")
         result["needs_human"] = True
         return result
 
     hits = count_recent_consecutive(session_id, detect_human_request)
     if hits < HUMAN_TRIGGER_TIMES:
-        left = HUMAN_TRIGGER_TIMES - hits
-        return _result(
-            f"收到～已经连续 {hits} 次「人工」了，再说 {left} 次就为你转接人工客服。"
-            f"（也可以直接点输入框旁的「人工」按钮）", "human")
+        return _result(comfort_reply(user, session_id, hits), "human")
 
     # 登记到平台「全部对话」：人工客服（平台侧）能看到这条会话并直接回复
     try:

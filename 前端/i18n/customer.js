@@ -317,7 +317,7 @@ KB_I18N.extend({
  "还没有账号？点「注册新账号」，用姓名 + 邮箱 + 密码新建一个（邮箱需验证）": "No account? Tap \"Create account\" and sign up with name, email and password (email needs verification).",
  "这件商品暂时无法联系商家客服": "Seller support is unavailable for this product right now.",
  "这笔订单暂时无法联系商家客服": "Seller support is unavailable for this order right now.",
- "连续说 3 次「人工」自动转接人工客服": "Say \"agent\" three times to reach a human.",
+ "需要人工客服时点这里": "Tap here when you need a human agent.",
  "退出登录": "Sign out",
  "退换完成": "Return completed",
  "退换货记录": "Return history",
