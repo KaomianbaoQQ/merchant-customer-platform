@@ -761,7 +761,6 @@
 <div class="view active" id="view-home">
   <section class="hero">
     <h1>好产品，<br>让日常更从容。</h1>
-    <p>办公好物与生活精品，均由商家精选上架，参数详实，为专注而生。</p>
     <div class="hero-cta">
       <a class="btn btn-primary" href="javascript:void(0)" onclick="goProducts()">立即选购</a>
       <a class="btn btn-ghost" href="javascript:void(0)" onclick="navigate('logistics')">查询物流 &rsaquo;</a>
@@ -772,7 +771,6 @@
     <div class="section-head">
       <div class="eyebrow">全部商品</div>
       <h2>为工作台与生活而生</h2>
-      <p>商家上架的全部好物，按类目筛选，点进商品查看完整图片与参数。</p>
     </div>
     <div class="filters" id="filters"></div>
     <div class="grid" id="productGrid"></div>
@@ -856,7 +854,6 @@
 <div class="view" id="view-logistics">
   <div class="logistics">
     <h1>查询你的包裹</h1>
-    <p class="lead">输入物流单号，系统将根据发货时间与预计送达时间，自动计算当前物流状态与剩余时间。</p>
 
     <div class="tracker">
       <input id="trackInput" placeholder="请输入物流单号" autocomplete="off" />
@@ -892,7 +889,6 @@
 <div class="view" id="view-orders">
   <div class="orders-page">
     <h1>我的订单</h1>
-    <p class="lead" id="ordersLead">查看你的全部订单、物流状态与退换货进度。</p>
     <div id="ordersContent"></div>
   </div>
 </div>
@@ -900,7 +896,6 @@
 <div class="view" id="view-account">
   <div class="orders-page">
     <h1>个人中心</h1>
-    <p class="lead">查看账号资料、管理收货地址簿、修改登录密码。</p>
     <div id="accountContent"></div>
   </div>
 </div>
@@ -933,7 +928,7 @@
     <div class="avatar" id="csAvatar">🛠️</div>
     <div>
       <div class="who" id="csWho">Kaomianbao 售后客服</div>
-      <div class="sub" id="csSub">订单 / 物流 / 退换</div>
+      <div id="csSub">订单 / 物流 / 退换</div>
     </div>
     <button class="cs-panel-close" onclick="closeCS()" aria-label="关闭">×</button>
   </div>
@@ -953,7 +948,7 @@
 <div class="modal-overlay" id="loginOverlay">
   <div class="modal">
     <h3 id="loginTitle">登录</h3>
-    <p class="sub" id="loginSub">还没有账号？点「注册新账号」，用姓名 + 邮箱 + 密码新建一个（邮箱需验证）</p>
+    <p id="loginSub">还没有账号？点「注册新账号」，用姓名 + 邮箱 + 密码新建一个（邮箱需验证）</p>
 
     <div id="loginBox">
       <div class="auth-tabs">
@@ -1017,7 +1012,7 @@
       <button type="button" class="auth-tab" id="fpTabAccount" onclick="switchFpMode('account')">找回账号名</button>
     </div>
 
-    <p class="sub" id="fpSub">验证码会发送到账号绑定的邮箱，收到后填写验证码即可设置新密码。</p>
+    <p id="fpSub">验证码会发送到账号绑定的邮箱，收到后填写验证码即可设置新密码。</p>
 
     <div id="fpEmailPane">
       <input id="fpEmail" type="email" placeholder="账号绑定的邮箱" autocomplete="email">
@@ -1049,7 +1044,7 @@
 <div class="modal-overlay" id="addressOverlay">
   <div class="modal">
     <h3>填写收货地址</h3>
-    <p class="sub">商家将据此发货，请填写真实的姓名、电话与地址</p>
+    
     <div class="addr-book" id="addrBook" style="display:none">
       <div class="addr-book-head">我的地址簿<span>点「使用」直接带出</span></div>
       <div class="addr-book-list" id="addrBookList"></div>
@@ -1076,7 +1071,7 @@
 <div class="modal-overlay" id="presaleOverlay">
   <div class="modal presale-modal">
     <h3>咨询售前客服</h3>
-    <p class="sub">选一个店铺或具体商品，客服能看到你正在咨询的是哪件好物。</p>
+    
     <div class="presale-list" id="presaleList"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closePresalePicker()">取消</button>
@@ -1087,7 +1082,7 @@
 <div class="modal-overlay" id="returnOverlay">
   <div class="modal return-modal">
     <h3 id="rtTitle">申请退货</h3>
-    <p class="sub" id="rtSub"></p>
+    <p id="rtSub"></p>
     <div class="rt-row">
       <span class="rt-label">数量</span>
       <div class="stepper">
@@ -1112,7 +1107,7 @@
   <div class="modal success-modal">
     <div class="ok-mark">✅</div>
     <h3>订单提交成功</h3>
-    <p class="sub" id="orderOkSub">不同店铺会分别发货，发货后可凭运单号在「我的订单」查物流。</p>
+    <p id="orderOkSub">不同店铺会分别发货，发货后可凭运单号在「我的订单」查物流。</p>
     <div class="ok-addr" id="orderOkAddr"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeOrderSuccess()">继续逛逛</button>
@@ -1996,7 +1991,7 @@ function accountAddressHtml(){
       '<div class="acc-field" style="max-width:560px"><label>详细地址</label>' +
         '<input id="maDetail" placeholder="街道、门牌号、小区 / 楼层等"></div>' +
       '<label class="addr-opt"><input type="checkbox" id="maDefault"> 设为默认地址（下单自动带出）</label>' +
-      '<div class="acc-tip" id="maTip"></div>' +
+      '<div id="maTip"></div>' +
       '<div style="margin-top:10px;display:flex;gap:10px">' +
         '<button class="btn btn-primary" onclick="maSave()">保存</button>' +
         '<button class="btn btn-ghost" onclick="maCancel()">取消</button>' +
@@ -2009,7 +2004,7 @@ function renderMyAddresses(){
   const box = document.getElementById('maList');
   if (!box) return;
   if (!addressBook.length){
-    box.innerHTML = '<div class="acc-tip">还没有保存过地址，点下面「新增地址」添加一条。</div>';
+    box.innerHTML = '';
     return;
   }
   box.innerHTML = addressBook.map(function(a){
@@ -2183,7 +2178,7 @@ function accountPasswordHtml(){
         '<div class="acc-field" style="flex:1;min-width:260px"><label>收货地址（账号有地址才需填）</label>' +
           '<input id="pwdAddress" placeholder="填写账号下的一条收货地址"></div>' +
       '</div>' +
-      '<div class="acc-tip">账号里没有的资料会自动跳过；两项资料都没有时，只能用原密码修改。</div>' +
+      '' +
     '</div>' +
     '<div class="acc-row">' +
       '<div class="acc-field" style="max-width:320px"><label>新密码</label>' +
@@ -2191,7 +2186,7 @@ function accountPasswordHtml(){
       '<div class="acc-field" style="max-width:320px"><label>确认新密码</label>' +
         '<input id="pwdNew2" type="password" placeholder="再次输入新密码" autocomplete="new-password"></div>' +
     '</div>' +
-    '<div class="acc-tip" id="pwdTip"></div>' +
+    '<div id="pwdTip"></div>' +
     '<div style="margin-top:10px"><button class="btn btn-primary" onclick="submitChangePassword()">确认修改</button></div>' +
   '</div>';
 }
@@ -3069,7 +3064,7 @@ function updateCSProduct(){
   
   if ((consultCandidates || []).length > 1){
     box.style.display = 'block';
-    box.innerHTML = '<div class="cs-pick-tip">要咨询哪件商品？（不选也可以直接问店铺）</div>' +
+    box.innerHTML = '' +
       '<div class="cs-pick-list">' +
       consultCandidates.map(function(c){
         const on = consultProduct && String(consultProduct.id) === String(c.id);

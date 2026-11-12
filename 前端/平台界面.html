@@ -172,11 +172,10 @@
 <div class="login-wrap" id="loginView">
   <div class="login-card">
     <h1>平台管理后台</h1>
-    <p>仅平台管理员可登录（默认账号 admin）</p>
     <input id="loginName" placeholder="管理员账号" autocomplete="username" />
     <input id="loginPwd" type="password" placeholder="密码" autocomplete="current-password" />
     <button class="btn btn-primary btn-block" onclick="doLogin()">登录</button>
-    <p class="muted" id="loginMsg" style="margin:12px 0 0;"></p>
+    <p id="loginMsg" style="margin:12px 0 0;"></p>
   </div>
 </div>
 
@@ -429,7 +428,7 @@ async function loadOverview(box) {
     ['罚款累计', money(o.fine_total), '针对商家'],
   ];
   panel(box, `<div class="cards">${cards.map(([t, n, s]) =>
-    `<div class="card"><div class="muted">${t}</div><div class="num">${n}</div><div class="muted" style="margin-top:4px">${s}</div></div>`
+    `<div class="card"><div class="num">${n}</div></div>`
   ).join('')}</div>`);
 }
 
@@ -437,12 +436,12 @@ async function loadArbitration(box) {
   const { arbitrations } = await api('/arbitrations');
   const rows = arbitrations.map(a => `
     <tr>
-      <td>${esc(a.id)}<div class="muted">原订单 ${esc(a.order_id)}</div></td>
-      <td>${esc(a.user_name)}<div class="muted">ID ${esc(a.user_id)}</div></td>
+      <td>${esc(a.id)}</td>
+      <td>${esc(a.user_name)}</td>
       <td>${esc(a.goodsname)} ×${a.quantity}</td>
       <td><span class="tag warn">${esc(a.type_text || a.type)}</span></td>
       <td style="max-width:200px">${esc(a.reason)}</td>
-      <td style="max-width:180px">${a.reject_reason ? esc(a.reject_reason) : '<span class="muted">—</span>'}</td>
+      <td style="max-width:180px">${a.reject_reason ? esc(a.reject_reason) : ''}</td>
       <td>${esc(a.create_time)}</td>
       <td><div class="row-actions">
         <button class="btn btn-ok" onclick="resolveArb('${esc(a.id)}', true)">支持顾客</button>
@@ -452,9 +451,7 @@ async function loadArbitration(box) {
   panel(box, `
     <div class="panel">
       <h2>售后 / 仲裁查询</h2>
-      <div class="muted" style="margin-bottom:10px">
-        按 售后单号 / 原订单号 / 顾客姓名 / 商品名 查询售后进度（含「平台仲裁中」）。
-      </div>
+      
       <div class="toolbar">
         <input class="q" id="asKeyword" placeholder="输入订单号或售后单号，留空看最近记录"
                onkeydown="if(event.key==='Enter')searchAftersales()" />
@@ -481,12 +478,12 @@ async function searchAftersales(status) {
     if (!aftersales.length) { box.innerHTML = '<div class="empty">没有匹配的售后记录。</div>'; return; }
     box.innerHTML = `<table><thead><tr><th>售后单</th><th>类型</th><th>商品</th><th>顾客</th><th>状态</th><th>退货单号</th><th>更新时间</th></tr></thead><tbody>
       ${aftersales.map(a => `<tr>
-        <td>${esc(a.id)}<div class="muted">原订单 ${esc(a.order_id)}</div></td>
+        <td>${esc(a.id)}</td>
         <td>${esc(a.type_text || a.type)}</td>
         <td>${esc(a.goodsname)} ×${a.quantity}</td>
         <td>${esc(a.user_name)}</td>
         <td><span class="tag ${a.status_code === 'arbitrating' ? 'warn' : (a.status_code === 'rejected' ? 'danger' : 'ok')}">${esc(a.status_text)}</span>
-          ${a.reject_reason ? `<div class="muted">拒绝理由：${esc(a.reject_reason)}</div>` : ''}</td>
+          ${a.reject_reason ? `` : ''}</td>
         <td>${esc(a.return_waybill || '—')}</td>
         <td>${esc(a.update_time || '')}</td>
       </tr>`).join('')}
@@ -516,11 +513,11 @@ async function loadMerchants(box) {
   if (!merchants.length) { panel(box, '<div class="panel"><div class="empty">暂无商家。</div></div>'); return; }
   const rows = merchants.map(m => `
     <tr>
-      <td>${esc(m.shop_name)}<div class="muted">${esc(m.username)}</div></td>
-      <td>${m.product_count}<div class="muted">${m.offline_count} 下架</div></td>
-      <td>${m.sales}<div class="muted">${money(m.sales_amount)}</div></td>
+      <td>${esc(m.shop_name)}</td>
+      <td>${m.product_count}</td>
+      <td>${m.sales}</td>
       <td>${m.buyer_count}</td>
-      <td>${m.review_count}<div class="muted">${m.review_count ? m.review_avg + ' 分' : '—'}</div></td>
+      <td>${m.review_count}</td>
       <td>${money(m.fine_total)}</td>
       <td>
         ${m.disabled ? '<span class="tag danger">已停用</span>' : '<span class="tag ok">正常</span>'}
@@ -579,9 +576,9 @@ async function openMerchant(mid) {
       <div class="panel"><h2>商品（${detail.products.length}）</h2>
         ${detail.products.length ? `<table><thead><tr><th>商品</th><th>价格</th><th>销量</th><th>状态</th><th></th></tr></thead><tbody>
           ${detail.products.map(p => `<tr>
-            <td>${esc(p.name)}<div class="muted">${esc(p.tag)}</div></td>
+            <td>${esc(p.name)}</td>
             <td>${money(p.price)}</td>
-            <td>${p.sales}<div class="muted">${money(p.sales_amount)}</div></td>
+            <td>${p.sales}</td>
             <td>${p.offline ? '<span class="tag danger">已下架</span>' : '<span class="tag ok">在售</span>'}</td>
             <td><button class="btn ${p.offline ? 'btn-ok' : 'btn-danger'}" onclick="setOffline('${esc(p.id)}',${!p.offline})">${p.offline ? '恢复' : '下架'}</button></td>
           </tr>`).join('')}
@@ -591,15 +588,15 @@ async function openMerchant(mid) {
         ${detail.orders.length ? `<table><thead><tr><th>订单号</th><th>商品</th><th>数量</th><th>顾客</th><th>金额</th><th>时间</th></tr></thead><tbody>
           ${detail.orders.slice(0, 40).map(o => `<tr>
             <td>${esc(o.order_id)}</td><td>${esc(o.goodsname)}</td><td>${o.quantity}</td>
-            <td>${esc(o.user_name)}<div class="muted">ID ${esc(o.user_id)}</div></td>
+            <td>${esc(o.user_name)}</td>
             <td>${money(o.amount)}</td><td>${esc(o.create_time)}</td>
           </tr>`).join('')}
         </tbody></table>` : '<div class="empty">暂无订单。</div>'}
       </div>
       <div class="panel"><h2>评价（${detail.reviews.length}）</h2>
         ${detail.reviews.length ? detail.reviews.map(r => `<div class="kv" style="border-bottom:1px solid #eef1f7;padding:6px 0">
-          ${stars(r.rating)} <b>${esc(r.user_name)}</b> <span class="muted">${esc(r.create_time)}</span>
-          <div>${esc(r.content)}</div><div class="muted">${esc(r.product_name)}</div>
+          ${stars(r.rating)} <b>${esc(r.user_name)}</b> 
+          <div>${esc(r.content)}</div>
         </div>`).join('') : '<div class="empty">暂无评价。</div>'}
       </div>
       <div class="panel"><h2>罚款记录（${detail.fines.length}）</h2>
@@ -613,12 +610,12 @@ async function loadProducts(box) {
   const { products } = await api('/products');
   const rows = products.map(p => `
     <tr>
-      <td>${esc(p.name)}<div class="muted">${esc(p.tag)} · ${esc(p.id)}</div></td>
+      <td>${esc(p.name)}</td>
       <td>${esc(p.owner_name || p.owner_id || '—')}</td>
       <td>${money(p.price)}</td>
       <td>${p.views}</td>
-      <td>${p.sales}<div class="muted">${money(p.sales_amount)}</div></td>
-      <td>${p.offline ? `<span class="tag danger">已下架</span><div class="muted">${esc(p.offline_reason)}</div>` : '<span class="tag ok">在售</span>'}</td>
+      <td>${p.sales}</td>
+      <td>${p.offline ? `<span class="tag danger">已下架</span>` : '<span class="tag ok">在售</span>'}</td>
       <td><button class="btn ${p.offline ? 'btn-ok' : 'btn-danger'}" onclick="setOffline('${esc(p.id)}',${!p.offline})">${p.offline ? '恢复上架' : '下架'}</button></td>
     </tr>`).join('');
   panel(box, `<div class="panel"><h2>全部商品（${products.length}）</h2>
@@ -641,7 +638,7 @@ async function loadUsers(box) {
   const { users } = await api('/users');
   const rows = users.map(u => `
     <tr>
-      <td>${esc(u.name)}<div class="muted">ID ${esc(u.id)}</div></td>
+      <td>${esc(u.name)}</td>
       <td>${esc(u.sex)}${u.age ? ' / ' + u.age + ' 岁' : ''}</td>
       <td>${u.order_count}</td>
       <td>${u.quantity}</td>
@@ -677,7 +674,7 @@ async function openUser(uid) {
       <div class="panel"><h2>售后记录（${detail.returns.length}）</h2>
         ${detail.returns.length ? detail.returns.map(r => `<div class="kv" style="border-bottom:1px solid #eef1f7;padding:6px 0">
           ${esc(r.id)} · ${esc(r.goodsname)} ×${r.quantity} · ${esc(r.status_text)}
-          <div class="muted">${esc(r.reason)}</div>
+          
         </div>`).join('') : '<div class="empty">暂无售后记录。</div>'}
       </div>`);
   } catch (e) { setDrawer(`<div class="empty">${esc(e.message)}</div>`); }
@@ -694,7 +691,7 @@ async function loadAnalytics(box){
   const profiles = pf.profiles || [];
   const rows = profiles.map(u => `
     <tr>
-      <td>${esc(u.name)}<div class="muted">ID ${esc(u.id)} · ${esc(u.sex)}</div></td>
+      <td>${esc(u.name)}</td>
       <td><span class="tag">${esc(u.level)}</span></td>
       <td>R${u.rfm.r} F${u.rfm.f} M${u.rfm.m}</td>
       <td>${u.order_count} 单 · ${money(u.amount)}</td>
@@ -705,24 +702,24 @@ async function loadAnalytics(box){
   const top = (pu.top || []).slice(0, 12);
   const topRows = top.map(t => `
     <tr>
-      <td>${esc(t.user_name)}<div class="muted">${esc(t.level || '')}</div></td>
-      <td>${esc(t.product_name)}<div class="muted">${esc(t.owner_name || t.owner_id)}</div></td>
+      <td>${esc(t.user_name)}</td>
+      <td>${esc(t.product_name)}</td>
       <td>${probBar(t.prob)} ${t.prob_text}</td>
-      <td class="muted">${esc((t.reasons || []).join('、') || '—')}</td>
+      <td>${esc((t.reasons || []).join('、') || '—')}</td>
     </tr>`).join('');
 
   const cards = (pu.products || []).map(p => `
     <div class="panel" style="margin-bottom:12px">
       <h2>${esc(p.product_name)}
-        <span class="muted">${esc(p.owner_name || p.owner_id)} · ${money(p.price)} · 浏览 ${p.views} · 销量 ${p.sales}</span>
+        
       </h2>
-      <div class="muted" style="margin-bottom:8px">预计潜在买家 ${p.prospect_count} 人 · 平均购买概率 ${Math.round((p.avg_prob || 0) * 100)}%</div>
+      
       ${p.top_buyers && p.top_buyers.length
         ? `<table><thead><tr><th>顾客</th><th>分层</th><th>购买概率</th><th>依据</th></tr></thead><tbody>
             ${p.top_buyers.map(b => `<tr>
               <td>${esc(b.user_name)}</td><td>${esc(b.level)}</td>
               <td>${probBar(b.prob)} ${b.prob_text}</td>
-              <td class="muted">${esc((b.reasons || []).join('、') || '—')}</td>
+              <td>${esc((b.reasons || []).join('、') || '—')}</td>
             </tr>`).join('')}
           </tbody></table>`
         : '<div class="empty">暂无潜在买家。</div>'}
@@ -748,7 +745,7 @@ function convTableHtml(list, keyword){
     const hitCell = keyword
       ? (c.matched && c.matched.length
           ? esc(c.matched[0].slice(0, 60)) + (c.matched_count > 1 ? ` <span class="tag">等 ${c.matched_count} 条</span>` : '')
-          : '<span class="muted">命中顾客姓名 / ID</span>')
+          : '')
       : esc(c.last_message).slice(0, 60);
     
     const waiting = (c.waiting_human !== undefined) ? !!c.waiting_human
@@ -756,7 +753,7 @@ function convTableHtml(list, keyword){
     return `
     <tr class="${waiting ? 'row-need' : ''}">
       <td>${esc(c.merchant_name)}${c.is_platform ? ' <span class="tag">平台</span>' : ''}</td>
-      <td>${esc(c.user_name)}<div class="muted">ID ${esc(c.user_id)}</div></td>
+      <td>${esc(c.user_name)}</td>
       <td>${c.mode === '人工' || c.needs_human ? '<span class="tag warn">人工</span>' : '<span class="tag">人机</span>'}${waiting ? ' <span class="tag danger">待人工</span>' : (c.needs_human ? ' <span class="tag">已接手</span>' : '')}</td>
       <td>${c.message_count}</td>
       <td style="max-width:280px">${hitCell}</td>
@@ -789,7 +786,7 @@ async function loadConversations(box) {
       <button class="btn btn-primary" onclick="searchConversations()">搜索记录</button>
       <button class="btn" onclick="clearConvSearch()">清除</button>
     </div>
-    <div class="muted" id="convSearchTip" style="margin-bottom:10px"></div>
+    <div id="convSearchTip" style="margin-bottom:10px"></div>
     <div id="convTableBox">${convTableHtml(conversations, '')}</div>
   </div>`);
 }
@@ -888,7 +885,7 @@ async function loadChats(box) {
   const { chats } = await api('/chats');
   const rows = chats.map(c => `
     <tr>
-      <td>${esc(c.merchant_name)}<div class="muted">ID ${esc(c.merchant_id)}</div></td>
+      <td>${esc(c.merchant_name)}</td>
       <td>${c.disabled ? '<span class="tag danger">已停用</span>' : '<span class="tag ok">正常</span>'}${c.muted ? ' <span class="tag warn">已禁言</span>' : ''}</td>
       <td>${c.message_count}${c.unread ? ` <span class="tag warn">未读 ${c.unread}</span>` : ''}</td>
       <td style="max-width:280px">${esc(c.last_message).slice(0, 60)}</td>
@@ -896,7 +893,7 @@ async function loadChats(box) {
       <td><button class="btn btn-primary" onclick="openChat('${esc(c.merchant_id)}','${esc(c.merchant_name)}')">打开对话</button></td>
     </tr>`).join('');
   panel(box, `<div class="panel"><h2>与商家的沟通（${chats.length}）</h2>
-    <div class="muted" style="margin-bottom:10px">平台发出的消息会出现在商家的「顾客消息」里，商家可直接回复。</div>
+    
     <table><thead><tr><th>商家</th><th>状态</th><th>消息</th><th>最新内容</th><th>时间</th><th>操作</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="6" class="empty">暂无商家。</td></tr>'}</tbody></table></div>`);
 }
@@ -936,7 +933,7 @@ async function loadReviews(box) {
   const { reviews } = await api('/reviews');
   const rows = reviews.map(r => `
     <tr>
-      <td>${esc(r.product_name)}<div class="muted">${esc(r.product_id)}</div></td>
+      <td>${esc(r.product_name)}</td>
       <td>${esc(r.merchant_name || '—')}</td>
       <td>${esc(r.user_name)}</td>
       <td>${stars(r.rating)}</td>
@@ -953,10 +950,7 @@ function loadTracking(box) {
   panel(box, `
     <div class="panel">
       <h2>快递查询</h2>
-      <div class="muted" style="margin-bottom:10px">
-        7 位数字为本系统运单（查本地物流，即时返回）；其他单号走 uapis.cn 真实快递接口，
-        顺丰等快递需要填写收件人手机尾号 4 位。<b>真实接口较慢，一次查询约需 20 秒，请耐心等待。</b>
-      </div>
+      
       <div class="toolbar">
         <input class="q" id="tkInput" placeholder="快递单号，例如 YT1234567890123"
                onkeydown="if(event.key==='Enter')doTrack()" />
@@ -990,18 +984,18 @@ function renderTracking(box, t, source) {
 
   const info = source === 'uapi'
     ? `<div class="kv">
-         <div><b>快递公司：</b>${esc(t.carrier || '—')}${t.carrier_code ? ` <span class="muted">(${esc(t.carrier_code)})</span>` : ''}</div>
+         <div><b>快递公司：</b>${esc(t.carrier || '—')}${t.carrier_code ? ` ` : ''}</div>
          <div><b>当前状态：</b>${esc(t.status_text || '—')}${t.is_completed ? ' <span class="tag ok">已签收</span>' : ''}</div>
          <div><b>签收时间：</b>${esc(t.completed_at || '—')}</div>
-         <div><b>轨迹条数：</b>${t.track_count || 0}　<span class="muted">数据来源：uapis.cn 实时查询</span></div>
+         <div><b>轨迹条数：</b>${t.track_count || 0}　</div>
        </div>`
     : `<div class="kv">
          <div><b>物流公司：</b>${esc(t.carrier || '—')}</div>
-         <div><b>收件人：</b>${esc(t.user_name || '—')} <span class="muted">ID ${esc(t.user_id || '—')}</span></div>
+         <div><b>收件人：</b>${esc(t.user_name || '—')} </div>
          <div><b>收货地址：</b>${esc(t.address || '—')}</div>
          <div><b>发货时间：</b>${esc(t.shipped_at || '—')}</div>
          <div><b>预计送达：</b>${esc(t.estimated_arrival || '—')}</div>
-         <div><b>当前状态：</b>${esc(t.status_text || '—')}　<span class="muted">数据来源：本系统物流表</span></div>
+         <div><b>当前状态：</b>${esc(t.status_text || '—')}　</div>
        </div>`;
 
   const tracks = (t.tracks || []).length
