@@ -32,7 +32,7 @@ st, body = call("/api/merchant/login", {"username": USERNAME, "password": PASSWO
 if st != 200:
     st, body = call("/api/merchant/register", {
         "username": USERNAME, "password": PASSWORD, "password2": PASSWORD,
-        "name": "演示商户", "shop_name": "Kaomianbao 官方旗舰店",
+        "name": "演示商户", "shop_name": "测试商城官方旗舰店",
     })
     print("register:", st, body.get("message") or body.get("error"))
     st, body = call("/api/merchant/login", {"username": USERNAME, "password": PASSWORD})

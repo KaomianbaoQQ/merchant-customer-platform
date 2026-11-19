@@ -63,6 +63,18 @@ def _thread_key(merchant_id, user_id):
     return "%s::%s" % (str(merchant_id or "platform").strip() or "platform",
                        str(user_id or "guest").strip() or "guest")
 
+def _attach_images(message, images):
+    """把图片 URL 列表规整后挂到消息文档上；没有合法图片则不写该字段。"""
+    if not images:
+        return
+    if isinstance(images, str):
+        images = [images]
+    if not isinstance(images, (list, tuple)):
+        return
+    urls = [str(x).strip() for x in images if str(x or "").strip()]
+    if urls:
+        message["images"] = urls
+
 def _thread_filter(merchant_id, user_id):
     return {
         "merchant_id": str(merchant_id or "platform").strip() or "platform",
@@ -70,11 +82,12 @@ def _thread_filter(merchant_id, user_id):
     }
 
 def append_message(merchant_id, user_id, user_name, role, text, merchant_name="",
-                   suppress_unread=False):
+                   suppress_unread=False, images=None):
     """追加一条消息。role: user（顾客）/ merchant（商家）/ bot（机器人）。
 
     会话按「商户 + 顾客」隔离：同一个顾客咨询不同商户会生成不同会话。
-    suppress_unread=True 时不递增 unread_merchant（普通机器人问答不打扰商家）。
+    suppress_unread=True 时不递增 unread_merchant；当前售前链路已不再使用，
+    顾客每条消息都计入商家未读，由商户后台提醒及时回复。
     """
     text = str(text or "").strip()
     if not text:
@@ -90,6 +103,7 @@ def append_message(merchant_id, user_id, user_name, role, text, merchant_name=""
         "read_user": safe_role == "user",
         "read_merchant": safe_role in ("merchant", "bot"),
     }
+    _attach_images(message, images)
     if is_bot:
         message["is_bot"] = True
 
@@ -108,6 +122,8 @@ def append_message(merchant_id, user_id, user_name, role, text, merchant_name=""
 
     inc_fields = {}
     if safe_role == "user":
+        # 顾客来消息即进入「等商家回复」；机器人自动回答不算商家回复
+        set_fields["awaiting_reply"] = True
         if not suppress_unread:
             inc_fields["unread_merchant"] = 1
     elif safe_role == "merchant":
@@ -115,6 +131,9 @@ def append_message(merchant_id, user_id, user_name, role, text, merchant_name=""
         # 商家已真人回复：「待人工」标记解除（会话保持人工通道）
         set_fields["needs_human"] = False
         set_fields["human_handled"] = True
+        # 商家真人回复后，待回复提醒与退换货意向提醒一并解除（意向标签仍保留）
+        set_fields["awaiting_reply"] = False
+        set_fields["return_intent_pending"] = False
 
     on_insert = {
         "user_name": str(user_name or "").strip() or ("顾客 " + user_id),
@@ -132,7 +151,8 @@ def append_message(merchant_id, user_id, user_name, role, text, merchant_name=""
     try:
         coll = _coll(PRESALE_COLLECTION)
         coll.update_one(_thread_filter(merchant_id, user_id), update, upsert=True)
-        if safe_role in ("merchant", "bot"):
+        # 只有商家真人回复才把顾客消息翻成「已读」；机器人自动回答不算商家看过
+        if safe_role == "merchant":
             try:
                 coll.update_one(
                     _thread_filter(merchant_id, user_id),
@@ -146,16 +166,20 @@ def append_message(merchant_id, user_id, user_name, role, text, merchant_name=""
         print(f"⚠️ 聊天记录写入 MongoDB 失败（消息未落库）：{_brief(e)}")
     return message
 
-def mark_needs_human(merchant_id, user_id):
-    """把会话标记为「需人工」，并给商家递增一次未读。会话不存在返回 False。
+def mark_needs_human(merchant_id, user_id, count_unread=True):
+    """把会话标记为「需人工」。会话不存在返回 False。
 
+    count_unread=True 时额外递增一次商家未读；售前通道的顾客消息本身已计入未读，
+    调用方传 False 避免同一条消息重复计数。
     同时把「已接手」标记清零：新一轮转人工要重新提醒（前端会重新闪动 / 亮横幅）。
     """
     query = _thread_filter(merchant_id, user_id)
     try:
         coll = _coll(PRESALE_COLLECTION)
-        res = coll.update_one(query, {"$set": {"needs_human": True, "human_ack": False},
-                                      "$inc": {"unread_merchant": 1}})
+        update = {"$set": {"needs_human": True, "human_ack": False}}
+        if count_unread:
+            update["$inc"] = {"unread_merchant": 1}
+        res = coll.update_one(query, update)
         if res.matched_count == 0:
             return False
         coll.update_one(dict(query, human_since={"$exists": False}),
@@ -179,6 +203,45 @@ def mark_human_ack(merchant_id, user_id):
     except Exception as e:
         print(f"⚠️ 标记接手失败：{_brief(e)}")
         return False
+
+def mark_return_intent(merchant_id, user_id, text):
+    """标记顾客在售前会话里表达了退换货/退款意向，供商户后台提醒商家及时跟进。
+
+    return_intent          曾经表达过意向（会话列表长期显示标签）
+    return_intent_pending  商家尚未真人回复（横幅提醒 / 聊天窗口提示条据此显示）
+    """
+    try:
+        res = _coll(PRESALE_COLLECTION).update_one(
+            _thread_filter(merchant_id, user_id),
+            {"$set": {
+                "return_intent": True,
+                "return_intent_text": str(text or "")[:120],
+                "return_intent_at": _now(),
+                "return_intent_pending": True,
+            }},
+        )
+        return res.matched_count > 0
+    except Exception as e:
+        print(f"⚠️ 标记退换货意向失败：{_brief(e)}")
+        return False
+
+def clear_return_intent(merchant_id, user_id):
+    """商家在聊天里「标记已处理」后调用：清除退换货意向标记与待提醒状态。
+
+    这样提醒不会因商家随手回一句「收到」就消失（那是 return_intent_pending 的行为），
+    也不会永远挂着——只有商家明确标记处理完才清掉，符合「进入会话后仍持续提醒」的预期。
+    """
+    try:
+        res = _coll(PRESALE_COLLECTION).update_one(
+            _thread_filter(merchant_id, user_id),
+            {"$set": {"return_intent": False, "return_intent_pending": False,
+                      "return_intent_text": "", "return_intent_at": ""}},
+        )
+        return res.matched_count > 0
+    except Exception as e:
+        print(f"⚠️ 清除退换货意向标记失败：{_brief(e)}")
+        return False
+
 
 def set_thread_meta(merchant_id, user_id, meta):
     """更新会话的自定义元数据字段（如 unclear_count / asking_human）。"""
@@ -246,6 +309,13 @@ def list_conversations(merchant_id=None, include_platform=True):
             # 已被客服接手（平台点开会话 / 商家真人回复过）：不再闪动、不计入待处理
             "human_ack": ack,
             "waiting_human": needs and not ack,
+            # 顾客已发消息、商家尚未真人回复（点开会话清未读后仍需提醒及时回复）
+            "awaiting_reply": bool(thread.get("awaiting_reply")),
+            # 退换货 / 退款意向：商户后台据此亮标签、发提醒
+            "return_intent": bool(thread.get("return_intent")),
+            "return_intent_pending": bool(thread.get("return_intent_pending")),
+            "return_intent_text": str(thread.get("return_intent_text") or ""),
+            "return_intent_at": str(thread.get("return_intent_at") or ""),
             "message_count": len(messages),
         })
     items.sort(key=lambda x: str(x.get("last_time") or ""), reverse=True)
@@ -341,7 +411,7 @@ def new_session_id(user_id):
     """生成一次登录的会话ID，如 99-20260910203015"""
     return f"{user_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-def save_message(session_id, user_id, user_name, role, content):
+def save_message(session_id, user_id, user_name, role, content, images=None):
     """保存一条对话消息。content 为空则跳过；出错只告警，返回 True/False。
 
     已读标记：read_user = 顾客侧已读，read_agent = 客服侧已读
@@ -349,7 +419,7 @@ def save_message(session_id, user_id, user_name, role, content):
     客服发出回复时，把之前顾客的消息一并标成「客服已读」）。
     """
     content = (content or "").strip()
-    if not content:
+    if not content and not images:
         return False
     is_user = role == "user"
     doc = {
@@ -363,6 +433,7 @@ def save_message(session_id, user_id, user_name, role, content):
         "read_user": is_user,
         "read_agent": not is_user,
     }
+    _attach_images(doc, images)
     try:
         coll = _coll(AFTER_SALES_COLLECTION)
         if not is_user:
@@ -430,7 +501,7 @@ def get_recent_messages(session_id, limit=10):
         rows = list(_coll(AFTER_SALES_COLLECTION)
                     .find({"session_id": str(session_id)},
                           {"_id": 0, "role": 1, "content": 1, "create_time": 1,
-                           "read_user": 1, "read_agent": 1})
+                           "images": 1, "read_user": 1, "read_agent": 1})
                     .sort([("_id", -1)]).limit(int(limit)))
     except Exception as e:
         print(f"⚠️ 读取对话历史失败：{_brief(e)}")

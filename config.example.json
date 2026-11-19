@@ -4,6 +4,18 @@
     "_说明": "顾客登录令牌的 HMAC 签名密钥。留空即可：首次签发时自动生成并写回 config.json；也可用环境变量 KB_TOKEN_SECRET 指定。",
     "token_secret": ""
   },
+  "access": {
+    "_说明": "全站准入控制。enabled=false 可一键停用强制登录/权限/限流；public_read_paths 里填 /api/products 可让游客仅浏览商品。改动后重启后端生效。",
+    "enabled": true,
+    "audit_enabled": true,
+    "strict_user_identity": true,
+    "general_per_minute": 120,
+    "chat_daily_quota": 30,
+    "login_per_minute": 10,
+    "register_per_hour": 5,
+    "public_read_paths": [],
+    "identity_cache_seconds": 2
+  },
   "default_delay": 300,
   "inventory": {
     "default_stock": 100,
@@ -20,7 +32,7 @@
   },
   "mongo": {
     "uri": "mongodb://127.0.0.1:27017",
-    "database": "kaomianbao_chat"
+    "database": "testmall_chat"
   },
   "express_tracking": {
     "api_key": "",
@@ -58,6 +70,6 @@
     "host": "",
     "port": 465,
     "ssl": true,
-    "from_name": "Kaomianbao"
+    "from_name": "测试商城"
   }
 }

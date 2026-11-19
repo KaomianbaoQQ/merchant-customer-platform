@@ -3,7 +3,7 @@ KB_I18N.extend({
  "/merchant 打开本页。": " /merchant to open this page.",
  "7位单号": "7-digit number",
  "7位快递单号": "7-digit tracking number",
- "Kaomianbao 商户中心": "Kaomianbao Merchant Center",
+ "测试商城商户中心": "Test Mall Merchant Center",
  "RFM：R 最近购买 / F 购买频次 / M 消费金额（各 1~5 分）；只统计在本店下过单或浏览 / 加购过本店商品的顾客。": "RFM: recency / frequency / monetary (1-5 each), counting customers who ordered from or browsed this shop.",
  "Safari 等浏览器会拦截这类请求。请改用": "Safari blocks this kind of request. Please use ",
  "¥ · 浏览 · 销量": "¥ · views · sold",
@@ -228,5 +228,14 @@ KB_I18N.extend({
  "）。请确认后端已启动，然后刷新重试。": "). Make sure the backend is running, then refresh.",
  "＋ 新增商品": "+ New product",
  "＋ 添加一条规格": "+ Add a spec",
- "，点一条可查看完整对话记录": " — tap one to see the full conversation"
+ "，点一条可查看完整对话记录": " — tap one to see the full conversation",
+ "退换货意向": "Return intent",
+ "曾问退换货": "Asked about returns",
+ "⚠️ 顾客表达了退换货/退款意向，请及时回复并引导至「售后客服」通道": "⚠️ The customer expressed a return/refund intent — reply promptly and point them to After-sales Support",
+ "顾客原话：${t}": "Customer said: ${t}",
+ "⚠️ 有 ${n} 位顾客在等你人工回复": "⚠️ ${n} customers are waiting for a human reply",
+ "💬 有 ${n} 位顾客在等你回复，请及时回复": "💬 ${n} customers are waiting — please reply promptly",
+ "💬 有 ${n} 条顾客新消息，请及时回复": "💬 ${n} new customer messages — please reply promptly",
+ "其中 ${n} 位顾客表达了退换货/退款意向，请优先跟进": "${n} of them expressed a return/refund intent — follow up first",
+ "另有 ${n} 条售后转人工，由平台客服处理": "Another ${n} after-sales escalations are handled by platform support"
 });

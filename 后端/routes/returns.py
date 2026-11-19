@@ -33,6 +33,7 @@ def api_create_return():
         reason=str(data.get("reason") or "").strip(),
         return_type=return_type,
         quantity=data.get("quantity"),
+        images=data.get("images"),
     )
     return jsonify({"ok": ok, "message": msg, "return": ret}), (200 if ok else 400)
 

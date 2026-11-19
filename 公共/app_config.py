@@ -113,7 +113,7 @@ def mongo_config():
     """MongoDB 连接参数。"""
     return {
         "uri": get("mongo.uri", "mongodb://127.0.0.1:27017"),
-        "database": get("mongo.database", "kaomianbao_chat"),
+        "database": get("mongo.database", "testmall_chat"),
     }
 
 

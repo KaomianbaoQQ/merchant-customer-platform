@@ -25,11 +25,11 @@ def new_session_id(user_id):
     return chat_store.new_session_id(user_id)
 
 
-def save_message(session_id, user_id, user_name, role, content):
+def save_message(session_id, user_id, user_name, role, content, images=None):
     """保存一条对话消息。content 为空则跳过；出错只打印警告，不抛异常。
     返回 True/False。
     """
-    return chat_store.save_message(session_id, user_id, user_name, role, content)
+    return chat_store.save_message(session_id, user_id, user_name, role, content, images=images)
 
 
 def save_turn(session_id, user, user_input, reply):

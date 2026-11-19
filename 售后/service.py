@@ -27,6 +27,7 @@ from .auth import check_ops_permission
 from .returns import (
     create_return, get_returns_by_user, change_active_return_type,
 )
+from 物流.repository import get_logistics
 from .session_state import (
     set_pending, get_pending, clear_pending,
     mark_human, is_human,
@@ -74,20 +75,25 @@ RETURN_POLICY_TEXT = (
     "退换货 / 退款政策如下：\n"
     "1. 未发货：退款、退货都无需填写理由，也不用商家同意、不走平台仲裁，"
     "提交后立即完成；未发货不能申请换货。\n"
-    "2. 已发货未签收：申请退货 / 换货 / 退款需要填写理由；不受时间窗限制，"
-    "退货只能「全部退回」，原运单号不变、只更新售后状态，用户无需寄回。\n"
-    "3. 已签收：申请退货 / 换货 / 退款需要填写理由；退货需在签收后 5 分钟内申请，"
-    "换货需在签收后 10 分钟内申请，超时将无法申请；可申请部分数量退换，"
-    "剩余可退数量内可多次申请。\n"
+    "2. 已发货但顾客尚未确认收货：申请退货 / 换货 / 退款需要填写理由；不受时间窗限制，"
+    "退货只能「全部退回」，原运单号不变、只更新售后状态，用户无需寄回。"
+    "注意：物流状态是按「预计送达时间」自动推算的，即使显示「已签收」，"
+    "只要工作流上下文里该订单的「实际签收时间」为空，就属于这一类，"
+    "不得回复「已超过 5 分钟」，也不得要求顾客寄回。\n"
+    "3. 已确认收货（真实签收）：申请退货 / 换货 / 退款需要填写理由；"
+    "退货需在实际签收后 5 分钟内申请，换货需在实际签收后 10 分钟内申请，超时将无法申请；"
+    "可申请部分数量退换，剩余可退数量内可多次申请。"
+    "时间窗一律以「实际签收时间」为起点，严禁用预计送达时间计算。\n"
     "4. 退款不受时间窗限制，签收与否、签收多久都可以申请。\n"
-    "5. 商家同意退货 / 换货后，平台会自动生成 7 位寄回快递单号；凭该单号寄回，"
-    "并在「我的订单 - 退换货记录」里填写单号、点「我已发出」。同一订单多次换货，每次都是全新单号。\n"
+    "5. 商家同意退货 / 换货后：只有顾客已确认收货的订单，平台才生成 7 位寄回快递单号；"
+    "凭该单号寄回，并在「我的订单 - 退换货记录」里填写单号、点「我已发出」。"
+    "未确认收货的订单整单退回、原运单号不变、无需寄回。同一订单多次换货，每次都是全新单号。\n"
     "6. 换货：商家签收你寄回的商品后，会填写新的 7 位运单号重新发货，"
     "你可以在「我的订单」里继续查看新包裹的物流。\n"
     "7. 商家拒绝时会写明拒绝理由；顾客可据此申请平台仲裁，由平台介入处理。\n"
     "8. 仲裁期间状态显示「平台仲裁中」，在客服这里随时可以查进度。\n"
-    "9. 平台仲裁判定支持顾客时，与商家同意完全一致：已签收由平台生成 7 位退货单号，"
-    "顾客凭单号寄回；未签收则原运单号不变、整单退回，无需寄回。\n"
+    "9. 平台仲裁判定支持顾客时，与商家同意完全一致：已确认收货由平台生成 7 位退货单号，"
+    "顾客凭单号寄回；未确认收货则原运单号不变、整单退回，无需寄回。\n"
     "需要办理的话，直接告诉我「商品名或订单号 + 退/换/退款」，我马上帮你提交申请。"
 )
 
@@ -341,19 +347,35 @@ def remember_order_choices(session_id, action, orders, **extra):
     }, **extra))
 
 def continue_pending_selection(user, user_input, session_id):
-    """顾客用序号回答「是哪一笔订单」时，接着上一轮的动作继续办理。
+    """顾客回答「是哪一笔订单」时，接着上一轮的动作继续办理。
 
-    没有待选择状态、或顾客这次说的不是序号 → 返回 None，交给后面的分支处理。
+    支持三种回答：纯序号（「4」/「第4个」）、订单号（ORD…）、商品名。
+    都不是、且和候选订单对不上 → 清空待选择状态，返回 None，交给后面的分支处理。
+    （之前只认序号，顾客直接报订单号会被当成「改主意」清空状态，导致退货流程卡死 / 循环）
     """
     state = get_pending(session_id)
     if not state:
         return None
-    idx = parse_selection(user_input, len(state.get("orders") or []))
-    if idx is None:
-        clear_pending(session_id)   # 顾客改说了别的，这次选择作废
+    candidate_ids = [str(o) for o in (state.get("orders") or [])]
+    if not candidate_ids:
+        clear_pending(session_id)
         return None
+
+    # 1) 纯序号（「4」/「第4个」）
+    idx = parse_selection(user_input, len(candidate_ids))
+    # 2) 订单号 / 商品名：在候选订单里定位（顾客常直接把订单号贴回来）
+    if idx is None:
+        all_orders = get_orders_by_user(user["id"]) or []
+        pool = [o for o in all_orders if str(o.get("id")) in candidate_ids]
+        matched = find_order_in_text(pool, user_input) if pool else None
+        if matched and str(matched.get("id")) in candidate_ids:
+            idx = candidate_ids.index(str(matched.get("id"))) + 1
+    if idx is None:
+        clear_pending(session_id)   # 顾客改说了别的、且对不上候选订单，这次选择作废
+        return None
+
     clear_pending(session_id)
-    order_id = (state.get("orders") or [])[idx - 1]
+    order_id = candidate_ids[idx - 1]
     action = str(state.get("action") or "")
 
     if action == "return":
@@ -769,8 +791,48 @@ def answer_policy_question(user, user_input, session_id=None):
     return RETURN_POLICY_TEXT
 
 def build_dify_context(user, session_id=None):
-    """订单 + 退换货记录 + 最近对话历史，作为 user_orders 上传，帮助 Dify 理解意图。"""
+    """订单 + 物流查询结果 + 退换货记录 + 最近对话历史，作为 user_orders 上传。
+
+    Dify 判断「到哪了 / 是否真的签收 / 退货有没有超时」必须拿到按运单号查出的
+    真实物流明细；只给文字状态，LLM 容易照着政策条款凭空说「已超过 5 分钟」。
+    """
     parts = [build_user_orders(user)]
+
+    # 按运单号实时查物流，把查询结果一并上传（去重、限量，避免每轮对话过多查库）
+    try:
+        orders = get_orders_by_user(user["id"])
+    except Exception:
+        orders = []
+    logistics_lines = []
+    seen = set()
+    for o in orders:
+        wb = str(o.get("waybill") or "").strip()
+        if not wb or wb in seen:
+            continue
+        seen.add(wb)
+        if len(seen) > 12:
+            break
+        found, row = get_logistics(wb)
+        if not found or not row:
+            logistics_lines.append(f"运单号 {wb}（订单 {o.get('id') or '—'}）：未查到物流记录")
+            continue
+        logistics_lines.append(
+            f"运单号 {wb}（订单 {o.get('id') or '—'}）："
+            f"承运商 {row.get('carrier') or '—'}，"
+            f"当前状态 {row.get('status_text') or '—'}（档位 {row.get('status_step')}），"
+            f"发货 {row.get('shipped_at') or '—'}，"
+            f"预计送达 {row.get('estimated_arrival') or '—'}，"
+            f"实际签收 {row.get('delivered_at') or '尚未确认收货'}，"
+            f"收货地址 {row.get('address') or '—'}"
+        )
+    if logistics_lines:
+        parts.append(
+            "【物流查询结果（按运单号实时查询）】\n" + "\n".join(logistics_lines) +
+            "\n说明：只有「实际签收」有值才算顾客真的签收；" \
+            "「预计送达」只是估算、状态档位由预计送达自动推算，" \
+            "不能据此判定退货超过 5 分钟 / 换货超过 10 分钟。" \
+            "顾客说没收到时，先看「实际签收」是否为空，不要直接说已超时。"
+        )
 
     try:
         returns = get_returns_by_user(user["id"])

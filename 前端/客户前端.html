@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kaomianbao — 精致办公与生活好物</title>
+<title>测试商城 — 精致办公与生活好物</title>
 <link rel="icon" href="data:,">
 <style>
   :root{
@@ -505,6 +505,20 @@
   .cs-input button:disabled{opacity:.5;cursor:default;}
   .cs-input .cs-human{background:#fff;color:var(--ink);border:1px solid var(--line);font-weight:600;}
   .cs-input .cs-human:hover{border-color:var(--blue);color:var(--blue);}
+  .cs-img-btn{background:#fff;color:var(--blue);border:1px solid var(--line);font-size:16px;line-height:1;padding:0 11px;border-radius:10px;cursor:pointer;}
+  .cs-img-btn:hover{border-color:var(--blue);}
+  /* 聊天 / 退换货上传图片的缩略图预览 */
+  .img-previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .img-previews:empty{display:none;}
+  .img-thumb{position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#f3f5f9;}
+  .img-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .img-thumb .rm{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:none;font-size:12px;line-height:18px;cursor:pointer;padding:0;}
+  .img-thumb .up{position:absolute;left:0;right:0;bottom:0;font-size:10px;background:rgba(0,0,0,.45);color:#fff;text-align:center;}
+  /* 聊天气泡里的图片 */
+  .cs-msg .cs-imgs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .cs-msg .cs-imgs img,.chat-msg-imgs img,.rt-imgs img,.rc-imgs img,.arb-imgs img{
+    width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;background:#f3f5f9;
+  }
 
   
   .modal-overlay{
@@ -736,7 +750,7 @@
 
 <nav class="nav">
   <div class="nav-inner">
-    <div class="nav-logo" onclick="navigate('home')">Kaomianbao</div>
+    <div class="nav-logo" onclick="navigate('home')">测试商城</div>
     <div class="nav-right">
       <div class="nav-links">
         <a href="javascript:void(0)" data-nav="home" onclick="navigate('home')">商店</a>
@@ -927,7 +941,7 @@
   <div class="cs-panel-head">
     <div class="avatar" id="csAvatar">🛠️</div>
     <div>
-      <div class="who" id="csWho">Kaomianbao 售后客服</div>
+      <div class="who" id="csWho">测试商城售后客服</div>
       <div id="csSub">订单 / 物流 / 退换</div>
     </div>
     <button class="cs-panel-close" onclick="closeCS()" aria-label="关闭">×</button>
@@ -940,9 +954,12 @@
 
   <div class="cs-input">
     <input id="csInput" placeholder="输入你的问题…" autocomplete="off" />
+    <button id="csImgBtn" class="cs-img-btn" type="button" title="上传图片" onclick="document.getElementById('csImg').click()">📷</button>
+    <input id="csImg" type="file" accept="image/*" multiple hidden onchange="onCsImagesSelected(event)" />
     <button id="csHuman" class="cs-human" onclick="askHuman()" title="需要人工客服时点这里">人工</button>
     <button id="csSend" onclick="csSend()">发送</button>
   </div>
+  <div class="img-previews" id="csPreviews"></div>
 </div>
 
 <div class="modal-overlay" id="loginOverlay">
@@ -1082,9 +1099,8 @@
 <div class="modal-overlay" id="returnOverlay">
   <div class="modal return-modal">
     <h3 id="rtTitle">申请退货</h3>
-    <p id="rtSub"></p>
     <div class="rt-row">
-      <span class="rt-label">数量</span>
+      <span class="rt-label">退货数量</span>
       <div class="stepper">
         <button type="button" id="rtMinus" onclick="rtStep(-1)">−</button>
         <input id="rtQty" type="number" min="1" step="1" value="1" oninput="rtSync()">
@@ -1093,6 +1109,12 @@
       <span class="rt-max" id="rtMaxTip"></span>
     </div>
     <textarea id="rtReason" placeholder="请说明原因（例如：尺码不合适 / 商品有瑕疵 / 不想要了）"></textarea>
+    <div class="rt-upload">
+      <input type="file" id="rtImages" accept="image/*" multiple hidden onchange="onRtImagesSelected(event)" />
+      <button type="button" class="btn btn-light btn-sm" onclick="document.getElementById('rtImages').click()">＋ 上传图片（凭证）</button>
+      <span class="rt-upload-hint">如有瑕疵、错发等，可上传照片，最多 6 张</span>
+    </div>
+    <div class="img-previews" id="rtPreviews"></div>
     <div class="modal-tip" id="rtTip"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeReturn()">取消</button>
@@ -1121,6 +1143,113 @@
 const API_ORIGIN = (location.protocol === 'file:') ? 'http://127.0.0.1:8000' : '';
 function IMG(filename){
   return API_ORIGIN + '/images/' + encodeURIComponent(filename);
+}
+
+/* ---------- 图片上传（退换货凭证 / 客服聊天图片） ---------- */
+const MAX_UPLOAD_IMAGES = 6;
+function uploadImageFiles(fileList){
+  /* 把选中的图片上传到后端，返回 Promise<Array<url>>（只返回上传成功的） */
+  const files = Array.from(fileList || []).filter(f => f && f.type && f.type.startsWith('image/'));
+  if (!files.length) return Promise.resolve([]);
+  const fd = new FormData();
+  files.forEach(f => fd.append('files', f));
+  return fetch(API_ORIGIN + '/api/upload', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => (d && d.ok && Array.isArray(d.urls)) ? d.urls : [])
+    .catch(() => []);
+}
+function renderImagePreviews(boxId, items, onRemove){
+  /* items: [{url, uploading}]；渲染缩略图，可点 × 移除 */
+  const box = document.getElementById(boxId);
+  if (!box) return;
+  box.innerHTML = (items || []).map((it, i) =>
+    '<div class="img-thumb">' +
+      '<img src="' + escapeHtml(it.url) + '" alt="预览" />' +
+      (it.uploading ? '<span class="up">上传中…</span>' : '') +
+      (!it.uploading ? '<button type="button" class="rm" onclick="' + onRemove + '(' + i + ')">×</button>' : '') +
+    '</div>'
+  ).join('');
+}
+function previewImage(url){
+  let ov = document.getElementById('imgLightbox');
+  if (!ov){
+    ov = document.createElement('div');
+    ov.id = 'imgLightbox';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out;';
+    ov.onclick = function(){ ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<img src="' + escapeHtml(url) + '" style="max-width:92vw;max-height:92vh;border-radius:10px;" />';
+}
+
+/* 客服聊天：待发送图片（上传成功后存 url） */
+let csPendingImages = [];
+function onCsImagesSelected(e){
+  const input = e.target;
+  const files = Array.from(input.files || []);
+  input.value = '';
+  if (!files.length) return;
+  const remaining = MAX_UPLOAD_IMAGES - csPendingImages.length;
+  if (remaining <= 0){ toast('最多上传 ' + MAX_UPLOAD_IMAGES + ' 张图片'); return; }
+  const slice = files.slice(0, remaining);
+  const placeholders = slice.map(() => ({ url: '', uploading: true }));
+  csPendingImages.push(...placeholders);
+  renderImagePreviews('csPreviews', csPendingImages, 'removeCsImage');
+  uploadImageFiles(slice).then(urls => {
+    // 把占位替换为真实 URL（按插入顺序）
+    let k = 0;
+    for (let i = 0; i < csPendingImages.length && k < urls.length; i++){
+      if (csPendingImages[i].uploading && !csPendingImages[i].url){
+        csPendingImages[i] = { url: urls[k], uploading: false }; k++;
+      }
+    }
+    // 上传失败（数量不足）的占位清理掉
+    csPendingImages = csPendingImages.filter(it => it.url);
+    renderImagePreviews('csPreviews', csPendingImages, 'removeCsImage');
+    if (urls.length < slice.length) toast('部分图片上传失败，请重试');
+  });
+}
+function removeCsImage(i){
+  csPendingImages.splice(i, 1);
+  renderImagePreviews('csPreviews', csPendingImages, 'removeCsImage');
+}
+function clearCsImages(){
+  csPendingImages = [];
+  renderImagePreviews('csPreviews', csPendingImages, 'removeCsImage');
+}
+
+/* 退换货：待提交图片 */
+let rtPendingImages = [];
+function onRtImagesSelected(e){
+  const input = e.target;
+  const files = Array.from(input.files || []);
+  input.value = '';
+  if (!files.length) return;
+  const remaining = MAX_UPLOAD_IMAGES - rtPendingImages.length;
+  if (remaining <= 0){ toast('最多上传 ' + MAX_UPLOAD_IMAGES + ' 张图片'); return; }
+  const slice = files.slice(0, remaining);
+  const placeholders = slice.map(() => ({ url: '', uploading: true }));
+  rtPendingImages.push(...placeholders);
+  renderImagePreviews('rtPreviews', rtPendingImages, 'removeRtImage');
+  uploadImageFiles(slice).then(urls => {
+    let k = 0;
+    for (let i = 0; i < rtPendingImages.length && k < urls.length; i++){
+      if (rtPendingImages[i].uploading && !rtPendingImages[i].url){
+        rtPendingImages[i] = { url: urls[k], uploading: false }; k++;
+      }
+    }
+    rtPendingImages = rtPendingImages.filter(it => it.url);
+    renderImagePreviews('rtPreviews', rtPendingImages, 'removeRtImage');
+    if (urls.length < slice.length) toast('部分图片上传失败，请重试');
+  });
+}
+function removeRtImage(i){
+  rtPendingImages.splice(i, 1);
+  renderImagePreviews('rtPreviews', rtPendingImages, 'removeRtImage');
+}
+function clearRtImages(){
+  rtPendingImages = [];
+  renderImagePreviews('rtPreviews', rtPendingImages, 'removeRtImage');
 }
 
 let authToken = null;
@@ -1500,7 +1629,7 @@ document.getElementById('dThumbs').addEventListener('click', function(e){
   setDetailImage(Number(thumb.dataset.idx), thumb);
 });
 
-const CART_KEY = 'kaomianbao_cart';
+const CART_KEY = 'testmall_cart';
 let cart = [];
 
 function usingServerCart(){ return !!authToken; }
@@ -2364,7 +2493,7 @@ document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') { closeCart(); closeCS(); }
 });
 
-const USER_KEY = 'kaomianbao_user';
+const USER_KEY = 'testmall_user';
 let currentUser = null;
 let afterLogin = null;
 let currentProduct = null;
@@ -2842,7 +2971,7 @@ const CS_META = {
               ph: '问参数、对比、物流…', title: '问商品参数、对比、优惠、物流进度',
               note: '售后问题（退换货 / 退款）请点右下角「售后客服」。',
               tip: '你好，欢迎光临本店 👋 商品规格、参数对比、物流进度都可以问我。' },
-  after:    { who: 'Kaomianbao 售后客服', avatar: '🛠️', sub: '订单 / 物流 / 退换',
+  after:    { who: '测试商城售后客服', avatar: '🛠️', sub: '订单 / 物流 / 退换',
               ph: '查订单、物流、退换…', title: '查订单物流，或申请退换货',
               note: '商品参数、选购问题请点进商品页咨询该商品的商家客服。',
               tip: '售后客服为你服务，可以查订单、查物流，也能直接申请退换货。' }
@@ -2861,7 +2990,7 @@ let csSending = false;
 
 function getAfterSessionKey(){
   if (!currentUser) return null;
-  return 'kaomianbao_after_session_' + currentUser.id;
+  return 'testmall_after_session_' + currentUser.id;
 }
 function loadAfterSession(){
   if (!currentUser){ csAfterSession = null; return; }
@@ -3088,10 +3217,10 @@ function updateCSProduct(){
 function getChatUser(){
   if (currentUser) return { id: String(currentUser.id), name: currentUser.name };
   let gid = null;
-  try { gid = localStorage.getItem('kaomianbao_guest'); } catch (e) {}
+  try { gid = localStorage.getItem('testmall_guest'); } catch (e) {}
   if (!gid){
     gid = 'guest-' + Math.random().toString(36).slice(2, 10);
-    try { localStorage.setItem('kaomianbao_guest', gid); } catch (e) {}
+    try { localStorage.setItem('testmall_guest', gid); } catch (e) {}
   }
   return { id: gid, name: '游客 ' + gid.slice(-4) };
 }
@@ -3198,6 +3327,7 @@ async function loadAfterMessages(){
     hist.length = 0;   // 先清空本地，用服务端数据替换
     (data.messages || []).forEach(function(msg){
       hist.push({ role: msg.role === 'user' ? 'user' : 'bot', text: msg.text,
+                  images: Array.isArray(msg.images) ? msg.images : [],
                   read_user: msg.read_user, read_agent: msg.read_agent });
     });
     renderCSMessages();
@@ -3298,17 +3428,23 @@ function renderCSMessages(){
   }
 
   box.innerHTML = list.map(function(m){
-    return '<div class="cs-msg ' + m.role + '">' + escapeHtml(m.text) + csReadLabel(m) + '</div>';
+    const imgs = Array.isArray(m.images) ? m.images : [];
+    const imgHtml = imgs.length
+      ? '<div class="cs-imgs">' + imgs.map(function(u){
+          return '<img src="' + escapeHtml(u) + '" onclick="previewImage(\'' + escapeHtml(u) + '\')" alt="图片" />';
+        }).join('') + '</div>'
+      : '';
+    const textHtml = m.text ? escapeHtml(m.text) : (imgs.length ? '' : '');
+    return '<div class="cs-msg ' + m.role + '">' + textHtml + imgHtml + csReadLabel(m) + '</div>';
   }).join('');
   box.scrollTop = box.scrollHeight;
 }
 
 function csReadLabel(m){
-  if (m.role !== 'user' && m.role !== 'bot' && m.role !== 'merchant') return '';
-  const own = m.role === 'user';
-  const read = (csMode === 'after')
-    ? (own ? m.read_agent : m.read_user)   // 售后：对面是客服（机器人）
-    : (own ? m.read_merchant : m.read_user);
+  // 已读回执只给发送方看：顾客只对自己发出的消息显示「已读 / 未读」；
+  // 客服 / 商家 / 机器人发来的消息是接收方一侧，不显示对方读没读。
+  if (m.role !== 'user') return '';
+  const read = (csMode === 'after') ? m.read_agent : m.read_merchant;
   return '<span class="cs-read">' + (read ? '已读' : '未读') + '</span>';
 }
 
@@ -3319,12 +3455,12 @@ function applyReadFlags(target, src){
   target.read_agent = src.read_agent;
 }
 
-function csPush(role, text){
+function csPush(role, text, images){
   if (!csHistory[csMode]) csHistory[csMode] = [];
   const own = role === 'user';
   const entry = {
     role: role, text: text, linked: false,
-    
+    images: Array.isArray(images) ? images.slice() : [],
     read_user: true, read_merchant: !own, read_agent: !own,
   };
   csHistory[csMode].push(entry);
@@ -3353,7 +3489,8 @@ async function csSend(){
   if (csSending) return;
   const input = document.getElementById('csInput');
   const text  = input.value.trim();
-  if (!text) return;
+  const imgs  = csPendingImages.map(x => x.url).filter(Boolean);
+  if (!text && !imgs.length) return;
 
   if (csMode === 'after' && !currentUser){
     csPush('bot', '请先登录后再使用售后客服。');
@@ -3367,8 +3504,9 @@ async function csSend(){
     csPush('sys', '售前客服请从商品详情页或「我的订单」里的「联系商家客服」进入。');
     return;
   }
-  csPush('user', text);
+  csPush('user', text, imgs);
   input.value = '';
+  clearCsImages();
   csSending = true;
   btn.disabled = true;
   showTyping(true);
@@ -3378,10 +3516,10 @@ async function csSend(){
     if (csMode === 'consult'){
       url = API_ORIGIN + '/api/chat';
       body = { message: text, product: consultProduct, user: getChatUser(),
-               merchant_id: m.id, merchant_name: m.name };
+               merchant_id: m.id, merchant_name: m.name, images: imgs };
     } else {
       url = API_ORIGIN + '/api/after-sales';
-      body = { message: text, user: currentUser, session_id: csAfterSession };
+      body = { message: text, user: currentUser, session_id: csAfterSession, images: imgs };
     }
 
     const res  = await fetch(url, {
@@ -3741,7 +3879,9 @@ function renderOrderGroup(g){
   const itemsHtml = g.items.map(function(o){
     const qty   = Number(o.quantity || 1);
     const avail = (o.returnable_quantity != null) ? Number(o.returnable_quantity) : qty;
-    const received = (step >= 4);
+    // 只有顾客真实点过「确认收货」（后端 delivered_at 有值）才算已签收；
+    // 物流档位 step>=4 只是按预计送达时间自动推算，不能据此放开「部分数量退换」
+    const received = !!(o.delivered_at || g.delivered_at);
 
     const unshipped = (step === 0);
     let btns = '';
@@ -3895,6 +4035,11 @@ function renderReturnCard(r){
   const reasonLine = r.reason
     ? '<div class="oc-meta">申请理由：' + escapeHtml(r.reason) + '</div>'
     : '';
+  const imgsLine = (Array.isArray(r.images) && r.images.length)
+    ? '<div class="oc-meta">上传凭证：</div><div class="rt-imgs">' + r.images.map(function(u){
+        return '<img src="' + escapeHtml(u) + '" onclick="previewImage(\'' + escapeHtml(u) + '\')" alt="凭证" />';
+      }).join('') + '</div>'
+    : '';
   const rejectLine = r.reject_reason
     ? '<div class="oc-meta">商家拒绝理由：' + escapeHtml(r.reject_reason) + '</div>'
     : '';
@@ -3909,6 +4054,7 @@ function renderReturnCard(r){
         waybillLine +
         reshipLine +
         reasonLine +
+        imgsLine +
         rejectLine +
         (r.shipped_at ? '<div class="oc-meta">寄出时间：' + escapeHtml(r.shipped_at) + '</div>' : '') +
         (r.estimated_arrival ? '<div class="oc-meta">预计到仓：' + escapeHtml(r.estimated_arrival) + '</div>' : '') +
@@ -3975,16 +4121,6 @@ function applyReturn(orderId, type, maxQty, received, unshipped){
             max: max, received: isReceived, unshipped: isUnshipped };
 
   document.getElementById('rtTitle').textContent = '申请' + typeText;
-  const sub = [];
-  if (isUnshipped){
-    sub.push('商品尚未发货：提交即完成，无需理由、无需商家同意。');
-  } else if (!isReceived){
-    sub.push('商品已发出、尚未签收：只能整单退回（数量锁定），原运单号不变。');
-  } else {
-    sub.push('可只退其中一部分：填 1 件就退 1 件，剩下的还可以再来申请。');
-  }
-  sub.push('本次最多可' + typeText + ' ' + max + ' 件。');
-  document.getElementById('rtSub').textContent = sub.join('');
 
   const qtyEl = document.getElementById('rtQty');
   qtyEl.max = String(max);
@@ -4011,6 +4147,7 @@ function applyReturn(orderId, type, maxQty, received, unshipped){
 function closeReturn(){
   document.getElementById('returnOverlay').classList.remove('open');
   rtCtx = null;
+  clearRtImages();
 }
 
 function rtStep(delta){
@@ -4054,12 +4191,14 @@ async function submitReturn(){
   btn.disabled = true;
   tip.classList.add('ok'); tip.textContent = '提交中…';
   try {
+    // 先把选中的图片上传到后端，再把 URL 随申请一起提交
+    const imgs = rtPendingImages.map(x => x.url).filter(Boolean);
     const res = await fetch(API_ORIGIN + '/api/returns', {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify({
         user: currentUser, order_id: orderId, reason: reason,
-        return_type: type, quantity: qty
+        return_type: type, quantity: qty, images: imgs
       })
     });
     const data = await res.json();
@@ -4068,6 +4207,7 @@ async function submitReturn(){
       tip.textContent = data.message || data.error || '申请失败';
       return;
     }
+    clearRtImages();
     closeReturn();
     toast(data.message || '申请成功');
     loadMyOrders();

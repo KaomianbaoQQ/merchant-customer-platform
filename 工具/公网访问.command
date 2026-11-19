@@ -1,5 +1,5 @@
 #!/bin/bash
-# Kaomianbao 公网访问：把本机 8000 端口（顾客商城）通过 Cloudflare 快速隧道发布到公网
+# 测试商城公网访问：把本机 8000 端口（顾客商城）通过 Cloudflare 快速隧道发布到公网
 #
 #   - 只发布 8000 端口，Dify（80）、MySQL（3306）等本地服务不对外暴露
 #   - 外网只能打开顾客商城；商户后台 / 平台管理 / 商户接口仍只限本机
@@ -35,7 +35,7 @@ if ! curl -s -m 2 "${BACKEND}/api/health" >/dev/null 2>&1; then
     read -r -p "按回车键关闭…" _
     exit 1
   fi
-  BACKEND_LOG="$(mktemp -t kaomianbao_backend)"
+  BACKEND_LOG="$(mktemp -t testmall_backend)"
   echo "后端未运行，正在启动后端（端口 ${PORT}）…"
   "${PY}" -u -c "from 后端.app import run_server; run_server(port=${PORT})" >"${BACKEND_LOG}" 2>&1 &
   BACKEND_PID=$!

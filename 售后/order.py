@@ -179,6 +179,13 @@ def ensure_tables():
                 cur.execute(
                     f"UPDATE {TABLE} SET order_status='shipped' WHERE waybill IS NOT NULL AND waybill <> ''"
                 )
+            # 入账标记：订单完成时给对应商家余额入账，避免重复入账
+            if not _column_exists(cur, "order", "revenue_settled"):
+                cur.execute(
+                    f"ALTER TABLE {TABLE} "
+                    "ADD COLUMN `revenue_settled` TINYINT DEFAULT 0 "
+                    "COMMENT '平台是否已就该单给商家余额入账(0/1)' AFTER `order_status`"
+                )
             _backfill_merchants(cur)
         conn.commit()
         return True, "cs.order / cs.operate_log 表已就绪"
@@ -467,7 +474,7 @@ def get_orders_by_user(user_id, limit=None):
         "SELECT o.id, o.goodsname, o.product_id, o.sku_id, o.sku_name, o.quantity, o.price, "
         "o.name, o.user_id, o.address, o.waybill, o.order_status, o.pay_status, "
         "o.group_id, o.merchant_id, o.merchant_name, o.create_time, o.update_time, "
-        "l.shipped_at, l.estimated_arrival, l.carrier "
+        "l.shipped_at, l.estimated_arrival, l.delivered_at, l.carrier "
         f"FROM {TABLE} o LEFT JOIN `logistics` l ON o.waybill = l.waybill "
         "WHERE o.user_id=%s ORDER BY o.create_time DESC"
     )
@@ -509,7 +516,7 @@ def get_orders_by_user(user_id, limit=None):
         for k in ("create_time", "update_time"):
             if r.get(k) is not None:
                 r[k] = str(r[k])
-        for k in ("shipped_at", "estimated_arrival"):
+        for k in ("shipped_at", "estimated_arrival", "delivered_at"):
             if r.get(k) is not None:
                 r[k] = format_datetime(r[k])
     return rows
@@ -535,11 +542,19 @@ def build_user_orders(user, limit=None):
             "商品": o["goodsname"],
             "下单时间": o.get("create_time"),
             "运单号": o.get("waybill"),
+            "承运商": o.get("carrier") or "",
             "物流状态": o.get("status_text"),
+            "状态档位": o.get("status_step"),
+            "发货时间": o.get("shipped_at") or "",
+            "预计送达": o.get("estimated_arrival") or "",
+            "实际签收时间": o.get("delivered_at") or "",
         })
     text = json.dumps(items, ensure_ascii=False)
     text += "（这是该用户全部订单，已按创建时间倒序：序号 1 为最新；" \
-            "用户提到退款/退货/换货时，请根据此列表确认具体订单，不要反问是哪一单）"
+            "用户提到退款/退货/换货时，请根据此列表确认具体订单，不要反问是哪一单。" \
+            "物流状态档位 0待发货/1已发货/2运输中/3派送中/4已签收 是按「预计送达时间」自动推算的；" \
+            "只有「实际签收时间」非空才代表顾客真的签收了，" \
+            "「预计送达」只是估算，不能据此判定退货超过 5 分钟 / 换货超过 10 分钟。）"
     return text
 
 def insert_order(op, operator, scope_user_id=None):
@@ -1264,7 +1279,8 @@ def confirm_receipt(order_id, user_id):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                f"SELECT id, user_id, order_status, waybill FROM {TABLE} WHERE id=%s", (oid,)
+                f"SELECT id, user_id, order_status, waybill, merchant_id, price, quantity, revenue_settled "
+                f"FROM {TABLE} WHERE id=%s", (oid,)
             )
             row = cur.fetchone()
             if not row:
@@ -1281,6 +1297,28 @@ def confirm_receipt(order_id, user_id):
             cur.execute(
                 f"UPDATE {TABLE} SET order_status='completed' WHERE id=%s", (oid,)
             )
+            # 记下「真实签收时刻」：售后退货 5 分钟 / 换货 10 分钟窗口以此为起点。
+            # 之前窗口起点错用了「预计送达时间」，顾客还没收到就会被告知「已超过 5 分钟」。
+            wb = str(row.get("waybill") or "").strip()
+            if wb:
+                cur.execute(
+                    "UPDATE `logistics` SET delivered_at=%s "
+                    "WHERE waybill=%s AND delivered_at IS NULL",
+                    (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), wb),
+                )
+            # 订单完成：给对应商家余额入账（按行归属，避免重复入账）
+            if not int(row.get("revenue_settled") or 0):
+                mid = str(row.get("merchant_id") or "").strip()
+                try:
+                    amount = round(float(row.get("price") or 0) * int(row.get("quantity") or 0), 2)
+                except (TypeError, ValueError):
+                    amount = 0.0
+                if mid and amount > 0:
+                    from 公共 import platform_state
+                    platform_state.credit_revenue(mid, amount, oid, "订单完成入账")
+                    cur.execute(
+                        f"UPDATE {TABLE} SET revenue_settled=1 WHERE id=%s", (oid,)
+                    )
         conn.commit()
         return True, "已确认收货，订单完成", "completed"
     except Exception as e:

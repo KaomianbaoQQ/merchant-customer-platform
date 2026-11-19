@@ -4,11 +4,15 @@
     1. 未发货（订单还没运单 / 物流）：
        - 退款、退货都**无需理由、无需商家同意、不走仲裁**，提交后直接完成；
        - 不允许申请换货（货还没发出，没有换货可言）。
-    2. 已发货未签收：可申请退货 / 换货 / 退款（需说明理由），只能「全部退回」。
-    3. 已签收：退货 5 分钟内、换货 10 分钟内有效；可申请部分数量退换；退款不限时间窗。
+    2. 已发货但顾客未确认收货（含物流按预计送达自动标为「已签收」）：
+       可申请退货 / 换货 / 退款（需说明理由），不受时间窗限制；只能「整单退回」，
+       原运单号不变、无需寄回。
+    3. 已确认收货（真实签收，delivered_at 有值）：退货 5 分钟内、换货 10 分钟内有效
+       （窗口以实际签收时间为起点）；可申请部分数量退换；退款不限时间窗。
     4. 同一订单允许多次申请，每次都是独立的售后单号
     5. 初始状态 requested（待商家确认），此阶段不生成快递单号
-    6. 商家同意退/换货 → 平台生成 7 位 return_waybill，用户凭此单号寄回
+    6. 商家同意退/换货（仅已确认收货订单）→ 平台生成 7 位 return_waybill，
+       用户凭此单号寄回；未确认收货订单直接整单退回、无需寄回
     7. 用户填写寄回物流单号并点「我已发出」→ 记录寄出时间，按默认等待时间算预计到仓时间
     8. 当前时间超过预计到仓时间：
        - 退货 → 退换完成（done）
@@ -44,7 +48,7 @@ from .order import (
 )
 
 RETURN_TABLE = "`return_order`"
-CARRIER = "Kaomianbao 速运"
+CARRIER = "测试商城速运"
 
 TYPE_TEXTS = {"return": "退货", "exchange": "换货", "refund": "退款"}
 VALID_TYPES = tuple(TYPE_TEXTS.keys())
@@ -83,8 +87,8 @@ RETURN_TERMINAL = ("done", "rejected", "arbitrating")
 RETURN_ACTIVE = ("requested", "pending", "approved", "shipping")
 
 # 时间窗（分钟）：签收后允许退/换货的时间窗口；未签收不受限制
-RETURN_WINDOW_MINUTES = 5      # 退货：签收后 5 分钟内
-EXCHANGE_WINDOW_MINUTES = 10   # 换货：签收后 10 分钟内
+RETURN_WINDOW_MINUTES = 5      # 退货：实际签收后 5 分钟内（以 delivered_at 为起点）
+EXCHANGE_WINDOW_MINUTES = 10   # 换货：实际签收后 10 分钟内
 
 CREATE_RETURN_SQL = """
 CREATE TABLE IF NOT EXISTS `return_order` (
@@ -101,7 +105,8 @@ CREATE TABLE IF NOT EXISTS `return_order` (
     `reship_waybill`    VARCHAR(32)  DEFAULT NULL             COMMENT '换货重新发货运单号',
     `address`           VARCHAR(255) DEFAULT NULL             COMMENT '寄回地址',
     `reason`            TEXT                                  COMMENT '原因',
-    `carrier`           VARCHAR(64)  DEFAULT 'Kaomianbao 速运' COMMENT '物流公司',
+    `images`            TEXT                                  COMMENT '顾客上传的图片URL列表(JSON数组)',
+    `carrier`           VARCHAR(64)  DEFAULT '测试商城速运' COMMENT '物流公司',
     `status`            VARCHAR(16)  DEFAULT 'pending'        COMMENT 'pending待寄出/shipping运输中/done完成；退款：requested/returning/delivering/received/refunded/rejected',
     `create_time`       DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '申请时间',
     `shipped_at`        DATETIME     DEFAULT NULL             COMMENT '用户点「我已发出」时间',
@@ -206,6 +211,11 @@ def _ensure_return_table_once():
                 )
             # 退款流水表（资金变动留痕）
             cur.execute(CREATE_REFUND_LEDGER_SQL)
+            if not _column_exists(cur, "return_order", "images"):
+                cur.execute(
+                    f"ALTER TABLE {RETURN_TABLE} "
+                    "ADD COLUMN `images` TEXT COMMENT '顾客上传的图片URL列表(JSON数组)' AFTER `reason`"
+                )
         conn.commit()
         return True, "cs.return_order / refund_ledger 表已就绪"
     except Exception as e:
@@ -216,6 +226,44 @@ def _ensure_return_table_once():
 
 def _gen_return_id():
     return "RE" + datetime.now().strftime("%Y%m%d%H%M%S") + uuid.uuid4().hex[:8].upper()
+
+def _images_to_json(images):
+    """把上传得到的图片 URL 列表规整成 JSON 字符串；非法值返回 None（不写库）。"""
+    if not images:
+        return None
+    if isinstance(images, str):
+        import json as _json
+        try:
+            images = _json.loads(images)
+        except Exception:
+            images = [images]
+    if not isinstance(images, (list, tuple)):
+        return None
+    urls = [str(x).strip() for x in images if str(x or "").strip()]
+    if not urls:
+        return None
+    import json as _json
+    return _json.dumps(urls, ensure_ascii=False)
+
+def _parse_images(raw):
+    """把 images 字段（JSON 字符串 / 列表 / None）解析成 URL 列表。"""
+    if raw is None:
+        return []
+    if isinstance(raw, (list, tuple)):
+        return [str(x).strip() for x in raw if str(x or "").strip()]
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return []
+        import json as _json
+        try:
+            data = _json.loads(s)
+        except Exception:
+            return [s]
+        if isinstance(data, (list, tuple)):
+            return [str(x).strip() for x in data if str(x or "").strip()]
+        return [s]
+    return []
 
 def _new_return_waybill(cur, user_id, address):
     """生成一个不与现有运单 / 物流冲突的 7 位新物流单号"""
@@ -239,6 +287,7 @@ def format_return_row(row):
     row["status_text"] = text
     row["type_text"] = TYPE_TEXTS.get(str(row.get("type") or "return"), "退货")
     row["reject_reason"] = str(row.get("reject_reason") or "")
+    row["images"] = _parse_images(row.get("images"))
     try:
         row["quantity"] = int(row.get("quantity") or 1)
     except (TypeError, ValueError):
@@ -393,7 +442,7 @@ def get_order_with_logistics(order_id):
             cur.execute(
                 "SELECT o.id, o.goodsname, o.product_id, o.quantity, o.price, o.name, o.user_id, o.address, o.waybill, "
                 "o.group_id, o.merchant_id, o.merchant_name, o.create_time, "
-                "l.shipped_at, l.estimated_arrival, l.carrier "
+                "l.shipped_at, l.estimated_arrival, l.delivered_at, l.carrier "
                 "FROM `order` o LEFT JOIN `logistics` l ON o.waybill = l.waybill "
                 "WHERE o.id=%s",
                 (oid,),
@@ -402,26 +451,41 @@ def get_order_with_logistics(order_id):
     finally:
         conn.close()
 
+def actually_received(order):
+    """顾客是否【真实签收】（即点过「确认收货」）。
+
+    物流档位 step>=4 只是「预计送达时间已过」自动推算的结果，不能当签收：
+    只有确认收货时写入的 delivered_at 才是可信的签收时刻（该字段也只在此处写入）。
+    未真实签收的订单一律按「未签收」口径处理——整单退回、原运单号不变、无需寄回。
+    """
+    if not isinstance(order, dict) or not order:
+        return False
+    # 已确认收货比自动推算的档位更可信：即使档位还没推进到 4 也算已签收
+    return parse_datetime(order.get("delivered_at")) is not None
+
+
 def check_return_eligibility(order, return_type="return"):
     """
     校验原订单物流状态与时间窗：
         - 未发货（step=0）：退款 / 退货直接受理（无需理由、无需商家同意）；不允许换货
-        - 已发货未签收：可退/换/退款，不受时间窗限制（未签收只能全部退回）
-        - 已签收：退货 5 分钟内、换货 10 分钟内有效；退款不限时间窗
-        - 无物流记录的历史订单默认视为已签收（老数据兼容）
+        - 已发货未签收（含自动标为已签收、但顾客未确认收货）：可退/换/退款，
+          不受时间窗限制，只能整单退回、原运单号不变、无需寄回
+        - 已真实签收：退货 5 分钟内、换货 10 分钟内有效；退款不限时间窗
     返回 (是否可申请, step, text, 提示, received, received_at)
-        received: bool 是否已签收
-        received_at: datetime 签收时间（未签收为 None）
+        received: bool 顾客是否【真实签收】；为 False 时一律走整单退回路径
+        received_at: datetime 真实签收时间（未真实签收为 None）
     """
     if order is None:
         return False, 0, "不存在", "订单不存在", False, None
 
     step, text = order_status(order)
-    received = (step >= 4)
-    received_at = None
-    if received:
-        # 签收时间 = 物流预计送达时间（到达即视为签收）
-        received_at = parse_datetime(order.get("estimated_arrival"))
+    # 时间窗起点只认「实际签收时间」。物流档位是按「预计送达时间」自动推算的，
+    # 预计送达只是估算值，不能当签收时刻——否则顾客还没收到货就会被判超时。
+    received_at = parse_datetime(order.get("delivered_at"))
+    # 自动档位已签收，或顾客已真实确认收货，都进入「签收分支」再按窗口判定
+    auto_received = (step >= 4) or (received_at is not None)
+    # 对外统一口径：只有真实签收才生成寄回单号、才允许部分数量退换
+    received = received_at is not None
 
     # 未发货：不能申请换货（货还没发出）；退款 / 退货一律直接受理
     if step == 0 and return_type == "exchange":
@@ -435,26 +499,30 @@ def check_return_eligibility(order, return_type="return"):
             return True, step, text, "商品尚未发货，可直接退款（无需理由）", received, received_at
         return True, step, text, "可以申请退款", received, received_at
 
-    if not received:
+    if not auto_received:
         if step == 0:
             return True, step, text, "商品尚未发货，可直接退货（无需理由）", received, received_at
         # 已发货未签收：可退可换，不受时间窗限制，但只能全部退回
         return True, step, text, "未签收，可以申请退换货（需全部退回）", received, received_at
 
-    # 已签收：检查时间窗
-    now = datetime.now()
+    # 已签收：检查时间窗。只有顾客真实签收（delivered_at 有值）才启用窗口。
+    # 若只是「预计送达时间已过」自动推进到已签收档位、顾客尚未确认收货，
+    # 就没有可信的签收起点，此时不拦超时，避免「还没收到却说已超过 5 分钟」。
     if received_at is None:
-        # 老订单无签收时间数据，默认视为刚签收，允许申请
-        return True, step, text, "可以申请", received, received_at
+        return (True, step, text,
+                "商品尚未确认收货，不受退换货时间窗限制，可以申请",
+                received, None)
 
-    elapsed = (now - received_at).total_seconds() / 60.0  # 已签收经过的分钟数
-    if return_type == "exchange" and elapsed > EXCHANGE_WINDOW_MINUTES:
+    now = datetime.now()
+    elapsed = (now - received_at).total_seconds() / 60.0  # 真实签收后经过的分钟数
+    if elapsed < 0:
+        elapsed = 0
+    window = EXCHANGE_WINDOW_MINUTES if return_type == "exchange" else RETURN_WINDOW_MINUTES
+    type_text = TYPE_TEXTS.get(return_type, "退货")
+    if elapsed > window:
         return (False, step, text,
-                f"换货需在签收后 {EXCHANGE_WINDOW_MINUTES} 分钟内申请，当前已超过",
-                received, received_at)
-    if return_type == "return" and elapsed > RETURN_WINDOW_MINUTES:
-        return (False, step, text,
-                f"退货需在签收后 {RETURN_WINDOW_MINUTES} 分钟内申请，当前已超过",
+                f"{type_text}需在签收后 {window} 分钟内申请；"
+                f"实际签收时间 {format_datetime(received_at)}，已过 {elapsed:.1f} 分钟，当前已超过",
                 received, received_at)
     return True, step, text, "可以申请", received, received_at
 
@@ -476,15 +544,17 @@ def _find_owner_id(order, product_name):
             return str(product.get("owner_id") or "")
     return ""
 
-def create_return(order_id, user, reason="", return_type="return", quantity=None):
+def create_return(order_id, user, reason="", return_type="return", quantity=None, images=None):
     """
     申请退货 / 换货 / 退款：
         - 未发货：退款 / 退货无需理由、无需商家同意、不走仲裁，提交即完成；不允许换货；
           支持按件退（一件一件退，退了就减少可退数量）
-        - 已发货未签收：理由必填，可退/换/退款，只能「全部退回」
-        - 已签收：理由必填；退货 5 分钟内、换货 10 分钟内有效；可申请部分数量退
-        - 同一订单允许多次申请，每次都是独立的售后单号；商家同意退/换货时
-          由平台生成新的 7 位 return_waybill，用户凭此单号寄回
+        - 已发货但顾客未确认收货（含物流自动标为已签收）：理由必填，可退/换/退款，
+          不受时间窗限制，只能「全部退回」，原运单号不变、无需寄回
+        - 已确认收货（真实签收）：理由必填；退货 5 分钟内、换货 10 分钟内有效
+          （以 delivered_at 为起点）；可申请部分数量退
+        - 同一订单允许多次申请，每次都是独立的售后单号；只有顾客已确认收货的订单，
+          商家同意 / 平台仲裁支持顾客时才由平台生成 7 位 return_waybill 供寄回
     return_type: "return"（退货） / "exchange"（换货） / "refund"（退款）
     quantity: 本次退/换/退数量；不传则默认剩余全部
     返回 (是否成功, 提示信息, 退换货/退款 dict 或 None)
@@ -564,11 +634,11 @@ def create_return(order_id, user, reason="", return_type="return", quantity=None
             if req < 1:
                 req = 1
 
-            # 已发货未签收：只能全部退回；未发货（step=0）允许按件退，方便一件一件退
+            # 已发货但顾客未真实签收：只能整单退回；未发货（step=0）允许按件退
             if not received and not unshipped and req != order_qty:
                 return False, (
-                    f"商品已发出但尚未签收，只能申请全部退回（共 {order_qty} 件）；"
-                    f"签收后才可以申请部分数量退换"
+                    f"商品已发出但尚未确认收货，只能整单退回（共 {order_qty} 件）；"
+                    f"确认收货后才可以申请部分数量退换"
                 ), None
 
             if req > remaining:
@@ -578,14 +648,15 @@ def create_return(order_id, user, reason="", return_type="return", quantity=None
 
             # 允许同订单多次申请：不再阻止已有进行中的售后单，只要还有可退数量即可
             return_id = _gen_return_id()
+            images_json = _images_to_json(images)
             cur.execute(
                 f"INSERT INTO {RETURN_TABLE} "
                 "(id, order_id, user_id, user_name, goodsname, owner_id, type, quantity, original_waybill, "
-                " return_waybill, address, reason, carrier, status, create_time) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                " return_waybill, address, reason, images, carrier, status, create_time) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (return_id, str(order_id), str(user.get("id")), user.get("name"),
                  product_name, owner_id, return_type, req, order.get("waybill"), None,
-                 address, reason, CARRIER, init_status, now),
+                 address, reason, images_json, CARRIER, init_status, now),
             )
         conn.commit()
     except Exception as e:
@@ -604,10 +675,12 @@ def create_return(order_id, user, reason="", return_type="return", quantity=None
         message = (f"已为订单 {order_id}（{product_name} ×{req}）提交退款申请，"
                    f"等待商家处理（售后单号 {return_id}）")
     elif not received:
-        # 未签收：整单退回，原运单号不变，只更新售后状态
+        # 未真实签收（含物流自动标为已签收、但顾客没确认收货）：
+        # 整单退回、原运单号不变、无需顾客寄回
         message = (f"已为订单 {order_id}（{product_name} ×{req}）提交{type_text}申请，"
-                   f"商品尚未签收，将整单退回（原运单号 {order.get('waybill') or '—'} 不变，"
-                   f"只更新售后状态），等待商家确认（售后单号 {return_id}）")
+                   f"商品尚未确认收货，将整单退回（原运单号 {order.get('waybill') or '—'} 不变，"
+                   f"只更新售后状态，无需你寄回），不受 5/10 分钟时间窗限制，"
+                   f"等待商家确认（售后单号 {return_id}）")
     else:
         message = (f"已为订单 {order_id}（{product_name} ×{req}）提交{type_text}申请，"
                    f"等待商家确认（售后单号 {return_id}）。商家同意后，平台会生成退货快递单号，"
@@ -1098,13 +1171,12 @@ def set_after_sale_status(return_id, status, owner_id=None, product_names=None,
     if status == "rejected" and not reject_reason:
         return False, f"请填写拒绝理由（说明为什么不通过这次{TYPE_TEXTS.get(rtype, '售后')}申请）", row
 
-    # 商家同意退换货时：已签收 → 平台生成新的退货快递单号（用户凭单号寄回）；
-    # 未签收 → 整单退回，原运单号不变，只更新售后状态（用户无需寄回）
+    # 商家同意退换货时：只有顾客真实确认收货（delivered_at 有值）才生成寄回单号；
+    # 仅因预计送达时间自动标成已签收、但顾客没确认收货的，按未签收口径：
+    # 整单退回、原运单号不变、只更新售后状态（用户无需寄回）
     order_received = False
     if status == "approved" and rtype in ("return", "exchange"):
-        _order = get_order_with_logistics(row.get("order_id"))
-        _step, _ = order_status(_order if isinstance(_order, dict) else {})
-        order_received = (_step >= 4)
+        order_received = actually_received(get_order_with_logistics(row.get("order_id")))
 
     conn = get_conn()
     try:
@@ -1219,9 +1291,10 @@ def resolve_arbitration(return_id, favor_user=True, note=""):
     """平台处理一笔「仲裁中」的售后单。
 
     favor_user=True  支持顾客：等价于商家同意，退货 / 换货 / 退款口径一致 ——
-                     已签收 → 平台生成 7 位退货单号，状态置为「商家已同意，
-                     请凭平台退货单号寄出」，等买家填单号寄出（不显示「退回中」）；
-                     未签收 → 原运单号不变、整单退回；
+                     已确认收货（真实签收） → 平台生成 7 位退货单号，状态置为
+                     「商家已同意，请凭平台退货单号寄出」，等买家填单号寄出；
+                     未确认收货（含自动标为已签收） → 原运单号不变、整单退回、
+                     无需寄回；
     favor_user=False 支持商家：维持商家拒绝，必须填写 note（拒绝理由，展示给顾客）。
 
     note 会追加到 reason 的「【平台仲裁】…」里。
@@ -1263,10 +1336,10 @@ def resolve_arbitration(return_id, favor_user=True, note=""):
         found, data = get_return(return_id)
         return True, f"已判定支持商家（售后单 {return_id} 维持拒绝），顾客可继续申诉", data
 
-    #   未签收 → 原运单号不变，整单退回（无需买家寄回）。
+    #   只有顾客真实确认收货才生成寄回单号；自动标为已签收但未确认收货的
+    #   → 原运单号不变，整单退回（无需买家寄回）。
     order = get_order_with_logistics(row.get("order_id"))
-    step, _ = order_status(order if isinstance(order, dict) else {})
-    order_received = (step >= 4)
+    order_received = actually_received(order)
     waybill = ""
     conn = get_conn()
     try:

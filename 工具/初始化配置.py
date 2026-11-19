@@ -28,7 +28,7 @@ FIELDS = [
     ("database.name", "数据库名", False, "默认 cs"),
 
     ("mongo.uri", "MongoDB 连接串", False, "通常 mongodb://127.0.0.1:27017"),
-    ("mongo.database", "MongoDB 库名", False, "默认 kaomianbao_chat"),
+    ("mongo.database", "MongoDB 库名", False, "默认 testmall_chat"),
 
     ("express_tracking.api_key", "快递查询 API Key", True, "uapis.cn 的 Key，可留空（留空则只能用 7 位内部运单号）"),
     ("express_tracking.base_url", "快递查询接口地址", False, "默认 https://uapis.cn/api/v1"),
@@ -44,7 +44,7 @@ FIELDS = [
     ("smtp.password", "SMTP 授权码", True, "注意是授权码，不是登录密码"),
     ("smtp.host", "SMTP 服务器", False, "留空则按邮箱域名自动推断"),
     ("smtp.port", "SMTP 端口", False, "465(SSL) / 587(STARTTLS)"),
-    ("smtp.from_name", "发件人显示名", False, "如「Kaomianbao」"),
+    ("smtp.from_name", "发件人显示名", False, "如「测试商城」"),
 ]
 
 DEFAULTS = {
@@ -54,7 +54,7 @@ DEFAULTS = {
     "database.name": "cs",
     "database.charset": "utf8mb4",
     "mongo.uri": "mongodb://127.0.0.1:27017",
-    "mongo.database": "kaomianbao_chat",
+    "mongo.database": "testmall_chat",
     "express_tracking.base_url": "https://uapis.cn/api/v1",
     "express_tracking.timeout": 30,
     "dify.base_url": "http://localhost/v1",
@@ -66,7 +66,7 @@ DEFAULTS = {
     "dify_knowledge.product_dir": "商品咨询",
     "dify_knowledge.indexing_technique": "high_quality",
     "smtp.ssl": True,
-    "smtp.from_name": "Kaomianbao",
+    "smtp.from_name": "测试商城",
     "default_delay": 300,
     "inventory": {"default_stock": 100, "reserve_ttl_seconds": 900, "cleanup_interval_seconds": 30},
 }

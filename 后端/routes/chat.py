@@ -17,8 +17,9 @@ bp = Blueprint("merchant_chat", __name__, url_prefix="/api")
 def api_send():
     data = request.get_json(silent=True) or {}
     text = str(data.get("message") or "").strip()
-    if not text:
-        return jsonify({"ok": False, "error": "请输入消息内容"}), 400
+    images = data.get("images") or []
+    if not text and not images:
+        return jsonify({"ok": False, "error": "请输入消息内容或上传图片"}), 400
     merchant_id = str(data.get("merchant_id") or "platform").strip() or "platform"
     merchant_name = str(data.get("merchant_name") or "").strip()
     user = data.get("user") or {}
@@ -28,6 +29,7 @@ def api_send():
         user=user,
         merchant_id=merchant_id,
         merchant_name=merchant_name,
+        images=images,
     )
     if not result.get("ok"):
         return jsonify(result), 400

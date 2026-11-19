@@ -1,7 +1,7 @@
-"""Kaomianbao 后端应用：Flask 工厂 + 启动。
+"""测试商城后端应用：Flask 工厂 + 启动。
 
-    create_app()   创建 Flask 应用并注册蓝图 / CORS
-    bootstrap()    启动前自检并建表（cs.order / cs.logistics / cs.chat_log / SKU 库存）
+    create_app()   创建 Flask 应用并注册蓝图 / CORS / 全站准入控制
+    bootstrap()    启动前自检并建表（含 cs.audit_log 操作留痕表）
     run_server()   启动 HTTP 服务 + 库存预占超时清理线程
 """
 from flask import Flask
@@ -17,6 +17,7 @@ from 公共.behavior import ensure_indexes as ensure_behavior_indexes
 from 公共 import inventory
 from .routes import register_routes
 from .public_access import guard
+from . import access_control
 
 
 def cors_headers(resp):
@@ -33,6 +34,10 @@ def create_app():
     app.json.ensure_ascii = False
     app.after_request(cors_headers)
     app.before_request(guard)
+    # 统一入口：强制登录 / 角色权限 / 次数限制 / 操作留痕
+    # 放在 guard 之后；被公网白名单拦下的请求同样会被 after 钩子留痕
+    app.before_request(access_control.before)
+    app.after_request(access_control.after)
     register_routes(app)
     return app
 
@@ -49,6 +54,7 @@ def bootstrap():
     ensure_behavior_indexes()
     inventory.ensure_tables()
     inventory.sync_all_products()
+    access_control.ensure_audit_table()
 
 
 def run_server(host="0.0.0.0", port=8000):
@@ -57,5 +63,5 @@ def run_server(host="0.0.0.0", port=8000):
     # 过期未支付的预占需要定时释放，否则库存会被永久锁住
     inventory.start_cleanup_worker()
     app = create_app()
-    print(f"Kaomianbao 商城后端启动：http://127.0.0.1:{port}")
+    print(f"测试商城后端启动：http://127.0.0.1:{port}")
     app.run(host=host, port=port, debug=False, threaded=True)

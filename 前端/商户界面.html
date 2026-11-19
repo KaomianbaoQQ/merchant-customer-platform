@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kaomianbao 商户中心</title>
+<title>测试商城商户中心</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230071e3'/%3E%3Ctext x='32' y='42' font-size='30' font-family='-apple-system,sans-serif' font-weight='700' fill='%23fff' text-anchor='middle'%3EK%3C/text%3E%3C/svg%3E">
 <style>
   :root{
@@ -128,6 +128,12 @@
     background:var(--bg-soft);border-radius:20px;border:1px dashed var(--line);
   }
   .empty .t{font-size:15px;color:var(--ink-2);margin-bottom:4px;}
+  /* ===== 平台管控提示 / 余额 ===== */
+  .merchant-notice{background:#fff3e0;color:#a15c00;border:1px solid #ffd08a;
+    border-radius:10px;padding:8px 12px;margin:8px 14px;font-size:13px;font-weight:600;}
+  .merchant-notice.disabled{background:#fdeceb;color:#b3261e;border-color:#f6b7b2;}
+  .chat-input-muted{color:#a15c00;background:#fff8ee;border:1px dashed #ffd08a;
+    border-radius:10px;padding:12px;font-size:13px;text-align:center;}
   /* ===== 顾客洞察 ===== */
   .muted{color:var(--ink-3);font-size:12px;}
   .tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;
@@ -268,6 +274,12 @@
     background:#fde9cd;border-radius:5px;padding:0 5px;margin-left:6px;vertical-align:1px;
   }
   .conv .c-need-done{color:#5b6577;background:#eceff5;}
+  /* 顾客来消息、商家尚未真人回复：左侧红条提醒及时回复 */
+  .conv.need-reply:not(.need-human){box-shadow:inset 3px 0 0 var(--red);}
+  .conv.need-reply:not(.need-human):hover{background:#fff5f4;}
+  /* 退换货 / 退款意向标签 */
+  .conv .c-need.c-return{color:#b3261e;background:#ffe3df;}
+  .conv .c-need.c-return-done{color:#8a6d3b;background:#f6efe0;}
   .conv .c-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
   .conv .c-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .conv .c-tag{
@@ -290,6 +302,19 @@
   }
   .chat-head .who{font-size:15px;font-weight:600;}
   .chat-head .sub{font-size:12px;color:var(--ink-3);margin-top:1px;}
+  /* 会话内退换货意向提醒条（会持续显示，直到商家「标记已处理」） */
+  .chat-intent-tip{
+    margin:10px 16px 0;padding:11px 14px;border-radius:10px;
+    background:#fff1f0;border:1px solid #ffc4bd;color:#b3261e;
+    font-size:14px;font-weight:700;line-height:1.5;
+  }
+  .chat-intent-tip.pending{animation:alertPulse 1.3s ease-in-out infinite;}
+  .chat-intent-tip span{display:block;margin-top:3px;font-size:12.5px;font-weight:400;color:#8a4b46;}
+  .chat-intent-tip .co-resolve{
+    margin-top:8px;float:right;padding:5px 12px;border-radius:8px;border:1px solid #ffc4bd;
+    background:#fff;color:#b3261e;font-size:12.5px;font-weight:600;cursor:pointer;
+  }
+  .chat-intent-tip .co-resolve:hover{background:#ffe9e7;}
   .chat-msgs{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:10px;background:var(--bg-soft);overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
   .msg{max-width:72%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.5;word-break:break-word;white-space:pre-wrap;}
   .msg.user{align-self:flex-start;background:#fff;border:1px solid var(--line-soft);border-bottom-left-radius:4px;}
@@ -298,6 +323,8 @@
   .msg.merchant{align-self:flex-end;background:var(--blue);color:#fff;border-bottom-right-radius:4px;}
   .msg.bot{align-self:flex-start;background:#eef4ff;border:1px solid rgba(0,113,227,.18);border-bottom-left-radius:4px;color:var(--ink-1);}
   .msg .t{display:block;font-size:10.5px;opacity:.6;margin-top:3px;}
+  .chat-msg-imgs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .chat-msg-imgs img{width:88px;height:88px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,0,0,.08);cursor:zoom-in;background:#f3f5f9;display:block;}
   .chat-input{display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--line-soft);background:#fff;}
   .chat-input input{
     flex:1;padding:10px 14px;border-radius:12px;border:1px solid var(--line);outline:none;
@@ -334,6 +361,8 @@
   .refund-card .rc-main{flex:1;min-width:220px;}
   .refund-card .rc-title{font-size:15px;font-weight:600;}
   .refund-card .rc-meta{font-size:12.5px;color:var(--ink-2);margin-top:3px;}
+  .refund-card .rc-imgs{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;}
+  .refund-card .rc-imgs img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;background:#f3f5f9;}
   .refund-card .rc-ops{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
   .status-pill{display:inline-block;font-size:12px;padding:3px 10px;border-radius:980px;background:var(--bg-soft);color:var(--ink-2);border:1px solid var(--line-soft);white-space:nowrap;}
   .status-pill.blue{background:#e0edff;color:var(--blue);border-color:transparent;}
@@ -366,15 +395,16 @@
   /* ===== 聊天中的顾客订单 ===== */
   .chat-orders{
     border-bottom:1px solid var(--line-soft);background:#fbfbfd;
-    max-height:170px;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:7px;
+    max-height:230px;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;
   }
-  .chat-orders .co-empty{font-size:12px;color:var(--ink-3);}
-  .chat-order{display:flex;align-items:center;gap:8px;font-size:12.5px;flex-wrap:wrap;}
-  .chat-order .co-name{font-weight:600;}
+  .chat-orders .co-empty{font-size:13px;color:var(--ink-3);}
+  .chat-order{display:flex;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap;}
+  .chat-order .co-name{font-weight:700;font-size:14px;}
   .chat-order .co-meta{color:var(--ink-2);}
   .chat-order .co-ops{margin-left:auto;display:flex;gap:6px;align-items:center;}
-  
-  .chat-order .co-addr{width:100%;font-size:14.5px;font-weight:700;color:#0b3f7a;line-height:1.45;word-break:break-all;}
+  .chat-orders .ship-info{margin-top:2px;}
+  .chat-orders .ship-info .si-v{font-size:18px;}
+  .chat-orders .ship-info .si-v.addr{font-size:19px;}
   /* ===== 物流详情弹窗 ===== */
   .logi-mask{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s;z-index:130;}
   .logi-mask.open{opacity:1;pointer-events:auto;}
@@ -438,7 +468,7 @@
 
 <nav class="nav" id="appNav" style="display:none">
   <div class="nav-inner">
-    <div class="nav-logo">Kaomianbao<span class="dot">.</span></div>
+    <div class="nav-logo">测试商城<span class="dot">.</span></div>
     <div class="nav-tabs">
       <button class="nav-tab active" data-view="products" onclick="switchView('products')">商品管理</button>
       <button class="nav-tab" data-view="orders" onclick="switchView('orders')">订单管理<span class="badge" id="orderBadge" style="display:none">0</span></button>
@@ -458,7 +488,7 @@
   
   <div class="view active" id="view-auth">
     <div class="auth-card">
-      <div class="auth-logo">Kaomianbao<span class="dot">.</span></div>
+      <div class="auth-logo">测试商城<span class="dot">.</span></div>
       <h1>商户中心</h1>
       
       <div class="local-tip" id="localTip"></div>
@@ -674,7 +704,7 @@ const API_ORIGIN = (function(){
   return 'http://127.0.0.1:8000';
 })();
 const API = API_ORIGIN + '/api/merchant';
-const TOKEN_KEY = 'kaomianbao_merchant_token';
+const TOKEN_KEY = 'testmall_merchant_token';
 let token = '';
 let merchant = null;
 let products = [];
@@ -766,6 +796,17 @@ function esc(s){
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function imgUrl(name){ return API_ORIGIN + '/images/' + encodeURIComponent(name); }
+function previewLightbox(url){
+  let ov = document.getElementById('imgLightbox');
+  if (!ov){
+    ov = document.createElement('div');
+    ov.id = 'imgLightbox';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out;';
+    ov.onclick = function(){ ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<img src="' + esc(url) + '" style="max-width:92vw;max-height:92vh;border-radius:10px;" />';
+}
 
 function syncKnowledgeBase(action, product){
   try {
@@ -824,10 +865,33 @@ function showAuth(){
 }
 function showApp(){
   $('appNav').style.display = '';
-  $('navMerchant').textContent = merchant
+  const name = merchant
     ? (merchant.shop_name || merchant.name || merchant.username)
     : '商户';
+  const bal = (merchant && typeof merchant.balance === 'number')
+    ? ' · 余额 ¥' + merchant.balance.toFixed(2) : '';
+  $('navMerchant').textContent = name + bal;
   switchView('products');
+  renderMerchantNotice();
+}
+function renderMerchantNotice(){
+  const nav = $('appNav');
+  let bar = $('merchantNotice');
+  const active = merchant && (merchant.muted || merchant.disabled);
+  if (!active){ if (bar) bar.remove(); return; }
+  if (!bar){
+    bar = document.createElement('div');
+    bar.id = 'merchantNotice';
+    if (nav && nav.parentNode) nav.parentNode.insertBefore(bar, nav.nextSibling);
+  }
+  bar.className = 'merchant-notice' + (merchant.disabled ? ' disabled' : '');
+  if (merchant.disabled){
+    bar.textContent = '⛔ 您的店铺已被平台停用，全部商品已下架，暂无法经营。';
+  } else {
+    bar.textContent = '🔇 您已被平台禁言'
+      + (merchant.mute_remaining_days ? '（剩余 ' + merchant.mute_remaining_days + ' 天）' : '')
+      + '，暂时无法回复顾客，期间只能与平台管理员对话。';
+  }
 }
 async function submitAuth(){
   const tip = $('authTip');
@@ -851,13 +915,8 @@ async function submitAuth(){
         username, password, password2, name, shop_name: shop
       });
       tip.classList.add('ok');
-      tip.textContent = reg.message || '注册成功，正在登录…';
-      const login = await api('POST', '/login', { username, password });
-      setToken(login.token);
-      merchant = login.merchant;
-      toast('欢迎，' + (merchant.shop_name || merchant.name));
-      showApp();
-      await initData();
+      tip.textContent = reg.message || '注册申请已提交，请等待平台客服审核';
+      // 注册后不再自动登录：必须等平台客服在「商户审核」里确认通过
       setAuthTab('login');
       $('loginUsername').value = username;
       return;
@@ -1433,6 +1492,8 @@ function clearChatSearch(){
 
 let lastHumanCount = 0;
 let lastPlatformHuman = 0;
+let lastAwaitingCount = 0;
+let lastUnreadTotal = 0;
 
 function updateHumanAlert(platformHuman){
   const banner = $('alertBanner');
@@ -1442,19 +1503,33 @@ function updateHumanAlert(platformHuman){
     banner.innerHTML = '';
     lastHumanCount = 0;
     lastPlatformHuman = 0;
+    lastAwaitingCount = 0;
+    lastUnreadTotal = 0;
     return;
   }
   
   const pending = conversations.filter(c => c.needs_human && !c.human_ack);
   const total = pending.length;
   const platform = Number(platformHuman) || 0;
+  // 顾客来消息但商家还没真人回复：即使点开会话清了未读，横幅仍提醒及时回复
+  const awaiting = conversations.filter(c => c.awaiting_reply && !c.needs_human).length;
+  const unreadTotal = conversations.reduce((s, c) => s + (Number(c.unread_merchant) || 0), 0);
+  // 只要顾客表达过退换货意向就持续提醒（return_intent 长期保留，直到商家「标记已处理」才撤下）
+  const intentPending = conversations.filter(c => c.return_intent).length;
+  const mainText = total > 0
+    ? '⚠️ 有 ' + total + ' 位顾客在等你人工回复'
+    : (awaiting > 0 ? '💬 有 ' + awaiting + ' 位顾客在等你回复，请及时回复'
+                    : (unreadTotal > 0 ? '💬 有 ' + unreadTotal + ' 条顾客新消息，请及时回复' : ''));
+  const subs = [];
+  if (intentPending > 0) subs.push('其中 ' + intentPending + ' 位顾客表达了退换货/退款意向，请优先跟进（点开会话可「标记已处理」）');
+  if (platform > 0) subs.push('另有 ' + platform + ' 条售后转人工，由平台客服处理');
+  const subsHtml = subs.map(t => '<span class="sub">' + esc(t) + '</span>').join('');
 
-  if (total > 0){
+  if (mainText){
     
     banner.classList.remove('calm');
     banner.onclick = goPendingHuman;
-    banner.innerHTML = '⚠️ 有 ' + total + ' 位顾客在等你人工回复' +
-      (platform > 0 ? '<span class="sub">另有 ' + platform + ' 条售后转人工，由平台客服处理</span>' : '');
+    banner.innerHTML = mainText + subsHtml;
     banner.classList.add('show');
   } else if (platform > 0){
     
@@ -1470,13 +1545,20 @@ function updateHumanAlert(platformHuman){
   }
 
   
-  if (total > lastHumanCount) beepAlert();
+  // 新增待回复会话 / 新增未读消息时提示一次，避免轮询重复响
+  if (total > lastHumanCount || awaiting > lastAwaitingCount || unreadTotal > lastUnreadTotal) beepAlert();
   lastHumanCount = total;
   lastPlatformHuman = platform;
+  lastAwaitingCount = awaiting;
+  lastUnreadTotal = unreadTotal;
 }
 
 function goPendingHuman(){
-  const target = conversations.find(c => c.needs_human);
+  // 优先跳到「有退换货意向且还没回复」的会话，其次待人工，再次待回复 / 未读
+  const target = conversations.find(c => c.return_intent_pending && c.awaiting_reply) ||
+                 conversations.find(c => c.needs_human && !c.human_ack) ||
+                 conversations.find(c => c.awaiting_reply) ||
+                 conversations.find(c => Number(c.unread_merchant) > 0);
   switchView('chats');
   if (target) openChat(target.user_id, target.merchant_id);
 }
@@ -1541,11 +1623,15 @@ function renderConversations(){
     const hbar = c.needs_human
       ? (c.human_ack ? '<span class="c-need c-need-done">已接手</span>' : '<span class="c-need">待人工</span>')
       : '';
+    const rbar = c.return_intent_pending
+      ? '<span class="c-need c-return">退换货意向</span>'
+      : (c.return_intent ? '<span class="c-need c-return-done">曾问退换货</span>' : '');
     return '<div class="conv' + (active ? ' active' : '') +
       (c.needs_human && !c.human_ack ? ' need-human' : '') +
+      (c.awaiting_reply ? ' need-reply' : '') +
       '" onclick="openChat(\'' + esc(c.user_id) + '\',\'' + esc(c.merchant_id) + '\')">' +
       '<div class="c-top">' +
-        '<span class="c-name">' + esc(c.user_name || ('顾客 ' + c.user_id)) + hbar + '</span>' +
+        '<span class="c-name">' + esc(c.user_name || ('顾客 ' + c.user_id)) + hbar + rbar + '</span>' +
         '<span class="c-time">' + esc(shortTime(c.last_time)) + '</span>' +
       '</div>' +
       '<div class="c-top">' +
@@ -1601,12 +1687,14 @@ function chatOrdersHtml(orders){
       return '<div class="chat-order">' +
         '<span class="co-name">' + esc(o.goodsname || '') + ' ×' + (o.quantity || 1) + '</span>' +
         '<span class="status-pill ' + orderStatusClass(o.status_step) + '">' + esc(o.status_text || '') + '</span>' +
-        '<span class="co-meta">' + esc(o.waybill || '待发货') + '</span>' +
+        '<span class="co-meta">运单：' + esc(o.waybill || '待发货') + '</span>' +
         '<span class="co-ops">' + ops + '</span>' +
       '</div>' +
-      '<div class="chat-order"><span class="co-addr">收货：' +
-        esc(o.user_name || o.user_id || '—') + ' ' + esc(o.phone || '') +
-        '　' + esc(o.address || '—') + '</span></div>' +
+      '<div class="ship-info">' +
+        '<div class="si-row"><span class="si-k">收货人</span><span class="si-v">' + esc(o.user_name || o.user_id || '—') + '</span>' +
+          '<span class="si-k">电话</span><span class="si-v">' + esc(o.phone || '—') + '</span></div>' +
+        '<div class="si-row"><span class="si-k">收货地址</span><span class="si-v addr">' + esc(o.address || '—') + '</span></div>' +
+      '</div>' +
       (o.ship_blocked_reason ? '<div class="co-meta" style="color:#b25000">' + esc(o.ship_blocked_reason) + '</div>' : '');
     }).join('');
 }
@@ -1632,23 +1720,46 @@ function messagesHtml(msgs){
   if (!msgs || !msgs.length) return '<div class="chat-placeholder">还没有消息</div>';
   return msgs.map(m => {
     const cls = m.role === 'merchant' ? 'merchant' : (m.role === 'bot' ? 'bot' : 'user');
-    
-    const own = m.role === 'merchant';
-    const read = own ? m.read_user : m.read_merchant;
+
+    // 已读回执只给发送方看：商家只对自己发出的消息显示「已读 / 未读」；
+    // 顾客 / 平台管理员 / 机器人发来的消息属于接收方一侧，这里一律不显示。
+    const readLabel = (m.role === 'merchant')
+      ? '<span class="msg-read">' + (m.read_user ? '已读' : '未读') + '</span>'
+      : '';
+    const imgs = Array.isArray(m.images) ? m.images : [];
+    const imgHtml = imgs.length
+      ? '<div class="chat-msg-imgs">' + imgs.map(u =>
+          '<img src="' + esc(u) + '" onclick="previewLightbox(\'' + esc(u) + '\')" alt="图片" />'
+        ).join('') + '</div>'
+      : '';
+    const textHtml = m.text ? esc(m.text) : (imgs.length ? '' : '');
     return '<div class="msg ' + cls + '">' +
-      esc(m.text) + '<span class="t">' + esc(m.time || '') + '</span>' +
-      '<span class="msg-read">' + (read ? '已读' : '未读') + '</span></div>';
+      textHtml + imgHtml + '<span class="t">' + esc(m.time || '') + '</span>' +
+      readLabel + '</div>';
   }).join('');
 }
 function msgSig(msgs){
-  
+
   return msgs.length + ':' + msgs.map(m =>
-    (m.read_user ? 1 : 0) + '' + (m.read_merchant ? 1 : 0)).join('');
+    (m.read_user ? 1 : 0) + '' + (m.read_merchant ? 1 : 0) +
+    (Array.isArray(m.images) ? m.images.length : 0)).join('');
+}
+function intentTipHtml(thread){
+  if (!thread || !thread.return_intent) return '';
+  const pending = thread.return_intent_pending ? ' pending' : '';
+  const uid = (activeChat && activeChat.user_id) || thread.user_id || '';
+  return '<div class="chat-intent-tip' + pending + '" id="chatIntentTip">⚠️ 顾客表达了退换货/退款意向，请及时回复并引导至「售后客服」通道' +
+    (thread.return_intent_text ? '<span>顾客原话：' + esc(thread.return_intent_text) + '</span>' : '') +
+    (uid ? '<button class="co-resolve" onclick="clearReturnIntent(\'' + esc(uid) + '\')">标记已处理</button>' : '') +
+    '<div style="clear:both"></div>' +
+    '</div>';
 }
 function renderChatThread(thread){
   const name = (thread && thread.user_name) || ('顾客 ' + (activeChat ? activeChat.user_id : ''));
   const msgs = (thread && thread.messages) || [];
+  const isPlatformChat = !!(activeChat && String(activeChat.user_id) === 'platform');
   const main = $('chatMain');
+  const intentTip = intentTipHtml(thread);
   main.innerHTML =
     '<div class="chat-head">' +
       '<div><div class="who">' + esc(name) + '</div></div>' +
@@ -1656,17 +1767,22 @@ function renderChatThread(thread){
         esc(activeChat ? activeChat.user_id : '') + '\',\'' +
         esc(activeChat ? activeChat.merchant_id : '') + '\')">刷新</button>' +
     '</div>' +
+    intentTip +
     '<div class="chat-orders" id="chatOrders"></div>' +
     '<div class="chat-msgs" id="chatMsgs" data-sig="' + msgSig(msgs) + '">' + messagesHtml(msgs) + '</div>' +
-    '<div class="chat-input">' +
-      '<input id="replyInput" placeholder="输入回复内容，回车发送…" autocomplete="off">' +
-      '<button class="btn btn-primary" onclick="sendReply()">发送</button>' +
-    '</div>';
+    ((merchant && (merchant.muted || merchant.disabled) && !isPlatformChat)
+      ? '<div class="chat-input-muted">' +
+          (merchant.disabled ? '账号已被平台停用，无法回复顾客' : '您已被平台禁言，暂时无法回复顾客（只能与平台管理员对话）') +
+        '</div>'
+      : '<div class="chat-input">' +
+          '<input id="replyInput" placeholder="输入回复内容，回车发送…" autocomplete="off">' +
+          '<button class="btn btn-primary" onclick="sendReply()">发送</button>' +
+        '</div>');
   const input = $('replyInput');
-  input.addEventListener('keydown', e => {
+  if (input) input.addEventListener('keydown', e => {
     if (e.key === 'Enter'){ e.preventDefault(); sendReply(); }
   });
-  if (!isMobile()) input.focus();
+  if (input && !isMobile()) input.focus();
   const box = $('chatMsgs');
   if (box) box.scrollTop = box.scrollHeight;
 }
@@ -1674,6 +1790,14 @@ function renderChatThread(thread){
 function refreshChatMessages(thread){
   const box = $('chatMsgs');
   if (!box){ renderChatThread(thread); return; }
+  // 顾客表达过退换货意向的会话：提醒条持续显示，直到商家「标记已处理」才撤下
+  const tip = $('chatIntentTip');
+  const keep = !!(thread && thread.return_intent);
+  if (tip && !keep) tip.remove();
+  if (!tip && keep){
+    const head = box.parentNode ? box.parentNode.querySelector('.chat-head') : null;
+    if (head) head.insertAdjacentHTML('afterend', intentTipHtml(thread));
+  }
   const msgs = (thread && thread.messages) || [];
   const sig = msgSig(msgs);
   if (box.dataset.sig === sig) return;
@@ -1681,11 +1805,30 @@ function refreshChatMessages(thread){
   box.innerHTML = messagesHtml(msgs);
   box.scrollTop = box.scrollHeight;
 }
+async function clearReturnIntent(userId){
+  if (!userId) return;
+  try {
+    await api('POST', '/chats/clear-intent', { user_id: userId });
+    toast('已标记处理完成，提醒已关闭');
+    if (activeChat){
+      const data = await api('GET', '/chats/thread?user_id=' + encodeURIComponent(activeChat.user_id) +
+        '&merchant_id=' + encodeURIComponent(activeChat.merchant_id));
+      refreshChatMessages(data.thread);
+    }
+    loadConversations(false);
+  } catch (e) { toast('操作失败：' + e.message, true); }
+}
 function isMobile(){
   return window.matchMedia && window.matchMedia('(max-width:720px)').matches;
 }
 async function sendReply(){
   if (!activeChat) return;
+  const isPlatformChat = String(activeChat.user_id) === 'platform';
+  if (!isPlatformChat && merchant && merchant.disabled){ toast('账号已被平台停用，无法回复顾客', true); return; }
+  if (!isPlatformChat && merchant && merchant.muted){
+    toast('您已被平台禁言，暂时无法回复顾客（只能与平台管理员对话）', true);
+    return;
+  }
   const input = $('replyInput');
   const text = (input.value || '').trim();
   if (!text) return;
@@ -2019,6 +2162,11 @@ function renderRefunds(){
       ? '<div class="rc-meta">重新发货运单号：' + esc(r.reship_waybill) + '</div>' : '';
     const rejectLine = r.reject_reason
       ? '<div class="rc-meta">拒绝理由：' + esc(r.reject_reason) + '</div>' : '';
+    const imgsLine = (Array.isArray(r.images) && r.images.length)
+      ? '<div class="rc-meta">上传凭证：</div><div class="rc-imgs">' + r.images.map(u =>
+          '<img src="' + esc(u) + '" onclick="previewLightbox(\'' + esc(u) + '\')" alt="凭证" />'
+        ).join('') + '</div>'
+      : '';
     return '<div class="refund-card">' +
       '<div class="rc-main">' +
         '<div class="rc-title">' + esc(r.type_text || '售后') + ' · ' + esc(r.goodsname || '') + ' ×' + (r.quantity || 1) + '</div>' +
@@ -2027,6 +2175,7 @@ function renderRefunds(){
         returnLine +
         reshipLine +
         (r.reason ? '<div class="rc-meta">原因：' + esc(r.reason) + '</div>' : '') +
+        imgsLine +
         rejectLine +
       '</div>' +
       '<div class="rc-ops">' +

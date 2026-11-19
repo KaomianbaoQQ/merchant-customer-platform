@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>平台管理 · Kaomianbao</title>
+<title>平台管理 · 测试商城</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230071e3'/%3E%3Ctext x='32' y='42' font-size='30' font-family='-apple-system,sans-serif' font-weight='700' fill='%23fff' text-anchor='middle'%3EK%3C/text%3E%3C/svg%3E">
 <style>
   * { box-sizing: border-box; }
@@ -58,6 +58,16 @@
   }
   nav.tabs button:hover { background: rgba(255,255,255,.08); color: #fff; }
   nav.tabs button.active { background: #4b6cf5; color: #fff; }
+  /* 头部右侧：退出 + 语言切换按钮的容器，保证两者并排、留间距、不重叠 */
+  header.top .nav-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  /* 仲裁待处理：导航红色高亮 + 闪烁数字徽章 */
+  nav.tabs button.tab-alert { background: rgba(255,77,79,.22); color: #ffd7d2; }
+  nav.tabs button.tab-alert.active { background: #d9363e; color: #fff; }
+  nav.tabs button .tab-badge{
+    display:none;margin-left:6px;min-width:18px;line-height:18px;padding:0 5px;
+    border-radius:980px;background:#ff4d4f;color:#fff;font-size:11px;font-weight:700;
+    animation:arbBlink 1s ease-in-out infinite;
+  }
   main { padding: 18px 20px 60px; max-width: 1280px; margin: 0 auto; }
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
   .card {
@@ -67,6 +77,18 @@
   .card .num { font-size: 24px; font-weight: 600; margin-top: 6px; }
   .panel { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(20,30,60,.06); }
   .panel h2 { margin: 0 0 12px; font-size: 15px; }
+  /* 待处理仲裁面板：红色边框 / 标题 / 行 */
+  .panel.arb-alert{border:1px solid #ff9c92;background:#fff6f5;box-shadow:0 0 0 3px rgba(255,77,79,.10);}
+  .panel.arb-alert h2.arb-title{color:#c81e1e;font-size:16px;font-weight:700;animation:arbBlink 1.2s ease-in-out infinite;}
+  .arb-inline-alert{
+    margin:0 0 10px;padding:8px 12px;border-radius:8px;background:#ffe3df;
+    color:#a8071a;font-size:13px;font-weight:600;
+  }
+  tr.arb-row td{background:#fff2f0;}
+  tr.arb-row td:first-child{box-shadow:inset 3px 0 0 #ff4d4f;}
+  tr.arb-row:hover td{background:#ffe8e5;}
+  .card.card-alert{border:1px solid #ff9c92;background:#fff6f5;}
+  .card.card-alert .num{color:#c81e1e;}
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #eef1f7; vertical-align: middle; }
   th { color: #7b8494; font-weight: 500; font-size: 12px; }
@@ -135,6 +157,16 @@
   }
   .alert-banner.show{display:block;}
   .alert-banner .sub{display:block;margin-top:3px;font-size:12.5px;font-weight:400;color:#8a4b46;}
+  /* 待处理仲裁：更醒目的红色 + 分块可点击提醒 */
+  .alert-banner.has-arbitration{
+    background:linear-gradient(90deg,#ffd9d6,#ffc7c1);border-color:#ff8f84;color:#a8071a;
+  }
+  .alert-banner .alert-line{cursor:pointer;}
+  .alert-banner .alert-line + .alert-line{
+    margin-top:9px;padding-top:9px;border-top:1px solid rgba(255,77,79,.28);
+  }
+  .alert-banner .alert-arb{font-size:15px;font-weight:700;animation:arbBlink 1s ease-in-out infinite;}
+  @keyframes arbBlink{0%,100%{opacity:1;}50%{opacity:.5;}}
   @keyframes alertPulse{
     0%,100%{box-shadow:0 0 0 0 rgba(255,77,79,.38);}
     50%{box-shadow:0 0 0 8px rgba(255,77,79,0);}
@@ -160,6 +192,10 @@
   .msg.merchant { background: #e8f0ff; margin-left: auto; }
   .msg.bot { background: #f6f7fb; color: #55607a; }
   .msg .who { font-size: 11px; color: #8b94a8; margin-bottom: 2px; }
+  .chat-msg-imgs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chat-msg-imgs img { width: 88px; height: 88px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,.08); cursor: zoom-in; background: #f3f5f9; display: block; }
+  .arb-imgs { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+  .arb-imgs img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line, #e3e7ef); cursor: zoom-in; background: #f3f5f9; }
   .toast {
     position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%);
     background: #2b3245; color: #fff; padding: 10px 18px; border-radius: 20px;
@@ -184,14 +220,18 @@
   <header class="top">
     <div class="brand">平台管理</div>
     <nav class="tabs" id="tabs"></nav>
-    <button class="btn" onclick="doLogout()">退出</button>
+    <div class="nav-right">
+      <button class="btn" onclick="doLogout()">退出</button>
+    </div>
   </header>
   <main>
     
-    <div class="alert-banner" id="alertBanner" onclick="goPendingHuman()"></div>
+    <div class="alert-banner" id="alertBanner"></div>
     <section data-tab="overview" class="tab-panel"></section>
     <section data-tab="arbitration" class="tab-panel" hidden></section>
     <section data-tab="merchants" class="tab-panel" hidden></section>
+    <section data-tab="applications" class="tab-panel" hidden></section>
+    <section data-tab="audit" class="tab-panel" hidden></section>
     <section data-tab="products" class="tab-panel" hidden></section>
     <section data-tab="users" class="tab-panel" hidden></section>
     <section data-tab="analytics" class="tab-panel" hidden></section>
@@ -229,6 +269,8 @@ const TABS = [
   ['overview', '总览'],
   ['arbitration', '仲裁处理'],
   ['merchants', '商家管理'],
+  ['applications', '商户审核'],
+  ['audit', '操作留痕'],
   ['products', '商品管理'],
   ['users', '顾客'],
   ['analytics', '智能分析'],
@@ -257,6 +299,17 @@ function esc(s) {
 }
 function money(n) { return '¥' + Number(n || 0).toFixed(2); }
 function stars(n) { return '<span class="stars">' + '★'.repeat(n) + '</span>' + '☆'.repeat(Math.max(0, 5 - n)); }
+function previewLightbox(url){
+  let ov = document.getElementById('imgLightbox');
+  if (!ov){
+    ov = document.createElement('div');
+    ov.id = 'imgLightbox';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out;';
+    ov.onclick = function(){ ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<img src="' + esc(url) + '" style="max-width:92vw;max-height:92vh;border-radius:10px;" />';
+}
 
 async function api(path, options = {}) {
   const res = await fetch(API + path, {
@@ -313,14 +366,29 @@ async function enterApp() {
   document.getElementById('appView').hidden = false;
   renderTabs();
   await switchTab('overview');
-  
+
+  // 登录后头部才可见：把 i18n 的语言切换按钮从「固定定位」重新挂回头部右侧，
+  // 避免它与「退出」按钮在右上角重叠（启动时 #appView 隐藏，按钮会被固定到 body 右上角）。
+  relocateLangBtn();
+
   startAlertPolling();
   refreshHumanAlert();
 }
+
+/* 把语言切换按钮（.kb-lang-btn）移入头部右侧容器，并去掉固定定位类。 */
+function relocateLangBtn() {
+  const btn = document.querySelector('.kb-lang-btn');
+  const host = document.querySelector('header.top .nav-right') || document.querySelector('header.top');
+  if (btn && host && btn.parentElement !== host) {
+    btn.classList.remove('kb-lang-fixed');
+    host.appendChild(btn);
+  }
+}
 function renderTabs() {
   document.getElementById('tabs').innerHTML = TABS.map(([key, label]) =>
-    `<button data-key="${key}" class="${key === currentTab ? 'active' : ''}" onclick="switchTab('${key}')">${label}</button>`
+    `<button data-key="${key}" class="${key === currentTab ? 'active' : ''}" onclick="switchTab('${key}')">${label}${key === 'arbitration' ? '<span class="tab-badge" id="arbTabBadge">0</span>' : ''}</button>`
   ).join('');
+  updateArbitrationBadge();
 }
 async function switchTab(key) {
   currentTab = key;
@@ -328,6 +396,7 @@ async function switchTab(key) {
   document.querySelectorAll('.tab-panel').forEach(p => { p.hidden = p.dataset.tab !== key; });
   const loaders = {
     overview: loadOverview, arbitration: loadArbitration, merchants: loadMerchants,
+    applications: loadApplications, audit: loadAuditLogs,
     products: loadProducts, users: loadUsers, analytics: loadAnalytics,
     conversations: loadConversations,
     chats: loadChats, reviews: loadReviews, tracking: loadTracking,
@@ -341,47 +410,116 @@ function panel(box, html) { box.innerHTML = html; }
 
 let lastHumanPending = 0;
 let alertTimer = null;
+/* 待处理仲裁：红色提醒 + 声音提醒的轮询状态 */
+let arbPendingCount = 0;
+let lastArbSig = '';
+let lastArbCount = 0;
+let lastArbBeepAt = 0;
+const ARB_BEEP_REPEAT_MS = 30000;   // 未处理时每 30 秒重复提醒一次
+let lastRenderedArbSig = '';        // 仲裁页表格只在单据变化时重绘，避免打断查询输入
 
-function renderAlertBanner(pending){
+function renderAlertBanner(pending, silent){
   const banner = document.getElementById('alertBanner');
-  if (!banner) return;
+  if (!banner) return 0;
   if (!TOKEN){
-    banner.classList.remove('show');
+    banner.classList.remove('show', 'has-arbitration');
     banner.innerHTML = '';
     lastHumanPending = 0;
-    return;
+    arbPendingCount = 0;
+    lastArbSig = '';
+    lastArbCount = 0;
+    lastArbBeepAt = 0;
+    updateArbitrationBadge();
+    return 0;
   }
   const merchantSide = pending.filter(c => !c.is_platform).length;
   const platformSide = pending.filter(c => c.is_platform).length;
-
+  const parts = [];
+  // 仲裁优先级最高：红色闪烁行，点击直达仲裁页
+  if (arbPendingCount > 0){
+    parts.push('<div class="alert-line alert-arb" onclick="switchTab(\'arbitration\')">🔴 有 ' +
+      arbPendingCount + ' 条待处理仲裁，请尽快判定' +
+      '<span class="sub">点击进入「仲裁处理」</span></div>');
+  }
   if (pending.length){
     const sub = (merchantSide && platformSide)
       ? '商家会话 ' + merchantSide + ' 条 ｜ 售后转人工 ' + platformSide + ' 条'
       : (platformSide ? '均为售后转人工（平台客服处理）' : '均为商家的商品咨询会话');
-    banner.innerHTML = '⚠️ 有 ' + pending.length + ' 条转人工会话待处理' +
-      '<span class="sub">' + sub + '（点这里打开全部对话）</span>';
-    banner.classList.add('show');
-  } else {
-    banner.classList.remove('show');
-    banner.innerHTML = '';
+    parts.push('<div class="alert-line" onclick="switchTab(\'conversations\')">⚠️ 有 ' +
+      pending.length + ' 条转人工会话待处理' +
+      '<span class="sub">' + sub + '（点这里打开全部对话）</span></div>');
   }
-
-  // 新出现转人工 → 响一声提醒
-  if (pending.length > lastHumanPending) beepAlert();
+  banner.innerHTML = parts.join('');
+  banner.classList.toggle('show', parts.length > 0);
+  banner.classList.toggle('has-arbitration', arbPendingCount > 0);
+  const rising = pending.length > lastHumanPending;
   lastHumanPending = pending.length;
+  // 轮询入口传 silent=true，由 refreshHumanAlert 统一按「仲裁优先」决定是否响
+  if (rising && !silent) beepAlert();
+  return rising ? 1 : 0;
+}
+
+function updateArbitrationBadge(){
+  const badge = document.getElementById('arbTabBadge');
+  if (badge){
+    badge.textContent = arbPendingCount;
+    badge.style.display = arbPendingCount > 0 ? 'inline-block' : 'none';
+  }
+  const btn = document.querySelector('nav.tabs button[data-key="arbitration"]');
+  if (btn) btn.classList.toggle('tab-alert', arbPendingCount > 0);
+}
+
+function updateArbitrationAlert(arbList){
+  const n = arbList.length;
+  const ids = arbList.map(a => String(a.id));
+  const sig = ids.slice().sort().join('|');
+  const prev = new Set(lastArbSig ? lastArbSig.split('|') : []);
+  const hasNewId = ids.some(id => !prev.has(id));
+  // 新仲裁单立即响；只要还有未处理的，每 ARB_BEEP_REPEAT_MS 再响一次
+  const repeat = n > 0 && (Date.now() - lastArbBeepAt >= ARB_BEEP_REPEAT_MS);
+  const rising = n > 0 && (hasNewId || repeat);
+  lastArbSig = sig;
+  lastArbCount = n;
+  arbPendingCount = n;
+  updateArbitrationBadge();
+  if (rising) lastArbBeepAt = Date.now();
+  return rising;
 }
 
 async function refreshHumanAlert(){
   if (!TOKEN) return;
   try {
-    const { conversations } = await api('/conversations');
-    const list = conversations || [];
-    renderAlertBanner(list.filter(isWaiting));
+    const convRes = await api('/conversations');
+    const list = convRes.conversations || [];
+    let arbList = null;
+    let arbRising = false;
+    try {
+      const arbRes = await api('/arbitrations');
+      arbList = arbRes.arbitrations || [];
+      arbRising = updateArbitrationAlert(arbList);
+    } catch (e) { /* 仲裁接口异常时不影响原有转人工提醒 */ }
+    const humanRising = renderAlertBanner(list.filter(isWaiting), true);
+    // 仲裁优先：同一轮轮询最多响一次，避免两种提醒叠加
+    if (arbRising) beepAlert('arbitration');
+    else if (humanRising) beepAlert();
+    // 停留在仲裁页时，新单 / 已处理单实时反映到红色面板（不重建查询区）
+    if (arbList && currentTab === 'arbitration'){
+      const sig = arbList.map(a => String(a.id)).sort().join('|');
+      if (sig !== lastRenderedArbSig){
+        lastRenderedArbSig = sig;
+        const p = document.getElementById('arbPendingPanel');
+        if (p) p.outerHTML = arbPendingPanelHtml(arbList);
+      }
+    }
     
     if (currentTab === 'conversations') {
       const box = document.getElementById('convTableBox');
       const tip = document.getElementById('convSearchTip');
       if (box && !(tip && tip.textContent)) box.innerHTML = convTableHtml(list, '');
+    }
+    // 打开的「与商家沟通」抽屉：平台自己发的消息实时反映商家是否已读
+    if (chatTarget && document.getElementById('drawer').classList.contains('open')) {
+      await refreshChat();
     }
   } catch (e) { /* 静默：轮询失败不打扰 */ }
 }
@@ -391,31 +529,72 @@ function startAlertPolling(){
   alertTimer = setInterval(refreshHumanAlert, 5000);
 }
 
-function goPendingHuman(){ switchTab('conversations'); }
+function goPendingHuman(){ switchTab(arbPendingCount > 0 ? 'arbitration' : 'conversations'); }
 
-function beepAlert(){
+function beepAlert(kind){
   try {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     const ctx = new AC();
-    [0, 0.24].forEach(function(offset, i){
+    // 浏览器自动播放策略：页面自动登录时 AudioContext 可能是 suspended，先尝试恢复
+    if (ctx.state === 'suspended' && ctx.resume) {
+      try { const p = ctx.resume(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+    }
+    // 仲裁提醒用更急促的三连音、音量更高；转人工沿用原来的两音
+    const strong = kind === 'arbitration';
+    const tones = strong ? [740, 990, 1320] : [880, 1180];
+    const step = strong ? 0.2 : 0.24;
+    tones.forEach(function(freq, i){
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
-      osc.frequency.value = i === 0 ? 880 : 1180;
-      const t0 = ctx.currentTime + offset;
+      osc.frequency.value = freq;
+      const t0 = ctx.currentTime + i * step;
       gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(0.2, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(strong ? 0.3 : 0.2, t0 + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(t0);
       osc.stop(t0 + 0.2);
     });
-    setTimeout(function(){ ctx.close(); }, 900);
+    setTimeout(function(){ ctx.close(); }, step * tones.length * 1000 + 400);
   } catch (e) { /* 静默：有的浏览器不允许自动播放 */ }
 }
 const loadingHTML = '<div class="empty">加载中…</div>';
+
+function arbRowsHtml(arbitrations){
+  return arbitrations.map(a => {
+    const imgs = Array.isArray(a.images) ? a.images : [];
+    const imgHtml = imgs.length
+      ? `<div class="arb-imgs">${imgs.map(u => `<img src="${esc(u)}" onclick="previewLightbox('${esc(u)}')" alt="凭证" />`).join('')}</div>`
+      : '';
+    return `
+    <tr class="arb-row">
+      <td>${esc(a.id)}</td>
+      <td>${esc(a.user_name)}</td>
+      <td>${esc(a.goodsname)} ×${a.quantity}</td>
+      <td><span class="tag warn">${esc(a.type_text || a.type)}</span></td>
+      <td style="max-width:200px">${esc(a.reason)}${imgHtml}</td>
+      <td style="max-width:180px">${a.reject_reason ? esc(a.reject_reason) : ''}</td>
+      <td>${esc(a.create_time)}</td>
+      <td><div class="row-actions">
+        <button class="btn" onclick="openArbDetail('${esc(a.id)}')">查看详情</button>
+        <button class="btn btn-ok" onclick="resolveArb('${esc(a.id)}', true)">支持顾客</button>
+        <button class="btn btn-danger" onclick="resolveArb('${esc(a.id)}', false)">支持商家</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+function arbPendingPanelHtml(arbitrations){
+  const n = arbitrations.length;
+  return `<div class="panel${n ? ' arb-alert' : ''}" id="arbPendingPanel">
+      <h2 class="arb-title">待处理仲裁（${n}）</h2>
+      ${n ? `<div class="arb-inline-alert">🔴 有 ${n} 条待处理仲裁，请尽快判定；处理前持续红色高亮并定时声音提醒。</div>` : ''}
+    ${n ? `<table><thead><tr><th>售后单</th><th>顾客</th><th>商品</th><th>类型</th><th>顾客理由</th><th>商家拒绝理由</th><th>申请时间</th><th>处理</th></tr></thead>
+    <tbody>${arbRowsHtml(arbitrations)}</tbody></table>` : '<div class="empty">当前没有待处理的仲裁。</div>'}
+    </div>`;
+}
 
 async function loadOverview(box) {
   const { overview: o } = await api('/overview');
@@ -429,26 +608,15 @@ async function loadOverview(box) {
     ['罚款累计', money(o.fine_total)],
   ];
   panel(box, `<div class="cards">${cards.map(([t, n]) =>
-    `<div class="card"><div class="label">${t}</div><div class="num">${n}</div></div>`
+    `<div class="card${t === '仲裁待处理' && Number(n) > 0 ? ' card-alert' : ''}"><div class="label">${t}</div><div class="num">${n}</div></div>`
   ).join('')}</div>`);
 }
 
 async function loadArbitration(box) {
   const { arbitrations } = await api('/arbitrations');
-  const rows = arbitrations.map(a => `
-    <tr>
-      <td>${esc(a.id)}</td>
-      <td>${esc(a.user_name)}</td>
-      <td>${esc(a.goodsname)} ×${a.quantity}</td>
-      <td><span class="tag warn">${esc(a.type_text || a.type)}</span></td>
-      <td style="max-width:200px">${esc(a.reason)}</td>
-      <td style="max-width:180px">${a.reject_reason ? esc(a.reject_reason) : ''}</td>
-      <td>${esc(a.create_time)}</td>
-      <td><div class="row-actions">
-        <button class="btn btn-ok" onclick="resolveArb('${esc(a.id)}', true)">支持顾客</button>
-        <button class="btn btn-danger" onclick="resolveArb('${esc(a.id)}', false)">支持商家</button>
-      </div></td>
-    </tr>`).join('');
+  arbPendingCount = arbitrations.length;
+  updateArbitrationBadge();
+  lastRenderedArbSig = arbitrations.map(a => String(a.id)).sort().join('|');
   panel(box, `
     <div class="panel">
       <h2>售后 / 仲裁查询</h2>
@@ -461,10 +629,7 @@ async function loadArbitration(box) {
       </div>
       <div id="asResult"><div class="empty">输入关键词后点「查询」。</div></div>
     </div>
-    <div class="panel"><h2>待处理仲裁（${arbitrations.length}）</h2>
-    ${arbitrations.length ? `<table><thead><tr><th>售后单</th><th>顾客</th><th>商品</th><th>类型</th><th>顾客理由</th><th>商家拒绝理由</th><th>申请时间</th><th>处理</th></tr></thead>
-    <tbody>${rows}</tbody></table>` : '<div class="empty">当前没有待处理的仲裁。</div>'}
-    </div>`);
+    ${arbPendingPanelHtml(arbitrations)}`);
 }
 
 async function searchAftersales(status) {
@@ -505,8 +670,99 @@ async function resolveArb(rid, favorUser) {
   try {
     const res = await api('/arbitrations/' + encodeURIComponent(rid), { method: 'POST', body: { favor_user: favorUser, note: note.trim() } });
     toast(res.message);
+    closeDrawer();
     await switchTab('arbitration');
+    await refreshHumanAlert();   // 立即撤下已处理仲裁的红色 / 声音提醒
   } catch (e) { toast(e.message); }
+}
+
+/* 仲裁详情抽屉：展示顾客理由 + 提交图片、商家拒绝理由、商品界面、双方对话，便于判定 */
+async function openArbDetail(rid) {
+  openDrawer('仲裁详情', loadingHTML);
+  try {
+    const data = await api('/arbitrations/' + encodeURIComponent(rid));
+    const a = data.arbitration || {};
+    const p = data.product || null;
+    const thread = data.thread || {};
+
+    const arbImgs = Array.isArray(a.images) ? a.images : [];
+    const arbImgHtml = arbImgs.length
+      ? `<div class="arb-imgs">${arbImgs.map(u => `<img src="${esc(u)}" onclick="previewLightbox('${esc(u)}')" alt="凭证" />`).join('')}</div>`
+      : '<div class="muted" style="color:#96a0b2;font-size:12px;margin-top:4px">顾客未上传图片凭证</div>';
+
+    const pImgs = (p && Array.isArray(p.images)) ? p.images : [];
+    const pImgHtml = pImgs.length
+      ? `<div class="arb-imgs" style="margin-top:8px">${pImgs.map(u => `<img src="${esc(u)}" onclick="previewLightbox('${esc(u)}')" alt="商品图" />`).join('')}</div>`
+      : '<div class="muted" style="color:#96a0b2;font-size:12px;margin-top:4px">该商品暂无图片</div>';
+
+    const msgs = (thread.messages || []).map(renderArbChatMsg).join('')
+      || '<div class="empty">双方暂无对话记录</div>';
+
+    setDrawer(`
+      <div class="panel">
+        <h2>仲裁单 ${esc(a.id)}</h2>
+        <div class="kv">
+          <div><b>顾客：</b>${esc(a.user_name)}${a.user_id ? '（' + esc(a.user_id) + '）' : ''}</div>
+          <div><b>商品：</b>${esc(a.goodsname)} ×${a.quantity}</div>
+          <div><b>类型：</b><span class="tag warn">${esc(a.type_text || a.type)}</span></div>
+          <div><b>原订单：</b>${esc(a.order_id || '—')}</div>
+          <div><b>申请时间：</b>${esc(a.create_time || '—')}</div>
+          <div><b>状态：</b>${esc(a.status_text || '—')}</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>顾客理由与提交图片（申请仲裁）</h2>
+        <div class="kv">${esc(a.reason) || '<span style="color:#96a0b2">（未填写理由）</span>'}</div>
+        ${arbImgHtml}
+      </div>
+
+      <div class="panel">
+        <h2>商家拒绝理由</h2>
+        <div class="kv">${esc(a.reject_reason) || '<span style="color:#96a0b2">（商家未填写拒绝理由）</span>'}</div>
+      </div>
+
+      <div class="panel">
+        <h2>商品界面</h2>
+        ${p ? `
+          <div class="kv">
+            <div><b>商品名：</b>${esc(p.name)}</div>
+            <div><b>价格：</b>${money(p.price)}</div>
+            <div><b>所属商家：</b>${esc(p.owner_name || p.owner_id || '—')}</div>
+            <div><b>描述：</b>${esc(p.desc || '（无）')}</div>
+          </div>
+          ${pImgHtml}
+        ` : '<div class="empty">未找到对应商品信息</div>'}
+      </div>
+
+      <div class="panel">
+        <h2>双方对话（顾客 ↔ 商家）</h2>
+        <div>${msgs}</div>
+      </div>
+    `);
+
+    const foot = document.getElementById('drawerFoot');
+    foot.hidden = false;
+    foot.innerHTML =
+      `<button class="btn btn-ok" onclick="resolveArb('${esc(a.id)}', true)">支持顾客</button>` +
+      `<button class="btn btn-danger" onclick="resolveArb('${esc(a.id)}', false)">支持商家</button>`;
+  } catch (e) {
+    setDrawer(`<div class="empty">${esc(e.message)}</div>`);
+  }
+}
+
+/* 渲染一条对话消息气泡（用于仲裁详情里的双方对话） */
+function renderArbChatMsg(m) {
+  const imgs = Array.isArray(m.images) ? m.images : [];
+  const imgHtml = imgs.length
+    ? `<div class="chat-msg-imgs">${imgs.map(u => `<img src="${esc(u)}" onclick="previewLightbox('${esc(u)}')" alt="图片" />`).join('')}</div>`
+    : '';
+  const textHtml = m.text ? esc(m.text) : (imgs.length ? '' : '');
+  const roleLabel = m.role === 'user' ? '顾客' : (m.role === 'merchant' ? '商家' : (m.role === 'bot' ? '机器人' : esc(m.role)));
+  return `<div class="msg ${esc(m.role)}">
+    <div class="who">${roleLabel} · ${esc(m.time || '')}</div>
+    ${textHtml}${imgHtml}
+  </div>`;
 }
 
 async function loadMerchants(box) {
@@ -519,10 +775,11 @@ async function loadMerchants(box) {
       <td>${m.sales}</td>
       <td>${m.buyer_count}</td>
       <td>${m.review_count}</td>
+      <td>${money(m.balance)}</td>
       <td>${money(m.fine_total)}</td>
       <td>
         ${m.disabled ? '<span class="tag danger">已停用</span>' : '<span class="tag ok">正常</span>'}
-        ${m.muted ? '<span class="tag warn">已禁言</span>' : ''}
+        ${m.muted ? '<span class="tag warn">已禁言' + (m.mute_remaining_days ? '（剩 ' + m.mute_remaining_days + ' 天）' : '') + '</span>' : ''}
         ${m.needs_human ? '<span class="tag warn">待人工</span>' : ''}
       </td>
       <td><div class="row-actions">
@@ -534,11 +791,87 @@ async function loadMerchants(box) {
       </div></td>
     </tr>`).join('');
   panel(box, `<div class="panel"><h2>商家（${merchants.length}）</h2>
-    <table><thead><tr><th>店铺</th><th>商品</th><th>销量</th><th>买家</th><th>评价</th><th>罚款</th><th>状态</th><th>操作</th></tr></thead>
+    <table><thead><tr><th>店铺</th><th>商品</th><th>销量</th><th>买家</th><th>评价</th><th>余额</th><th>罚款</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`);
+}
+async function loadApplications(box) {
+  const { applications } = await api('/merchant-applications');
+  if (!applications.length) { panel(box, '<div class="panel"><div class="empty">暂无商户注册申请。</div></div>'); return; }
+  const label = {
+    pending: '<span class="tag warn">待审核</span>',
+    approved: '<span class="tag ok">已通过</span>',
+    rejected: '<span class="tag danger">已驳回</span>'
+  };
+  const rows = applications.map(a => `
+    <tr>
+      <td>${esc(a.id)}</td>
+      <td>${esc(a.username)}</td>
+      <td>${esc(a.name)}</td>
+      <td>${esc(a.shop_name)}</td>
+      <td>${esc(a.create_time)}</td>
+      <td>${label[a.status] || esc(a.status)}</td>
+      <td>${esc(a.reviewed_by)} ${esc(a.review_note)}</td>
+      <td><div class="row-actions">
+        ${a.status === 'pending'
+          ? `<button class="btn btn-primary" onclick="reviewApplication('${esc(a.id)}','approve')">通过</button>
+             <button class="btn btn-danger" onclick="reviewApplication('${esc(a.id)}','reject')">驳回</button>`
+          : esc(a.reviewed_at)}
+      </div></td>
+    </tr>`).join('');
+  panel(box, `<div class="panel"><h2>商户注册审核（${applications.length}）</h2>
+    <p style="font-size:12px;opacity:.75">新注册的商户必须经平台客服确认，才能登录并上架商品。</p>
+    <table><thead><tr><th>编号</th><th>账号</th><th>联系人</th><th>店铺</th><th>申请时间</th><th>状态</th><th>审核信息</th><th>操作</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`);
+}
+async function reviewApplication(mid, action) {
+  const word = action === 'approve' ? '通过' : '驳回';
+  if (!confirm(`确定要${word}该商户的注册申请吗？`)) return;
+  let note = '';
+  if (action === 'reject') {
+    const input = prompt('驳回原因（商户登录时会看到）：', '资料不完整');
+    if (input === null) return;
+    note = input;
+  }
+  try {
+    const res = await api(`/merchant-applications/${encodeURIComponent(mid)}/review`,
+      { method: 'POST', body: { action, note } });
+    toast(res.message);
+    await switchTab('applications');
+  } catch (e) { toast(e.message); }
+}
+async function loadAuditLogs(box) {
+  const { logs } = await api('/audit-logs?limit=200');
+  if (!logs.length) { panel(box, '<div class="panel"><div class="empty">暂无操作记录。</div></div>'); return; }
+  const rows = logs.map(l => `
+    <tr>
+      <td>${esc(l.ts)}</td>
+      <td>${esc(l.actor_role)}</td>
+      <td>${esc(l.actor_id)}</td>
+      <td>${esc(l.actor_name)}</td>
+      <td>${esc(l.method)} ${esc(l.path)}</td>
+      <td>${l.status}</td>
+      <td>${esc(l.ip)}</td>
+      <td><div style="max-width:320px;word-break:break-all;font-size:12px;opacity:.75">${esc(l.query || '')} ${esc(l.body || '')}</div></td>
+    </tr>`).join('');
+  panel(box, `<div class="panel"><h2>操作留痕（最近 ${logs.length} 条）</h2>
+    <p style="font-size:12px;opacity:.75">密码、令牌、验证码已自动打码；被拒绝的请求同样留痕。</p>
+    <table><thead><tr><th>时间</th><th>角色</th><th>账号</th><th>名称</th><th>操作</th><th>结果</th><th>来源 IP</th><th>参数摘要</th></tr></thead>
     <tbody>${rows}</tbody></table></div>`);
 }
 async function setMerchant(mid, key, value) {
-  const label = key === 'disabled' ? (value ? '停用' : '恢复') : (value ? '禁言' : '解除禁言');
+  if (key === 'muted' && value) {
+    const days = prompt('禁言天数（按天计算，输入数字，例如 3）：', '3');
+    if (days === null) return;
+    const n = parseInt(days, 10);
+    if (!n || n <= 0) { toast('请输入大于 0 的天数'); return; }
+    try {
+      const res = await api(`/merchants/${encodeURIComponent(mid)}/state`, { method: 'POST', body: { key, value: true, days: n } });
+      toast(res.message);
+      await switchTab('merchants');
+    } catch (e) { toast(e.message); }
+    return;
+  }
+  const label = key === 'disabled' ? (value ? '停用' : '恢复') : '解除禁言';
   if (!confirm(`确定要${label}该商家吗？`)) return;
   try {
     const res = await api(`/merchants/${encodeURIComponent(mid)}/state`, { method: 'POST', body: { key, value } });
@@ -568,8 +901,9 @@ async function openMerchant(mid) {
           <div><b>登录账号：</b>${esc(m.username)}</div>
           <div><b>联系人：</b>${esc(m.name)}</div>
           <div><b>注册时间：</b>${esc(m.create_time)}</div>
-          <div><b>状态：</b>${m.disabled ? '已停用' : '正常'}${m.muted ? ' / 已禁言' : ''}</div>
+          <div><b>状态：</b>${m.disabled ? '已停用' : '正常'}${m.muted ? ' / 已禁言' + (m.mute_remaining_days ? '（剩 ' + m.mute_remaining_days + ' 天，至 ' + esc(m.muted_until) + '）' : '') : ''}</div>
           <div><b>商品 / 销量 / 销售额：</b>${m.product_count} / ${m.sales} / ${money(m.sales_amount)}</div>
+          <div><b>小店余额：</b>${money((detail.balance||{}).balance)}（累计入账 ${money((detail.balance||{}).total_revenue)}，罚款扣出 ${money((detail.balance||{}).total_fine)}）</div>
           <div><b>罚款累计：</b>${money(m.fine_total)}</div>
           <div><b>评价：</b>${m.review_count} 条${m.review_count ? '，均分 ' + m.review_avg : ''}</div>
         </div>
@@ -599,6 +933,12 @@ async function openMerchant(mid) {
           ${stars(r.rating)} <b>${esc(r.user_name)}</b> 
           <div>${esc(r.content)}</div>
         </div>`).join('') : '<div class="empty">暂无评价。</div>'}
+      </div>
+      <div class="panel"><h2>余额流水（${(detail.ledger||[]).length}）</h2>
+        ${(detail.ledger||[]).length ? detail.ledger.slice(0, 50).map(x => `<div class="kv">
+          ${esc(x.time)} · <b>${x.type === 'revenue' ? '入账' : '罚款'}</b> · ${x.type === 'revenue' ? '+' : '-'}${money(x.amount)}
+          ${x.ref ? ' · 单号 ' + esc(x.ref) : ''}${x.note ? ' · ' + esc(x.note) : ''}
+        </div>`).join('') : '<div class="empty">暂无流水。</div>'}
       </div>
       <div class="panel"><h2>罚款记录（${detail.fines.length}）</h2>
         ${detail.fines.length ? detail.fines.map(f => `<div class="kv">${esc(f.time)} · ${money(f.amount)} · ${esc(f.reason)}</div>`).join('') : '<div class="empty">暂无罚款。</div>'}
@@ -859,13 +1199,20 @@ async function refreshConversation() {
   try {
     const { thread } = await api(`/conversations/thread?merchant_id=${encodeURIComponent(convTarget.merchantId)}&user_id=${encodeURIComponent(convTarget.userId)}`);
     const msgs = (thread.messages || []).map(m => {
-      
-      const own = m.role === 'merchant';
-      const read = own ? m.read_user : m.read_merchant;
+
+      // 平台客服在本会话里以「商家侧」身份发言：只有自己发出的消息显示已读回执；
+      // 顾客 / 机器人的消息属于接收方一侧，监控视图里也不展示读没读。
+      const readLabel = (m.role === 'merchant')
+        ? `<span class="msg-read">${m.read_user ? '已读' : '未读'}</span>` : '';
+      const imgs = Array.isArray(m.images) ? m.images : [];
+      const imgHtml = imgs.length
+        ? `<div class="chat-msg-imgs">${imgs.map(u => `<img src="${esc(u)}" onclick="previewLightbox('${esc(u)}')" alt="图片" />`).join('')}</div>`
+        : '';
+      const textHtml = m.text ? esc(m.text) : (imgs.length ? '' : '');
       return `
       <div class="msg ${esc(m.role)}">
         <div class="who">${m.role === 'user' ? esc(thread.user_name || '顾客') : (m.role === 'merchant' ? '商家 / 平台客服' : '机器人')} · ${esc(m.time)}</div>
-        ${esc(m.text)}<span class="msg-read">${read ? '已读' : '未读'}</span>
+        ${textHtml}${imgHtml}${readLabel}
       </div>`;
     }).join('');
     setDrawer(msgs || '<div class="empty">暂无消息。</div>');
@@ -909,15 +1256,38 @@ async function openChat(mid, shopName) {
 }
 async function refreshChat() {
   if (!chatTarget) return;
+  const body = document.getElementById('drawerBody');
   try {
     const { thread } = await api('/chats/thread?merchant_id=' + encodeURIComponent(chatTarget.mid));
-    const msgs = (thread.messages || []).map(m => `
+    const list = thread.messages || [];
+    // 轮询也走这里：内容和已读状态都没变就不重绘，避免打断滚动与阅读
+    const sig = 'chat|' + list.map(m =>
+      (m.id || m.time || '') + ':' + m.role + ':' + (m.read_user ? 1 : 0) + (m.read_merchant ? 1 : 0) +
+      ':' + (Array.isArray(m.images) ? m.images.length : 0)
+    ).join('|');
+    if (body.dataset.sig === sig) return;
+    // 已读回执只给发送方看：平台管理员在本会话以 "user" 身份发言，
+    // 只有自己发出的消息显示商家是否已读；商家回的消息不显示回执。
+    const msgs = list.map(m => {
+      const readLabel = (m.role === 'user')
+        ? `<span class="msg-read">${m.read_merchant ? '已读' : '未读'}</span>` : '';
+      const imgs = Array.isArray(m.images) ? m.images : [];
+      const imgHtml = imgs.length
+        ? `<div class="chat-msg-imgs">${imgs.map(u => `<img src="${esc(u)}" onclick="previewLightbox('${esc(u)}')" alt="图片" />`).join('')}</div>`
+        : '';
+      const textHtml = m.text ? esc(m.text) : (imgs.length ? '' : '');
+      return `
       <div class="msg ${esc(m.role)}">
         <div class="who">${m.role === 'merchant' ? esc(chatTarget.shopName) : '平台管理员'} · ${esc(m.time)}</div>
-        ${esc(m.text)}
-      </div>`).join('');
+        ${textHtml}${imgHtml}${readLabel}
+      </div>`;
+    }).join('');
     setDrawer(msgs || '<div class="empty">还没有消息，发送第一条吧。</div>');
-  } catch (e) { setDrawer(`<div class="empty">${esc(e.message)}</div>`); }
+    body.dataset.sig = sig;
+  } catch (e) {
+    body.dataset.sig = '';   // 拉取失败后下一轮轮询要能重绘
+    setDrawer(`<div class="empty">${esc(e.message)}</div>`);
+  }
 }
 async function sendChat() {
   const input = document.getElementById('chatInput');
@@ -1017,6 +1387,8 @@ function renderTracking(box, t, source) {
 function openDrawer(title, html) {
   document.getElementById('drawerTitle').textContent = title;
   document.getElementById('drawerBody').innerHTML = html;
+  // 换一个抽屉时清掉上一个会话的增量渲染签名
+  document.getElementById('drawerBody').dataset.sig = '';
   document.getElementById('drawerFoot').hidden = true;
   document.getElementById('drawerFoot').innerHTML = '';
   document.getElementById('drawer').classList.add('open');

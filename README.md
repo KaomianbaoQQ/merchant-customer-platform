@@ -1,4 +1,4 @@
-# Kaomianbao 商城 · 客服 / 售后 / 物流
+# 测试商城 · 客服 / 售后 / 物流
 
 > **这个项目还在测试完善阶段。**
 >
@@ -84,6 +84,19 @@ brew install cloudflared              # 已装可跳过
   商户后台 `/merchant`、平台管理 `/platform`、`/api/merchant/*`、`/api/platform/*` 一律 403；  
   本机 `127.0.0.1` 不受限制，商户与平台界面照常用（局域网其它设备按“外部”处理）；
 - 隧道地址每次重启都会变；要固定域名需 Cloudflare 账号 + 自有域名（`cloudflared tunnel login` 后建命名隧道）。
+
+### 全站准入控制（默认开启）
+
+后端在 `后端/access_control.py` 统一拦截所有 `/api/*` 请求，不改动各业务路由：
+
+1. **强制登录**：除登录 / 注册 / 验证码 / 密码找回 / 健康检查 / 行政区划外，所有业务接口必须带有效令牌；页面与静态资源照常可打开（否则无法登录）。
+2. **角色权限**：`/api/platform/*` 仅平台管理员、`/api/merchant/*` 仅已审核商户、其余业务接口仅顾客 / 管理员；旧式「只报 id + name 就认人」已默认关闭。
+3. **次数限制**：通用 120 次/分钟；客服类 `consult / chat / after-sales` 另加 30 次/天；登录 10 次/分钟/IP；注册与验证码 5 次/小时/IP。超限返回 429。
+4. **全量留痕**：所有 `/api/*` 请求（含被拒绝的）写入 MySQL `cs.audit_log`，密码 / 令牌 / 验证码自动打码；平台管理 →「操作留痕」可查。
+
+**商户注册审核**：新注册商户为 `pending`，不能登录；平台管理 →「商户审核」点「通过」后才可用，「驳回」会同时清空其登录令牌。升级前已有的商户账号自动视为已通过，不会被锁死。
+
+配置在 `config.json` 的 `access` 段；`enabled: false` 可一键停用强制策略，想让游客仅浏览商品可把 `public_read_paths` 设为 `["/api/products"]`。**改动配置或代码后需重启后端才生效。**
 
 ## 二、目录结构
 
@@ -273,14 +286,14 @@ brew install cloudflared              # 已装可跳过
 
 ```bash
 # 容器（「一键启动全部.command」会自动拉起）
-docker run -d --name kaomianbao-mongo -p 127.0.0.1:27017:27017 \
-  -v kaomianbao_mongo_data:/data/db --restart unless-stopped mongo:7
+docker run -d --name testmall-mongo -p 127.0.0.1:27017:27017 \
+  -v testmall_mongo_data:/data/db --restart unless-stopped mongo:7
 
 # 历史数据一次性导入（幂等，可重复跑；加 --dry-run 只看条数不写库）
 .venv/bin/python 工具/迁移聊天记录到Mongo.py
 
 # 看数据
-docker exec kaomianbao-mongo mongosh kaomianbao_chat --eval "db.presale_threads.countDocuments()"
+docker exec testmall-mongo mongosh testmall_chat --eval "db.presale_threads.countDocuments()"
 ```
 
 - 连接配置在 `公共/db_config.py · MONGO_CONFIG`（不放 config.json，避免被 `工具/set_time_config.py` 整体覆盖）；
@@ -290,18 +303,42 @@ docker exec kaomianbao-mongo mongosh kaomianbao_chat --eval "db.presale_threads.
 
 ### 消息的已读 / 未读
 
-每条消息后面都会跟一个小字：**自己发的看对方有没有读，对方发来的看自己有没有读**；  
-**点进这个会话就算读过了**（没点进去一直显示未读）。
+**回执只挂在自己发出的消息上**：A 给 B 发消息，只有 A 的界面能看到 B 有没有读；
+B 的界面（顾客、商家，以及平台管理员查看别人会话的监控视图）在收到的消息旁
+**不显示**「已读 / 未读」。**点进这个会话就算读过了**（没点进去一直显示未读）。
 
-| 界面                    | 小字 class                                                 | 判读                                                                          |
-| --------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------- |
-| 顾客的客服面板（售前 `cs-read`） | 自己发的看 `read_merchant`，商家 / 机器人发的看 `read_user`            | 打开面板（GET `/api/chat`）、或刚发完消息（POST `/api/chat`）即标已读                          |
-| 顾客的售后面板               | 自己发的看 `read_agent`，客服回复的看 `read_user`                    | 打开面板（GET `/api/after-sales`）、客服发出回复时各自标记                                    |
-| 商户后台「顾客消息」/ 平台「全部对话」  | 自己（商家 / 平台客服）发的看 `read_user`，顾客 / 机器人发的看 `read_merchant` | 打开会话（`/api/merchant/chats/thread`、`/api/platform/conversations/thread`）即标已读 |
+| 界面 | 只有这些消息带小字 | 判读 |
+| --- | --- | --- |
+| 顾客的客服面板（售前 `cs-read`） | 顾客自己发的（`role=user`） | `read_merchant` —— 商家是否已读 |
+| 顾客的售后面板 | 顾客自己发的（`role=user`） | `read_agent` —— 售后客服是否已读 |
+| 商户后台「顾客消息」 | 商家真人发的（`role=merchant`） | `read_user` —— 顾客是否已读 |
+| 平台「全部对话」（监控 / 平台客服介入） | 平台客服以商家侧身份发的（`role=merchant`） | `read_user` —— 顾客是否已读 |
+| 平台「与商家的沟通」 | 平台管理员发的（`role=user`） | `read_merchant` —— 商家是否已读，抽屉按 5 秒轮询增量刷新 |
 
+机器人自动回答不会冒充「商家真人已看」；顾客消息在商家真人回复前保持「未读」。
+> 注：平台管理员在「全部对话」点开会话时，后端仍会按原有逻辑把该会话的顾客消息标为
+> 商家侧已读（用于接手转人工会话）。若要求严格区分「管理员旁观」与「商家本人已读」，
+> 需再调整 `/api/platform/conversations/thread` 的标记时机。
 
-标记存在 MongoDB 的消息里（售前 `read_user` / `read_merchant`，售后 `read_user` / `read_agent`）；  
+标记存在 MongoDB 的消息里（售前 `read_user` / `read_merchant`，售后 `read_user` / `read_agent`）：
+顾客打开面板（GET `/api/chat`）或刚发完消息（POST `/api/chat`）标 `read_user`；
+商家 / 平台打开会话（`/api/merchant/chats/thread`、`/api/platform/conversations/thread`）标 `read_merchant`；
+平台与商家会话由 `/api/platform/chats/thread` 标 `read_user`。
 从 `chat.json` 迁移进来的历史消息没有这两个字段，读取时按「发送方已读、接收方未读」补齐。
+
+### 商家侧的「及时回复」提醒（售前）
+
+顾客在「联系商家 / 商品咨询」里发的**每一条消息**都会计入 `unread_merchant`，商户后台
+「顾客消息」红点、顶部横幅与提示音据此提醒商家及时回复；机器人自动回答**不算商家回复**，
+顾客消息在商家真人回复前保持「未读」。会话还会带 `awaiting_reply`：即使商家点开会话清了
+未读，只要没真人回复，横幅仍会提醒。
+
+`客服/auto_reply_service.py · RETURN_INTENT_RE` 命中「退货 / 换货 / 退款 / 换新 …」时，
+除给顾客「请走售后客服通道」的固定话术外，还会在会话上写 `return_intent / return_intent_pending /
+return_intent_text / return_intent_at`（`公共/chat_store.py · mark_return_intent`）：商户后台会话列表
+亮「退换货意向」标签、聊天窗口顶部亮提醒条、横幅提示优先跟进，点击横幅优先跳到这类会话。
+已转人工的会话命中退换货意图时**只打标、机器人不插话**。商家真人回复后 `awaiting_reply`
+与 `return_intent_pending` 解除，历史意向标签保留。
 
 ### 聊天记录查询（商家 / 平台）
 
@@ -313,7 +350,7 @@ docker exec kaomianbao-mongo mongosh kaomianbao_chat --eval "db.presale_threads.
 | 平台后台 | 「全部对话」页顶部同样的搜索框                               | `GET /api/platform/conversations/search?q=&since=&until=` —— 搜全部会话（含售后转人工） |
 
 - 关键词同时匹配**顾客姓名 / 顾客 ID**与**任意一条消息内容**，结果里会显示「命中内容」原文；
-- 点结果里的会话即可在右侧 / 抽屉里读**完整对话记录**（含每条消息的已读 / 未读）；
+- 点结果里的会话即可在右侧 / 抽屉里读**完整对话记录**（仅自己发出的消息带已读 / 未读小字）；
 - 商户侧查询时不会被轮询刷新覆盖（`chatSearching` 标记），点「清除」回到正常会话列表。
 
 ### 商品评价门槛
@@ -412,7 +449,7 @@ Dify 知识库里的文档不在清理范围内，需要时在 Dify 里手动删
 | `失败清单.txt`          | 失败用户与原因（没有失败则不生成）                                      |
 
 > 跑之前请确保：后端在跑、MongoDB 已启动（`一键启动全部.command` 或  
-> `docker start kaomianbao-mongo`）。库里已有数据也能再跑（顾客姓名带本次运行的短标识，  
+> `docker start testmall-mongo`）。库里已有数据也能再跑（顾客姓名带本次运行的短标识，  
 > 不会与上一批账号重名）；想从空库开始先执行 `工具/清空数据.py --yes`。
 
 ## 四、智能分析（用户画像 / 商品购买可能性）
@@ -560,14 +597,19 @@ now >= 预计送达                    → 4 已签收
             └─ 校验物流状态（售后/returns.py · check_return_eligibility）
                  ├─ 未发货 → 退款 / 退货：无需理由、无需商家同意、不走仲裁，提交即完成
                  │           换货：拒绝（货还没发出，没有换货可言）
-                 ├─ 已发货未签收 → 可退/换/退款（需理由），只能「全部退回」，原运单号不变
-                 └─ 已签收 → 退货 5 分钟内 / 换货 10 分钟内；可部分数量退换
+                 ├─ 已发货但顾客未确认收货（含物流按预计送达自动标为「已签收」）
+                 │   → 可退/换/退款（需理由），不受时间窗限制，只能「整单退回」，
+                 │     原运单号不变、无需寄回
+                 └─ 已确认收货（真实签收，delivered_at 有值）
+                     → 退货需在签收后 5 分钟内 / 换货 10 分钟内；可部分数量退换
+                     （时间窗一律以实际签收时间为起点，不用预计送达时间）
 ```
 
-已签收的退货 / 换货走商家确认：
+已确认收货的退货 / 换货走商家确认（生成 7 位寄回单号）；未确认收货的订单在
+商家同意 / 平台仲裁支持顾客时直接整单退回，原运单号不变、无需寄回。
 
 ```
-商家同意（平台生成 7 位寄回单号，换货由顾客自己填寄回单号）
+商家同意（仅已确认收货订单：平台生成 7 位寄回单号，换货由顾客自己填寄回单号）
 点「我已发出」
   └─ 记录寄出时间，预计到仓 = 寄出时间 + default_delay（状态【退货运输中】）
 倒计时结束
@@ -614,6 +656,18 @@ now >= 预计送达                    → 4 已签收
   浏览器要求先与页面交互过才允许发声，所以首次可能无声，之后正常。
 - 商家侧每 6 秒（不在会话页）/ 4 秒（在会话页）刷新，平台侧每 5 秒刷新，  
   商家真人回复后 `needs_human` 置回 False，横幅自动消失。
+
+#### 待处理仲裁强提醒（平台后台）
+
+`GET /api/platform/arbitrations` 有待处理单时，平台后台每 5 秒轮询都会维持以下提醒：
+
+- 顶部横幅出现红色闪烁的「🔴 有 N 条待处理仲裁，请尽快判定」（点击直达「仲裁处理」），
+  有单时横幅整体切成更深的红色；「仲裁处理」导航亮红色并显示闪烁数字徽章；
+- 仲裁页「待处理仲裁（N）」面板为红色边框 / 红色标题 / 淡红行高亮，总览「仲裁待处理」卡片变红；
+- **声音提醒**：新仲裁单立即响三连音；只要还有未处理单，每 30 秒重复提醒一次。
+  判定完成（`/api/platform/arbitrations/<rid>`）后立即撤下红色与声音状态。
+
+停留在仲裁页时只按单据 ID 变化重绘待处理面板，不会打断「售后 / 仲裁查询」的输入与结果。
 
 > **关于 Dify**：售后工作流只有 insert/delete/update/select/闲聊 分支，没有「退款/退货/换货」分支，  
 > 所以“退款”会被 LLM 误判成 insert。这里把退/换意图改为**后端确定性处理**（可靠且能定位订单），  

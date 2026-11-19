@@ -76,7 +76,7 @@ KB_I18N.extend({
  "平台介入": "Platform stepped in",
  "平台发出的消息会出现在商家的「顾客消息」里，商家可直接回复。": "Platform messages appear in the seller's inbox and can be replied to directly.",
  "平台管理": "Platform admin",
- "平台管理 · Kaomianbao": "Platform admin · Kaomianbao",
+ "平台管理 · 测试商城": "Platform admin · Test Mall",
  "平台管理后台": "Platform Console",
  "店铺": "Shop",
  "当前没有待处理的仲裁。": "No pending arbitration.",
@@ -212,5 +212,11 @@ KB_I18N.extend({
  "${x} 已停用 / ${y} 已禁言": "${x} suspended / ${y} muted",
  "${x} 条会话": "${x} chats",
  "${x} 已下架": "${x} unlisted",
- "成交 ¥${x}": "Revenue ¥${x}"
+ "成交 ¥${x}": "Revenue ¥${x}",
+ "🔴 有 ${n} 条待处理仲裁，请尽快判定": "🔴 ${n} pending arbitrations — please rule now",
+ "点击进入「仲裁处理」": "Open Arbitration",
+ "🔴 有 ${n} 条待处理仲裁，请尽快判定；处理前持续红色高亮并定时声音提醒。": "🔴 ${n} pending arbitrations — please rule now. The alert stays red with repeated sound reminders until resolved.",
+ "⚠️ 有 ${n} 条转人工会话待处理": "⚠️ ${n} chats awaiting a human reply",
+ "已读": "Read",
+ "未读": "Unread"
 });

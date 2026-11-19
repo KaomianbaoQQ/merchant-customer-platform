@@ -18,7 +18,7 @@ from .status import compute_status, format_datetime
 ORDER_TABLE = "`order`"
 LOGISTICS_TABLE = "`logistics`"
 
-CARRIER = "Kaomianbao 速运"
+CARRIER = "测试商城速运"
 
 CREATE_LOGISTICS_SQL = """
 CREATE TABLE IF NOT EXISTS `logistics` (
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `logistics` (
     `user_id`           VARCHAR(64)  DEFAULT NULL             COMMENT '下单用户ID',
     `user_name`         VARCHAR(64)  DEFAULT NULL             COMMENT '下单用户姓名',
     `address`           VARCHAR(255) DEFAULT NULL             COMMENT '收货地址',
-    `carrier`           VARCHAR(64)  DEFAULT 'Kaomianbao 速运' COMMENT '物流公司',
+    `carrier`           VARCHAR(64)  DEFAULT '测试商城速运' COMMENT '物流公司',
     `shipped_at`        DATETIME     DEFAULT NULL             COMMENT '发货时间',
     `estimated_arrival` DATETIME     DEFAULT NULL             COMMENT '预计送达时间',
     `delivered_at`      DATETIME     DEFAULT NULL             COMMENT '实际签收时间',
@@ -77,6 +77,15 @@ def _ensure_logistics_once():
     try:
         with conn.cursor() as cur:
             cur.execute(CREATE_LOGISTICS_SQL)
+
+            # 老表可能没有「实际签收时间」，CREATE TABLE IF NOT EXISTS 不会补列；
+            # 售后时间窗与物流查询结果都依赖它，缺列会让新增的 SELECT 直接报错。
+            if not _column_exists(cur, "logistics", "delivered_at"):
+                cur.execute(
+                    "ALTER TABLE `logistics` "
+                    "ADD COLUMN `delivered_at` DATETIME DEFAULT NULL COMMENT '实际签收时间' "
+                    "AFTER `estimated_arrival`"
+                )
 
             # cs.order 补字段（老表没有 address / waybill）
             if not _column_exists(cur, "order", "address"):

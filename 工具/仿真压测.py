@@ -165,7 +165,7 @@ class Simulation:
         chat = str(data.get("chat") or "")
         if "失败" in chat:
             log(f"⚠️ MongoDB 不可用，聊天记录写不进去：{chat[:80]}")
-            log("   先执行「一键启动全部.command」或 docker start kaomianbao-mongo 再跑")
+            log("   先执行「一键启动全部.command」或 docker start testmall-mongo 再跑")
         else:
             log(f"后端就绪：{chat}")
         return True

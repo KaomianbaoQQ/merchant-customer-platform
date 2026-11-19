@@ -19,7 +19,11 @@ from 公共.admin_auth import issue_token, revoke_token, verify_token
 from 物流.repository import get_logistics
 from 物流.tracking_api import is_external_waybill, query as tracking_query
 from 售后.config import verify_admin
-from 售后.returns import list_arbitrations, resolve_arbitration, search_returns
+from 售后.returns import (
+    list_arbitrations, resolve_arbitration, search_returns,
+    get_return, get_order_with_logistics,
+)
+from 售后.order import base_goodsname
 from 售后 import platform as pf
 
 bp = Blueprint("platform_admin", __name__, url_prefix="/api/platform")
@@ -88,7 +92,11 @@ def api_platform_merchant_detail(mid):
 
 @bp.post("/merchants/<mid>/state")
 def api_platform_merchant_state(mid):
-    """停用 / 恢复商家账号，或禁言 / 解除禁言。"""
+    """停用 / 恢复商家账号，或禁言 / 解除禁言。
+
+    - disabled: 停用时自动下架该商家全部在售商品；恢复时把这批被下架的商品恢复上架。
+    - muted:    按天禁言，请求体带 days（>0）；days 缺省为 1 天，传 value=false 解除。
+    """
     err = _require_admin()
     if err:
         return err
@@ -96,9 +104,33 @@ def api_platform_merchant_state(mid):
     key = str(body.get("key") or "").strip()
     if key not in ("disabled", "muted"):
         return jsonify({"ok": False, "error": "只支持 disabled（停用）/ muted（禁言）"}), 400
-    state = platform_state.set_merchant_flag(mid, key, bool(body.get("value")))
-    label = ("已停用" if state["disabled"] else "已恢复") if key == "disabled" else \
-            ("已禁言" if state["muted"] else "已解除禁言")
+
+    if key == "disabled":
+        value = bool(body.get("value"))
+        if value:
+            # 停用前先记录「当前在售」的商品，并全部下架
+            from 公共 import store as _store
+            offline_pids = []
+            for p in _store.list_products(owner_id=mid, include_offline=True):
+                pid = str(p.get("id") or "").strip()
+                if pid and not platform_state.is_product_offline(pid):
+                    offline_pids.append(pid)
+                    platform_state.set_product_offline(pid, True, "商家被平台停用，自动下架")
+            state = platform_state.set_merchant_disabled(mid, True, offline_pids)
+            label = "已停用（已下架全部在售商品）"
+        else:
+            # 恢复账号：把停用时刻在售、被自动下架的商品恢复上架
+            prev = platform_state.merchant_state(mid)
+            pids = list(prev.get("disabled_offline_pids") or [])
+            state = platform_state.set_merchant_disabled(mid, False)
+            for pid in pids:
+                platform_state.set_product_offline(pid, False)
+            label = "已恢复账号" + (f"（已重新上架 {len(pids)} 件商品）" if pids else "")
+        return jsonify({"ok": True, "state": state, "message": f"商家 {mid} {label}"})
+
+    days = int(body.get("days") or 1)
+    state = platform_state.set_merchant_muted(mid, days if bool(body.get("value")) else 0)
+    label = f"已禁言 {state['muted_days']} 天" if state["muted"] else "已解除禁言"
     return jsonify({"ok": True, "state": state, "message": f"商家 {mid} {label}"})
 
 @bp.get("/merchants/<mid>/fines")
@@ -107,7 +139,8 @@ def api_platform_merchant_fines(mid):
     if err:
         return err
     return jsonify({"ok": True, "fines": platform_state.list_fines(mid),
-                    "total": platform_state.fine_total(mid)})
+                    "total": platform_state.fine_total(mid),
+                    "balance": platform_state.get_balance(mid)})
 
 @bp.post("/merchants/<mid>/fines")
 def api_platform_add_fine(mid):
@@ -121,7 +154,16 @@ def api_platform_add_fine(mid):
                      if m["id"] == str(mid)), "")
     ok, msg, entry = platform_state.add_fine(mid, name, body.get("amount"), body.get("reason"))
     return jsonify({"ok": ok, "message": msg, "fine": entry,
-                    "total": platform_state.fine_total(mid)}), (200 if ok else 400)
+                    "total": platform_state.fine_total(mid),
+                    "balance": platform_state.get_balance(mid)}), (200 if ok else 400)
+
+@bp.get("/merchants/<mid>/balance")
+def api_platform_merchant_balance(mid):
+    err = _require_admin()
+    if err:
+        return err
+    return jsonify({"ok": True, "balance": platform_state.get_balance(mid),
+                    "ledger": platform_state.list_ledger(mid)})
 
 # 商品：下架 / 恢复
 @bp.get("/products")
@@ -278,6 +320,49 @@ def api_platform_arbitrations():
         return err
     return jsonify({"ok": True, "arbitrations": list_arbitrations()})
 
+@bp.get("/arbitrations/<rid>")
+def api_platform_arbitration_detail(rid):
+    """仲裁详情：一并返回仲裁单、对应商品、双方（顾客 ↔ 商家）对话，
+    供平台在「仲裁处理」里查看顾客理由 / 提交图片 / 商品界面 / 双方对话后判定。"""
+    err = _require_admin()
+    if err:
+        return err
+    rid = str(rid or "").strip()
+    found, row = get_return(rid)
+    if not found:
+        return jsonify({"ok": False, "error": "仲裁单不存在"}), 404
+
+    # 商品：优先按订单里的 product_id 找，找不到再按商品名兜底匹配
+    product = None
+    try:
+        order = get_order_with_logistics(row.get("order_id"))
+        if order and order.get("product_id"):
+            product = store.get_product(order["product_id"], include_offline=True)
+    except Exception:
+        product = None
+    if not product:
+        target = base_goodsname(row.get("goodsname"))
+        for p in store.list_products(include_offline=True):
+            if base_goodsname(p.get("name")) == target:
+                product = p
+                break
+
+    # 双方对话：商家(owner_id) ↔ 顾客(user_id) 的咨询 / 沟通记录
+    owner_id = str(row.get("owner_id") or "")
+    user_id = str(row.get("user_id") or "")
+    thread = {}
+    if owner_id and user_id:
+        try:
+            thread = store.get_thread(owner_id, user_id) or {}
+        except Exception:
+            thread = {}
+    return jsonify({
+        "ok": True,
+        "arbitration": row,
+        "product": product,
+        "thread": thread,
+    })
+
 @bp.get("/aftersales")
 def api_platform_aftersales():
     """按关键词查售后单（含「平台仲裁中」），便于仲裁期间核查进度。
@@ -338,7 +423,7 @@ def api_platform_tracking():
             "source": "local",
             "tracking": {
                 "waybill": row.get("waybill"),
-                "carrier": row.get("carrier") or "Kaomianbao 速运",
+                "carrier": row.get("carrier") or "测试商城速运",
                 "status_text": row.get("status_text"),
                 "status_step": row.get("status_step", 0),
                 "shipped_at": row.get("shipped_at"),
@@ -354,3 +439,55 @@ def api_platform_tracking():
     if not ok:
         return jsonify({"ok": False, "error": msg}), 404
     return jsonify({"ok": True, "source": "uapi", "tracking": data})
+
+
+# ---------------------------------------------------------------- 商户注册审核 / 操作留痕
+@bp.get("/merchant-applications")
+def api_platform_applications():
+    """平台客服查看商户注册申请（默认全部，可带 status=pending 只看待审）。"""
+    err = _require_admin()
+    if err:
+        return err
+    from 公共.accounts import list_merchant_applications
+    status = str(request.args.get("status") or "").strip() or None
+    rows = list_merchant_applications(status=status, limit=request.args.get("limit") or 200)
+    return jsonify({"ok": True, "applications": rows})
+
+
+@bp.post("/merchant-applications/<mid>/review")
+def api_platform_review_application(mid):
+    """平台客服确认 / 驳回商户注册申请：action = approve / reject。"""
+    err = _require_admin()
+    if err:
+        return err
+    from .. import access_control
+    from 公共.accounts import review_merchant
+    data = request.get_json(silent=True) or {}
+    admin = verify_token(_token_from_request()) or {}
+    ok, info, msg = review_merchant(
+        mid,
+        data.get("action"),
+        reviewer=admin.get("name") or "平台客服",
+        note=data.get("note"),
+    )
+    if not ok:
+        return jsonify({"ok": False, "error": msg}), 400
+    # 审核结果立即生效：清掉身份缓存，避免旧状态最多残留数秒
+    access_control.invalidate_identity_cache()
+    return jsonify({"ok": True, "application": info, "message": msg})
+
+
+@bp.get("/audit-logs")
+def api_platform_audit_logs():
+    """查看全站操作留痕（支持 role / actor_id / path 过滤）。"""
+    err = _require_admin()
+    if err:
+        return err
+    from .. import access_control
+    rows = access_control.query_audit_logs(
+        limit=request.args.get("limit") or 200,
+        role=request.args.get("role") or None,
+        actor_id=request.args.get("actor_id") or None,
+        path=request.args.get("path") or None,
+    )
+    return jsonify({"ok": True, "logs": rows})

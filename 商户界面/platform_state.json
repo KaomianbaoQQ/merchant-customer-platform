@@ -1,5 +1,30 @@
 {
-  "merchants": {},
+  "merchants": {
+    "1": {
+      "muted": false,
+      "update_time": "2026-11-13 11:18:20",
+      "disabled": false,
+      "muted_until": "",
+      "muted_days": 0,
+      "disabled_offline_pids": []
+    }
+  },
   "products": {},
-  "fines": []
+  "fines": [
+    {
+      "merchant_id": "1",
+      "merchant_name": "演示小店",
+      "amount": 100.0,
+      "reason": "违规操作",
+      "time": "2026-11-13 09:32:09"
+    }
+  ],
+  "balances": {
+    "1": {
+      "balance": 0.0,
+      "total_revenue": 0.0,
+      "total_fine": 0.0
+    }
+  },
+  "ledger": []
 }

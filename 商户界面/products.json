@@ -1,1 +1,29 @@
-[]
+[
+  {
+    "id": "test-20261112153420",
+    "name": "test",
+    "tag": "test",
+    "price": 1,
+    "desc": "test",
+    "images": [],
+    "img": "",
+    "specs": [
+      [
+        "test",
+        "test"
+      ]
+    ],
+    "owner_id": "1",
+    "owner_name": "演示小店",
+    "views": 6,
+    "updated_at": "2026-11-12 15:34:20",
+    "created_at": "2026-11-12 15:34:20",
+    "skus": [
+      {
+        "sku_id": "test-20261112153420::default",
+        "name": "默认规格",
+        "price": 1.0
+      }
+    ]
+  }
+]

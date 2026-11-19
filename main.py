@@ -1,4 +1,4 @@
-"""Kaomianbao 项目入口。
+"""测试商城项目入口。
 
 用法（在项目根目录执行）：
     python main.py          # 启动 Web 后端

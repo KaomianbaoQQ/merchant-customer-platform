@@ -15,6 +15,7 @@ from .platform import bp as platform_bp
 from .reviews import bp as reviews_bp
 from .analytics import bp as analytics_bp
 from .cart import bp as cart_bp
+from .upload import bp as upload_bp
 
 ALL_BLUEPRINTS = (
     pages_bp,
@@ -33,6 +34,7 @@ ALL_BLUEPRINTS = (
     reviews_bp,
     analytics_bp,
     cart_bp,
+    upload_bp,
 )
 
 

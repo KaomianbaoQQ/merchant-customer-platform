@@ -1,6 +1,6 @@
 KB_I18N.extend({
-"Kaomianbao 商城": "Kaomianbao Store",
-"Kaomianbao 商城 · 统一入口": "Kaomianbao Store · Entry",
+"测试商城": "Test Mall",
+"测试商城 · 统一入口": "Test Mall · Entry",
 "⚠️ 连不上后端服务（": "⚠️ Cannot reach the backend (",
 "三个前端互相独立、共用一个后端，点下面任意一个即可进入": "Three independent front ends sharing one backend — pick any card below.",
 "入口.html?api=http://127.0.0.1:端口": "entry.html?api=http://127.0.0.1:PORT",

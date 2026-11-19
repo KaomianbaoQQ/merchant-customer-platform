@@ -5,8 +5,8 @@
 首次配置请运行：.venv/bin/python 工具/初始化配置.py
 
 聊天记录的 NoSQL 存储（MongoDB）。容器由「一键启动全部.command」负责拉起：
-    docker run -d --name kaomianbao-mongo -p 127.0.0.1:27017:27017 \
-      -v kaomianbao_mongo_data:/data/db --restart unless-stopped mongo:7
+    docker run -d --name testmall-mongo -p 127.0.0.1:27017:27017 \
+      -v testmall_mongo_data:/data/db --restart unless-stopped mongo:7
 """
 import pymysql
 

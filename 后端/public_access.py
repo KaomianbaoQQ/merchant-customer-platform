@@ -38,6 +38,7 @@ PUBLIC_PATHS = (
     "/api/consult",
     "/api/after-sales",
     "/api/logistics",
+    "/api/upload",
 )
 
 # 公网禁止访问的路径：商户后台、平台管理、统一入口导航

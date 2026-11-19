@@ -26,6 +26,8 @@ from 公共.chat_store import (  # noqa: F401
     mark_human_ack,
     mark_needs_human,
     mark_read,
+    mark_return_intent,
+    clear_return_intent,
     search_threads,
     set_thread_meta,
 )

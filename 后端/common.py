@@ -52,7 +52,16 @@ def resolve_user(raw):
         return {"id": admin["id"], "name": admin["name"], "role": "admin",
                 "is_admin": True, "age": None, "sex": None}
 
-    # 3) 旧式 id + name 核对（兼容，弱）
+    # 3) 旧式 id + name 核对（弱，默认关闭）
+    #    全局准入钩子（后端/access_control.py）已强制所有业务接口携带有效令牌，
+    #    令牌优先于前端传来的 id/name，因此这里默认不再接受「报个名字就认人」。
+    from 公共 import app_config
+    strict = app_config.get("access.strict_user_identity", True)
+    if isinstance(strict, str):
+        strict = strict.strip().lower() not in ("false", "0", "no", "off", "")
+    if strict:
+        return None
+
     user_id = str(raw.get("id") or raw.get("user_id") or "").strip()
     user_name = str(raw.get("name") or raw.get("user_name") or "").strip()
     if not user_id or not user_name:

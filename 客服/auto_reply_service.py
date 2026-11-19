@@ -7,10 +7,14 @@ HUMAN_RE 命中 3 次，才把会话标记为 needs_human（商家后台高亮 +
 对话记录并可回复）。
 
 分流（都在调 Dify 之前确定性处理，避免 LLM 误判）：
-    1. 退换货/退款意图 → 固定话术，引导到「售后客服」入口
+    1. 退换货/退款意图 → 给会话打标 return_intent（商户后台据此提醒商家及时跟进），
+       并给顾客固定话术，引导到「售后客服」入口；已转人工的会话只打标、机器人不插话
     2. 物流查询 → 直接查「当前咨询商品 + 当前顾客」的订单与运单状态作答
        （后端保底；同时把这段订单物流上下文拼进 user_input，
         Dify 工作流的「物流查询」分支可直接引用）
+
+顾客发的每一条消息都计入商家未读（unread_merchant），商户后台据此亮红点、
+横幅和提示音，提醒商家及时回复；机器人自动回答不再抑制未读。
 
 对外主函数：
     handle_chat_message(text, product, user, merchant_id, merchant_name) -> dict
@@ -129,7 +133,7 @@ def build_conversation_history(thread):
             history.append({"role": role, "text": str(m.get("text") or "")})
     return history
 
-def handle_chat_message(text, product, user, merchant_id, merchant_name):
+def handle_chat_message(text, product, user, merchant_id, merchant_name, images=None):
     """
     处理一条来自顾客的客服消息。
 
@@ -139,6 +143,7 @@ def handle_chat_message(text, product, user, merchant_id, merchant_name):
         user           {"id","name"}（可能为游客）
         merchant_id    商品所属商户 id
         merchant_name  商铺名
+        images         本条消息携带的图片 URL 列表（顾客上传的凭证）
 
     返回 dict：
         ok             bool
@@ -146,6 +151,7 @@ def handle_chat_message(text, product, user, merchant_id, merchant_name):
         bot            str|None  知识库/转人工的回复文本
         bot_message_id str|None  落盘的 bot 消息 id
         needs_human    bool      本会话是否已转入工（3 次人工触发）
+        return_intent  bool      本条消息是否命中退换货 / 退款意图
         error          str|None
     """
     user_id = str((user or {}).get("id") or "guest").strip() or "guest"
@@ -156,49 +162,69 @@ def handle_chat_message(text, product, user, merchant_id, merchant_name):
     # 这样顾客退出浏览器再进来，仍然有机器人应答，不会被永久静音。
     waiting_human = bool(thread.get("needs_human"))
 
+    # 顾客消息一律计入商家未读：商户后台据此提醒商家及时回复
     message = store.append_message(
-        merchant_id, user_id, user_name, "user", text, merchant_name,
-        suppress_unread=not waiting_human,
+        merchant_id, user_id, user_name, "user", text, merchant_name, images=images
     )
     if not message:
         return {"ok": False, "error": "消息为空", "message": None,
-                "bot": None, "bot_message_id": None, "needs_human": waiting_human}
+                "bot": None, "bot_message_id": None,
+                "needs_human": waiting_human, "return_intent": False}
 
-    # 正在等人工：由商家真人回复，机器人暂不插话
+    # 商家被停用：顾客咨询由平台客服接管（商家无法回复，平台可在「顾客会话」里介入）
+    from 公共 import platform_state
+    if platform_state.is_merchant_disabled(merchant_id):
+        bot = store.append_message(
+            merchant_id, user_id, user_name, "bot",
+            "该商家账号已被平台停用，您的咨询将由平台客服接管，请稍候，平台客服会尽快为您处理。",
+            merchant_name,
+        )
+        return {"ok": True, "message": message,
+                "bot": "该商家账号已被平台停用，您的咨询将由平台客服接管，请稍候，平台客服会尽快为您处理。",
+                "bot_message_id": bot["id"] if bot else None,
+                "needs_human": True, "return_intent": False,
+                "service_mode": "platform", "error": None}
+
+    # 退换货 / 退款意图：先打标通知商户后台（人工通道里同样要提醒商家）
+    intent = bool(RETURN_INTENT_RE.search(text))
+    if intent:
+        store.mark_return_intent(merchant_id, user_id, text)
+
+    # 正在等人工：由商家真人回复，机器人暂不插话（意图已打标）
     if waiting_human:
         return {"ok": True, "message": message, "bot": None,
                 "bot_message_id": None,
-                "needs_human": True, "error": None}
+                "needs_human": True, "return_intent": intent, "error": None}
 
     # 退换货 / 退款意图分流：商品咨询不处理售后流程，引导用户到「售后客服」入口
-    if RETURN_INTENT_RE.search(text):
+    if intent:
         bot = store.append_message(
             merchant_id, user_id, user_name, "bot", RETURN_TRANSFER_REPLY, merchant_name
         )
         return {"ok": True, "message": message, "bot": RETURN_TRANSFER_REPLY,
                 "bot_message_id": bot["id"] if bot else None,
-                "needs_human": False, "error": None}
+                "needs_human": False, "return_intent": True, "error": None}
 
     # 重新读取线程（拿到刚插入的消息）再判断是否转人工
     thread = store.get_thread(merchant_id, user_id)
     if count_human_hits(thread) >= HUMAN_TRIGGER_TIMES:
-        store.mark_needs_human(merchant_id, user_id)
+        store.mark_needs_human(merchant_id, user_id, count_unread=False)
         bot = store.append_message(
             merchant_id, user_id, user_name, "bot", TRANSFER_REPLY, merchant_name
         )
         return {"ok": True, "message": message, "bot": TRANSFER_REPLY,
                 "bot_message_id": bot["id"] if bot else None,
-                "needs_human": True, "error": None}
+                "needs_human": True, "return_intent": False, "error": None}
 
     # 若上一轮机器人主动询问是否转人工，且用户本次确认，则直接接通人工
     if thread.get("asking_human") and CONFIRM_HUMAN_RE.search(text.strip()):
-        store.mark_needs_human(merchant_id, user_id)
+        store.mark_needs_human(merchant_id, user_id, count_unread=False)
         bot = store.append_message(
             merchant_id, user_id, user_name, "bot", TRANSFER_REPLY, merchant_name
         )
         return {"ok": True, "message": message, "bot": TRANSFER_REPLY,
                 "bot_message_id": bot["id"] if bot else None,
-                "needs_human": True, "error": None}
+                "needs_human": True, "return_intent": False, "error": None}
 
     # 物流查询分流：直接查「当前咨询商品 + 当前顾客」的订单与运单状态作答。
     if LOGISTICS_RE.search(text):
@@ -209,7 +235,7 @@ def handle_chat_message(text, product, user, merchant_id, merchant_name):
             )
             return {"ok": True, "message": message, "bot": reply,
                     "bot_message_id": bot["id"] if bot else None,
-                    "needs_human": False, "error": None}
+                    "needs_human": False, "return_intent": False, "error": None}
 
     history = build_conversation_history(thread)
     result = ask_product_service(text, product=product, user_id=user_id,
@@ -244,4 +270,5 @@ def handle_chat_message(text, product, user, merchant_id, merchant_name):
     )
     return {"ok": True, "message": message, "bot": reply,
             "bot_message_id": bot["id"] if bot else None,
-            "needs_human": False, "error": result.get("error")}
+            "needs_human": False, "return_intent": False,
+            "error": result.get("error")}

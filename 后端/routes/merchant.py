@@ -451,15 +451,32 @@ def api_merchant_thread():
     thread = store.get_thread(merchant_id, user_id)
     return jsonify({"ok": True, "thread": thread})
 
+@bp.post("/chats/clear-intent")
+def api_merchant_clear_intent():
+    """商家在聊天里「标记已处理」退换货意向：清除该会话的退换货提醒标记。"""
+    m, err = require_merchant()
+    if err:
+        return err
+    data = request.get_json(silent=True) or {}
+    user_id = str(data.get("user_id") or "").strip()
+    if not user_id:
+        return jsonify({"ok": False, "error": "缺少 user_id"}), 400
+    store.clear_return_intent(m["id"], user_id)
+    return jsonify({"ok": True, "message": "已标记处理完成"})
+
 @bp.post("/chats/reply")
 def api_merchant_reply():
     m, err = require_merchant()
     if err:
         return err
-    if m.get("muted"):
-        return jsonify({"ok": False, "error": "该商家账号已被平台禁言，暂时无法回复顾客"}), 403
     data = request.get_json(silent=True) or {}
     user_id = str(data.get("user_id") or "").strip()
+    # 与「平台管理员」的会话不受禁言影响：禁言期间商家只能和平台管理员对话
+    to_platform = (user_id == "platform")
+    if m.get("disabled") and not to_platform:
+        return jsonify({"ok": False, "error": "该商家账号已被平台停用，无法回复顾客"}), 403
+    if m.get("muted") and not to_platform:
+        return jsonify({"ok": False, "error": "该商家账号已被平台禁言，暂时无法回复顾客（仅可与平台管理员对话）"}), 403
     # 同上：只能回复自己店铺的会话，不接受请求里传来的 merchant_id
     merchant_id = m["id"]
     text = str(data.get("text") or "").strip()

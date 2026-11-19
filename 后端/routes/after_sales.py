@@ -16,12 +16,13 @@ def api_after_sales():
         return jsonify({"ok": False, "error": "请先登录后再使用售后客服"}), 401
 
     message = str(data.get("message") or "").strip()
-    if not message:
-        return jsonify({"ok": False, "error": "请输入内容"}), 400
+    images = data.get("images") or []
+    if not message and not images:
+        return jsonify({"ok": False, "error": "请输入内容或上传图片"}), 400
 
     ensure_chat_table()
     session_id = str(data.get("session_id") or "").strip() or new_session_id(user["id"])
-    save_message(session_id, user["id"], user["name"], "user", message)
+    save_message(session_id, user["id"], user["name"], "user", message, images=images)
 
     result = handle_after_sales(user, message, session_id=session_id)
     # 顾客就在售后面板里：客服刚给的那条回复直接算「已读」
@@ -50,6 +51,7 @@ def api_after_sales_history():
             "id": f"{session_id}-{len(messages)}",
             "role": "user" if role == "user" else "bot",
             "text": r.get("content") or "",
+            "images": [str(x) for x in (r.get("images") or []) if str(x or "").strip()],
             "read_user": bool(r.get("read_user", role != "user")),
             "read_agent": bool(r.get("read_agent", role != "user")),
         })

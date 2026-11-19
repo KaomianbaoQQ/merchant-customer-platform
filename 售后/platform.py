@@ -196,6 +196,11 @@ def list_merchants():
             "create_time": _fmt(m.get("create_time")),
             "disabled": st["disabled"],
             "muted": st["muted"],
+            "muted_until": st.get("muted_until") or "",
+            "mute_remaining_days": st.get("mute_remaining_days") or 0,
+            "balance": platform_state.get_balance(mid)["balance"],
+            "total_revenue": platform_state.get_balance(mid)["total_revenue"],
+            "total_fine": platform_state.get_balance(mid)["total_fine"],
             "product_count": len(own_products),
             "offline_count": sum(
                 1 for p in own_products if platform_state.is_product_offline(p.get("id"))
@@ -282,6 +287,8 @@ def merchant_detail(mid):
         "orders": order_list,
         "reviews": reviews,
         "fines": platform_state.list_fines(mid),
+        "balance": platform_state.get_balance(mid),
+        "ledger": platform_state.list_ledger(mid),
         "conversations": store.list_conversations(merchant_id=mid, include_platform=False),
     }
 

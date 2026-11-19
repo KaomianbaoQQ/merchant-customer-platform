@@ -127,7 +127,7 @@ def main():
 
     ok, msg = chat_store.ensure_indexes()
     if not ok:
-        print("❌ %s\n请先启动 MongoDB（docker start kaomianbao-mongo）后重试。" % msg)
+        print("❌ %s\n请先启动 MongoDB（docker start testmall-mongo）后重试。" % msg)
         return
     print("✅ %s" % msg)
     if dry_run:

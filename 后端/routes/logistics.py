@@ -66,7 +66,7 @@ def api_logistics(waybill):
     return jsonify({
         "ok": True,
         "code": row["waybill"],
-        "carrier": row.get("carrier") or "Kaomianbao 速运",
+        "carrier": row.get("carrier") or "测试商城速运",
         "shippedAt": row.get("shipped_at"),
         "estimatedArrival": row.get("estimated_arrival"),
         "statusStep": row.get("status_step", 0),
